@@ -5,6 +5,6 @@ This repository is in its infancy. The ultimate goal is to solve ecological and 
 
 This repository currently contains:
 
-⋅⋅1. Reworked examples of maximum entropy approaches for numerically solving best-fit distributions subject to (Lagrangian) constraints. 
+⋅⋅ 1. Reworked examples of maximum entropy approaches for numerically solving best-fit distributions subject to (Lagrangian) constraints. ⋅⋅ 
 
-⋅⋅⋅max_ent.R: The only goal of this script is to start learning CVXR. Here, I reproduce the Maximum Entropy example from http://www.di.fc.ul.pt/~jpn/r/maxent/maxent.html based on the CVXR Direct Standardization example from https://cvxr.rbind.io/post/examples/cvxr_direct-standardization/
+⋅⋅⋅ max_ent.R: The only goal of this script is to start learning CVXR. Here, I reproduce the Maximum Entropy example from http://www.di.fc.ul.pt/~jpn/r/maxent/maxent.html based on the CVXR Direct Standardization example from https://cvxr.rbind.io/post/examples/cvxr_direct-standardization/ ⋅⋅⋅
