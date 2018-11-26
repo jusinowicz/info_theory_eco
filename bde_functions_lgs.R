@@ -178,6 +178,7 @@ get_mm1_d = function (l1, mu1, gs, Ki, nsims=30000, ip=1) {
 
 	# first arrival
 	T1 = rexp(1,rate=l1)
+	p = runif(nsims,0,1) #Probabilities of birth/death
 	currentqueue = 1
 	eventsTime = T1
 	t = T1
@@ -275,6 +276,7 @@ get_mm1_lgs2 = function (l1, mu1, gs, Ki, nsims=30000, ip=1) {
 
 	# first arrival
 	T1 = rexp(1,rate=l1)
+	p = runif(nsims,0,1) #Probabilities of birth/death
 	currentqueue = 1
 	eventsTime = T1
 	t = T1
