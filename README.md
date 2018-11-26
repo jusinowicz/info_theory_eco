@@ -13,6 +13,6 @@ This repository currently contains:
 But also builds this into a more general approach to reproduce classic solutions to the deterministic logistic equation. 
 
   * bd_density_entropy.R: This file reproduces the birth-death process with density dependence using simulations, and by solving for the stationary distribution with a maximum entropy approach. The maximum entropy approach uses the description of equilibrium in the matrix of transition rates as a constraint and solves for it numerically. The numerical solving is done using the CVXR package. 
-  * bd_density_entropy_quasi: Almost the same as bd_density_entropy.R, but where the quasi-stationary distribution has been solved instead. The mean of the quasi-stationary distribution corresponds to the classic solution of the deterministic logistic equation. 
-  * logistic_entropy_quasi: The same as bd_density_entropy_quasi, but where a different form of the logistic model has been implemented. 
+  * bd_density_entropy_quasi2: Almost the same as bd_density_entropy.R, but where the quasi-stationary distribution has been solved instead. The mean of the quasi-stationary distribution corresponds to the classic solution of the deterministic logistic equation. 
+  * logistic_entropy2: The same as bd_density_entropy_quasi, but where a different form of the logistic model has been implemented. 
   * bde_functions_lgs.R: The code for the population simulations. There are several versions of the function, casting it  as a more traditional M/M/1 queing simulation with exponentially distributed wait times, and as a density-dependent logistic growth process. 
