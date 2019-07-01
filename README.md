@@ -3,7 +3,7 @@ Using information theory to solve ecology
 
 This repository is in its infancy. The ultimate goal is to solve ecological and evolutionary problems using tools from information theory that are currently applied to a range of problems in other disciplines. The starting focus is on using maximum entropy and entropy distance approaches to understand population dynamics, and the dynamics of competing species in particular. 
 
-This repository currently contains
+This repository currently contains:
 In bd_models: 
 
 1. Reworked examples of maximum entropy approaches for numerically solving best-fit distributions subject to (Lagrangian) constraints.
