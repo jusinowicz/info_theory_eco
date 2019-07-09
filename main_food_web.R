@@ -9,6 +9,11 @@
 #	 C. Relative non-linearity allows 2 consumers per Resource
 # 2. Change the dynamics by perturbing the resource behavior. 
 # 3. Use information theory to track the resulting changes. 
+# This left off with not knowing how to represent the decreases in biomass in 
+# the compartment model, then finding a chunk of literature about the compart-
+# ment models that seems to suggest that models need to be solved first, then
+# thinking that the way forward might be to delve into more generic solution 
+# techniques first -- i.e. the Lagrangian approach, maximum entropy? 
 #=============================================================================
 #=============================================================================
 # load libraries
@@ -138,10 +143,13 @@ lines(out[,paste(n)],t="l")
 #=============================================================================
 # Total energy at time ts
 ts = tl
-pop_ts1 = out[ts,2:(nspp+1)]
+pop_ts1 = out[(ts-1),2:(nspp+1)]
+pop_ts2 = out[(ts),2:(nspp+1)]
 pop_conv = matrix(1,nspp,1) #energetic content per individual. 
-pop_tot = sum(pop_ts1*e_conv)
-pop_freq1 = pop_ts1/matrix(e_tot,length(pop_ts1),1) #Energy distribution
+pop_tot1 = sum(pop_ts1*pop_conv)
+pop_tot2 = sum(pop_ts2*pop_conv)
+pop_freq1 = pop_ts1/matrix(pop_tot,length(pop_ts1),1) #Energy distribution
+pop_freq2 = pop_ts2/matrix(pop_tot,length(pop_ts2),1) #Energy distribution
 
 #Generate quantities for the maximum entropy distribution, i.e. uniform: 
 pop_me = runif(nspp)
@@ -158,6 +166,10 @@ fR1 = matrix(pop_freq1[1:nRsp],nCsp,nRsp,byrow=T)
 fC1 = matrix(pop_freq1[(nRsp+1):(nRsp+nCsp)],nPsp,nCsp,byrow=T)
 fP1 = matrix(pop_freq1[(nRsp+nCsp+1):(nspp)],nCsp,nPsp,byrow=T)
 
+R1 = matrix(pop_ts1[1:nRsp],nCsp,nRsp,byrow=T)
+C1 = matrix(pop_ts1[(nRsp+1):(nRsp+nCsp)],nPsp,nCsp,byrow=T)
+P1 = matrix(pop_ts1[(nRsp+nCsp+1):(nspp)],nCsp,nPsp,byrow=T)
+
 frC = matrix(rC,nCsp,nRsp)
 frP = matrix(rP,nPsp,nCsp)
 
@@ -165,7 +177,7 @@ fmuC = matrix(muC,nCsp,nRsp)
 fmuP = matrix(muP,nPsp,nCsp)
 
 #Resource
-diag(fijQi[1:nRsp,1:nRsp]) = rR*(1/pop_tot - fR1[1,])/Ki*fR1[1,]
+diag(fijQi[1:nRsp,1:nRsp]) = rR*(1/pop_tot - fR1[1,]/Ki)*fR1[1,]
 #fij[nspp+1,1:nRsp] = colSums()
 #Consumer
 fijQi[(1+nRsp):(nRsp+nCsp),1:nRsp] = (fR1*cC*t(fC1)) 
@@ -175,7 +187,7 @@ fijQi[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (fC1*cP*t(fP1))
 fijQi[nspp+1,(1+nRsp+nCsp):nspp ] = (frP*t(fP1)*fmuP/pop_tot)[,1]
 
 #Resource
-diag(fij[1:nRsp,1:nRsp]) = rR*(1/pop_tot - fR1[1,])/Ki
+diag(fij[1:nRsp,1:nRsp]) = rR*(1/pop_tot - fR1[1,]/Ki)
 #fij[nspp+1,1:nRsp] = colSums()
 #Consumer
 fij[(1+nRsp):(nRsp+nCsp),1:nRsp] = (cC*t(fC1)) 
@@ -183,6 +195,27 @@ fij[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (frC* (fmuC/pop_tot))[,1]
 #Predator
 fij[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (cP*t(fP1))
 fij[nspp+1,(1+nRsp+nCsp):nspp ] = (frP*fmuP/pop_tot)[,1]
+
+
+#Resource
+diag(fijQi[1:nRsp,1:nRsp]) = rR*(1- R1[1,]/Ki)*fR1[1,]
+#fij[nspp+1,1:nRsp] = colSums()
+#Consumer
+fijQi[(1+nRsp):(nRsp+nCsp),1:nRsp] = (R1*cC)*t(fC1)
+fijQi[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (t(fC1)*frC*fmuC)[,1]
+#Predator
+fijQi[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (C1*cP)*t(fP1)
+fijQi[nspp+1,(1+nRsp+nCsp):nspp ] = (t(fP1)*frP*fmuP)[,1]
+
+#Resource
+diag(fij[1:nRsp,1:nRsp]) = rR*(1- R1[1,]/Ki)
+#fij[nspp+1,1:nRsp] = colSums()
+#Consumer
+fij[(1+nRsp):(nRsp+nCsp),1:nRsp] = (R1*cC)
+fij[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (frC*fmuC)[,1]
+#Predator
+fij[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (C1*cP)
+fij[nspp+1,(1+nRsp+nCsp):nspp ] = (frP*fmuP)[,1]
 
 ###"Thoroughput " diversity (distribution of energetic flow through web)
 D_pop1 = - sum ( pop_freq1*log(pop_freq1) )
