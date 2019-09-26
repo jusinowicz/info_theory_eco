@@ -32,13 +32,14 @@ shifter = function(x, n = 1) {
 
 ###Time to simulate over: 
 tend = 1000 #Length of numerical simulation
-times  = seq(from = 0, to = tend, by = 0.01)
+delta1 = 0.01 #Time increments
+times  = seq(from = 0, to = tend, by = delta1)
 tl = length(times)
 
 ###Number of species at each trophic level: 
-nRsp=3 #Resource species
-nCsp=4 #Consumer species
-nPsp=3 #Predator species
+nRsp=2 #Resource species
+nCsp=3 #Consumer species
+nPsp=1 #Predator species
 nspp = nRsp+nCsp+nPsp #Total number of species
 
 ###Parameters of the model:
@@ -46,8 +47,22 @@ nspp = nRsp+nCsp+nPsp #Total number of species
 rR = matrix(rnorm(nRsp,30,0.1), nRsp, 1) #intrinsic growth
 Ki = matrix(rnorm(nRsp,50,0.1), nRsp, 1) #carrying capacity
 
+#Random resources:
+c = 0.1
+#Make the a variable -- see the documentation for forcings for an example
+amp = 1
+xint = 0
+a = approxfun( x = times, y = amp*exp(rnorm(times)+xint), method = "linear", rule = 2) 
+a_t = exp(amp*rnorm(times)+xint)
+#a = approxfun( x = times, y = amp*rnorm(times)+xint, method = "linear", rule = 2) 
+#a_t = amp*rnorm(times)+xint
+print( paste("Var in a(t) = ", var(a_t),sep="")) 
+a_m = mean(a_t)
+vara = var(a_t)
+
+
 #Consumers: 
-rC = matrix(rnorm(nCsp,5,0.1), nCsp, 1) #intrisic growth
+rC = matrix(rnorm(nCsp,.8,0.1), nCsp, 1) #intrisic growth
 eFc = matrix(1,nCsp,nRsp) # just make the efficiency for everything 1 for now
 muC = matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
 #Consumption rates: 
@@ -58,11 +73,12 @@ hier1 = c(1, 1/2, 1/3) #Sum of this is total consumption rate when efC=1
 hier2 = c(1/3,1/3,1/3)
 cC = hier2 
 for( n in 1:(nCsp-dspp)) {
-	cC = rbind(cC, shifter(hier1,n))
+	cC = cbind(cC, shifter(hier1,n))
 }
+cC = as.matrix(cC[1:nRsp,1:nCsp ])
 
 #Predators: 
-rP = matrix(rnorm(nPsp,1,0.1), nPsp, 1) #intrisic growth
+rP = matrix(rnorm(nPsp,0.8,0.1), nPsp, 1) #intrisic growth
 eFp = matrix(1,nPsp,nCsp) # just make the efficiency for everything 1 for now
 muP = matrix(rnorm(nPsp,0.6,0.1), nPsp, 1) #mortality rates
 #Consumption rates: 
@@ -70,17 +86,20 @@ muP = matrix(rnorm(nPsp,0.6,0.1), nPsp, 1) #mortality rates
 #predominantly feeds on particular resource. 
 dspp = ((nPsp - nCsp))
 if(dspp<0){dspp = 0 }
-hier1 = c(3/4, 1/3, 1/4, 1/6) #Sum of this is total consumption rate when efC=1
+hier1 = matrix(c(3/4, 1/3, 1/4, 1/6),4,1) #Sum of this is total consumption rate when efC=1
 cP = hier1
 for( n in 1:(nPsp-dspp-1)) {
-	cP = rbind(cP, shifter(hier1,n))
+	cP = cbind(cP, shifter(hier1,n))
 }
+cP = as.matrix(cP[1:nCsp,1:nPsp])
+
 
 #Pass all of these parameters as a list
 parms = list(nspp=nspp, nRsp = nRsp, nCsp = nCsp, nPsp =nPsp,
 	rR = rR, Ki =Ki,
 	rC = rC, eFc = eFc, muC = muC, cC = cC,
-	rP = rP, eFp = eFp, muP = muP, cP = cP
+	rP = rP, eFp = eFp, muP = muP, cP = cP,
+	#a = a
  )
 
 #=============================================================================
@@ -97,20 +116,24 @@ food_web = function(times,sp,parms){
 	###Resource dynamics: Logistic growth, reduced by consumption
 	dR = R
 	for( i in 1:nRsp){
-		dR[i] = rR[i] *R[i] * (1 - R[i]/Ki[i]) - (t(cC[,i])%*%C)*R[i]
+		#dR[i] = R[i]*( (rR[i]+a(times)) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+		dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+
 	}
 
 	###Consumer dynamics: LV consumption
 	dC = C 
 	for( i in 1:nCsp){
-		dC[i] = rC[i] *C[i] * ( (eFc[i]*cC[i,])%*%R -(t(cP[,i])%*%P)- muC[i] )
+		dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
 	}
 
 	###Predator dynamics: LV consumption
 	dP = P 
 	for( i in 1:nPsp){
-		dP[i] = rP[i] *P[i] * ( (eFp[i]*cP[i,])%*%C - muP[i] )
+		dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
 	}
+
+	#a = a(times) 
 
 return(list(c(dR,dC,dP)))
 
@@ -139,92 +162,104 @@ lines(out[,paste(n)],t="l")
 # Information theoretic assessment of the foodweb.
 #=============================================================================
 #=============================================================================
-# This first section is as per Rutledge, Basore, and Mulholland 1976
+# This section is as per Rutledge, Basore, and Mulholland 1976
 #=============================================================================
-# Total energy at time ts
+# Total net biomass at the end of each time: 
 ts = tl
-pop_ts1 = out[(ts-1),2:(nspp+1)]
-pop_ts2 = out[(ts),2:(nspp+1)]
-pop_conv = matrix(1,nspp,1) #energetic content per individual. 
-pop_tot1 = sum(pop_ts1*pop_conv)
-pop_tot2 = sum(pop_ts2*pop_conv)
-pop_freq1 = pop_ts1/matrix(pop_tot,length(pop_ts1),1) #Energy distribution
-pop_freq2 = pop_ts2/matrix(pop_tot,length(pop_ts2),1) #Energy distribution
+tbegin = tl/2
+pop_ts = out[tbegin:(ts),2:(nspp+1)]
+tuse = dim(pop_ts)[1]
+ncol1 = nRsp+2*nCsp+2*nPsp+1
+nrow1 = ncol1
+
+###Generate the quantities that describe "energy" (biomass?) flow through
+###food web.
+fij = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
+Qi = matrix(0,ncol1,(tuse))
+fijQi = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
+Pi = matrix(0,ncol1,(tuse))
+
+###For now, loop through each time step. Is there a faster way to do this with matrix math? 
+for(n in 1:(tuse)) { 
+
+	#Make a block matrix of biomass transfer for each trophic level 
+
+	#Timestep 1
+	R1 = t(matrix(pop_ts[n,1:nRsp],nCsp,nRsp,byrow=T))
+	C1r = t(matrix(pop_ts[n,(nRsp+1):(nRsp+nCsp)],nRsp,nCsp,byrow=T))
+	C1p = t(matrix(pop_ts[n,(nRsp+1):(nRsp+nCsp)],nPsp,nCsp,byrow=T))
+	P1 = t(matrix(pop_ts[n,(nRsp+nCsp+1):(nspp)],nCsp,nPsp,byrow=T))
+	frR = t(matrix(rR,nCsp,nRsp,byrow=T))
+	frC = t(matrix(rC,nCsp,nRsp))
+	frP = t(matrix(rP,nPsp,nCsp))
+	fmuC = t(matrix(muC,nCsp,nRsp))
+	fmuP = t(matrix(muP,nPsp,nCsp))
+
+
+	## Calculate the actual biomass flow between each element. 
+	## Productions: 
+	#Resource production: 
+	diag(fijQi[1:nRsp,1:nRsp,n]) = (rR+a_t[(n)])*R1[,1]
+	#Consumer production: 
+	fijQi[(1+nRsp):(nRsp+nCsp),1:nRsp,n] = t((frC*R1*cC)*t(C1r) )
+	#Predator production: 
+	fijQi[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp),n] = (frP*C1p*cP)*t(P1)
+
+	##Energetic loss: 
+	#Resource to consumer: 
+	fijQi[(nspp+1):(nspp+nCsp),1:nRsp,n ] = t(( R1*cC)*t(C1r) ) - t((frC*R1*cC)*t(C1r) )
+	#Consumer to Predator: 
+	fijQi[(nspp+nCsp+1):(nspp+nCsp+nPsp),(1+nRsp):(nRsp+nCsp),n ] = t( (C1p*cP)*t(P1) - (frP*C1p*cP)*t(P1) )
+
+	##Mortality loss:
+	#Resource: 
+	fijQi[ncol1,1:nRsp,n ] =(rR+a_t[(n)])*R1[,1]*(R1[,1]/Ki)
+	#Consumer:
+	fijQi[ncol1,(1+nRsp):(nRsp+nCsp),n ] = t((t(C1r)*fmuC)[1,])
+	#Predator
+	fijQi[ncol1,(1+nRsp+nCsp):nspp,n ] = (t(P1)*fmuP)[1,]
+
+	#Now make Qi/Pi
+	Qi[,n] = rowSums( fijQi[,,n]) #*as.numeric(lower.tri(fijQi[,,n])) )
+	
+	#Now make fij by standardizing (dividing by Qi)
+	fij[,,n] = fijQi[,,n]/ matrix(Qi[,n],ncol1,nrow1,byrow=T)
+	fij[,,n][is.na(fij[,,n])] = 0
+
+	#Pi should be the same as Qi[,n+1]. Should also work equally well before or after 
+	#standardizing Qi.
+	#Pi[,n] = fij[,,n]%*%Qi[,n] 
+	
+	#Standardize Qi to be proportions: 
+	Qi[,n] = Qi[,n]/sum(Qi[,n])
+
+}
+
 
 #Generate quantities for the maximum entropy distribution, i.e. uniform: 
 pop_me = runif(nspp)
 me_freq = pop_me/matrix(sum(pop_me),length(pop_me),1)
 
-###Generate the quantities that describe "energy" (biomass?) flow through
-###food web.
-
-fij = matrix(0,nspp+1,nspp+1)
-fijQi = matrix(0,nspp+1,nspp+1)
-
-#Make a block matrix of freq for each trophic level 
-fR1 = matrix(pop_freq1[1:nRsp],nCsp,nRsp,byrow=T)
-fC1 = matrix(pop_freq1[(nRsp+1):(nRsp+nCsp)],nPsp,nCsp,byrow=T)
-fP1 = matrix(pop_freq1[(nRsp+nCsp+1):(nspp)],nCsp,nPsp,byrow=T)
-
-R1 = matrix(pop_ts1[1:nRsp],nCsp,nRsp,byrow=T)
-C1 = matrix(pop_ts1[(nRsp+1):(nRsp+nCsp)],nPsp,nCsp,byrow=T)
-P1 = matrix(pop_ts1[(nRsp+nCsp+1):(nspp)],nCsp,nPsp,byrow=T)
-
-frC = matrix(rC,nCsp,nRsp)
-frP = matrix(rP,nPsp,nCsp)
-
-fmuC = matrix(muC,nCsp,nRsp)
-fmuP = matrix(muP,nPsp,nCsp)
-
-#Resource
-diag(fijQi[1:nRsp,1:nRsp]) = rR*(1/pop_tot - fR1[1,]/Ki)*fR1[1,]
-#fij[nspp+1,1:nRsp] = colSums()
-#Consumer
-fijQi[(1+nRsp):(nRsp+nCsp),1:nRsp] = (fR1*cC*t(fC1)) 
-fijQi[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (frC*t(fC1)* (fmuC/pop_tot))[,1]
-#Predator
-fijQi[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (fC1*cP*t(fP1))
-fijQi[nspp+1,(1+nRsp+nCsp):nspp ] = (frP*t(fP1)*fmuP/pop_tot)[,1]
-
-#Resource
-diag(fij[1:nRsp,1:nRsp]) = rR*(1/pop_tot - fR1[1,]/Ki)
-#fij[nspp+1,1:nRsp] = colSums()
-#Consumer
-fij[(1+nRsp):(nRsp+nCsp),1:nRsp] = (cC*t(fC1)) 
-fij[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (frC* (fmuC/pop_tot))[,1]
-#Predator
-fij[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (cP*t(fP1))
-fij[nspp+1,(1+nRsp+nCsp):nspp ] = (frP*fmuP/pop_tot)[,1]
-
-
-#Resource
-diag(fijQi[1:nRsp,1:nRsp]) = rR*(1- R1[1,]/Ki)*fR1[1,]
-#fij[nspp+1,1:nRsp] = colSums()
-#Consumer
-fijQi[(1+nRsp):(nRsp+nCsp),1:nRsp] = (R1*cC)*t(fC1)
-fijQi[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (t(fC1)*frC*fmuC)[,1]
-#Predator
-fijQi[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (C1*cP)*t(fP1)
-fijQi[nspp+1,(1+nRsp+nCsp):nspp ] = (t(fP1)*frP*fmuP)[,1]
-
-#Resource
-diag(fij[1:nRsp,1:nRsp]) = rR*(1- R1[1,]/Ki)
-#fij[nspp+1,1:nRsp] = colSums()
-#Consumer
-fij[(1+nRsp):(nRsp+nCsp),1:nRsp] = (R1*cC)
-fij[nspp+1,(1+nRsp):(nRsp+nCsp) ] = (frC*fmuC)[,1]
-#Predator
-fij[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp)] = (C1*cP)
-fij[nspp+1,(1+nRsp+nCsp):nspp ] = (frP*fmuP)[,1]
-
 ###"Thoroughput " diversity (distribution of energetic flow through web)
-D_pop1 = - sum ( pop_freq1*log(pop_freq1) )
+D_pop1 = - colSums ( Qi*log(Qi),na.rm=T )
 D_me = - sum ( me_freq*log(me_freq) )
 
 ###Average mutual information -- uncertainty resolved by knowing food web structure
 #When energy flow is based on pop size, then the "fij" are the per food source
 #conversion rate to new population (I think this should be scaled by the freq of  
 #the population i.e. e*c*pop_freq vs. e*c only). 
+mI = matrix (0,tuse,1)
+for(n in 2:(tuse)) { 
+	for (k in 1:ncol1){ 
+		for(j in 1:ncol1){
 
+			ntemp = Qi[k,(n-1)]*fij[j,k,(n-1)] *log(fij[j,k,(n-1)]/Qi[j,n] )
+			if(is.na(ntemp)){ntemp =0 }
+			mI[(n-1)]= mI[( n-1)]+ntemp
+		}
+
+	}
+}
 
 ###Conditional entropy -- remaining uncertainty
+S_ce = D_pop1 - mI
