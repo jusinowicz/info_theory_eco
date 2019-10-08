@@ -99,7 +99,7 @@ parms = list(nspp=nspp, nRsp = nRsp, nCsp = nCsp, nPsp =nPsp,
 	rR = rR, Ki =Ki,
 	rC = rC, eFc = eFc, muC = muC, cC = cC,
 	rP = rP, eFp = eFp, muP = muP, cP = cP,
-	#a = a
+	a = a
  )
 
 #=============================================================================
@@ -116,8 +116,8 @@ food_web = function(times,sp,parms){
 	###Resource dynamics: Logistic growth, reduced by consumption
 	dR = R
 	for( i in 1:nRsp){
-		#dR[i] = R[i]*( (rR[i]+a(times)) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
-		dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+		dR[i] = R[i]*( (rR[i]+a(times)) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+		#dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 
 	}
 
@@ -164,7 +164,12 @@ lines(out[,paste(n)],t="l")
 #=============================================================================
 # This section is as per Rutledge, Basore, and Mulholland 1976
 #=============================================================================
-# Total net biomass at the end of each time: 
+## This code takes the ODEs and converts them to a biomass balance matrix and 
+## transition matrix. 
+## This version creates a compartment for each "event" where biomass is gained 
+## or loss. This includes birth, death, and "inefficiency" in the form of the 
+## way that biomass consumed translates to new population biomass. 
+
 ts = tl
 tbegin = tl/2
 pop_ts = out[tbegin:(ts),2:(nspp+1)]
@@ -177,7 +182,7 @@ nrow1 = ncol1
 fij = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
 Qi = matrix(0,ncol1,(tuse))
 fijQi = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
-Pi = matrix(0,ncol1,(tuse))
+#Pi = matrix(0,ncol1,(tuse))
 
 ###For now, loop through each time step. Is there a faster way to do this with matrix math? 
 for(n in 1:(tuse)) { 
@@ -235,7 +240,6 @@ for(n in 1:(tuse)) {
 
 }
 
-
 #Generate quantities for the maximum entropy distribution, i.e. uniform: 
 pop_me = runif(nspp)
 me_freq = pop_me/matrix(sum(pop_me),length(pop_me),1)
@@ -263,3 +267,17 @@ for(n in 2:(tuse)) {
 
 ###Conditional entropy -- remaining uncertainty
 S_ce = D_pop1 - mI
+
+#=============================================================================
+#### Compare to this version of the matrix, where the compartments are just per-
+#### species
+
+fij_s = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
+Qi_s = matrix(0,ncol1,(tuse))
+fijQi_s = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
+
+for(n in 1:(tuse)) {
+
+#fijQi_s = 
+
+}
