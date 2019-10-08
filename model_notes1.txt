@@ -1,0 +1,3 @@
+#Notes
+
+October 3, 2019: The food web model becomes novel when we add compartments for wasted energy. An innovation that might turn out to be key is the fact that "waste" is essentially defined by the amount of biomass that is consumed by, but not used by the next trophic level up. This has the effect of scaling the biomass consumed into an "edible biomass." In an emprical setting, what we would want to know is the absolute biomass of an organism relative to that which has nutritional value -- presumably, the non-nutritional biomass is almost entirely related to structures etc that make the organism inedible, and so are themselves inedible. 
