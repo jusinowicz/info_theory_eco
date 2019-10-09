@@ -254,14 +254,16 @@ shannon_D = function ( freq = freq) {
 get_mI = function (freq=freq, fij=fij) {
 	ncol1 = length(freq)
 
-	mI = 0
+	mI = NULL
+	mI$mean = 0
+	mI$per = matrix(0,dim(fij)[1],dim(fij)[2]) #How much does each link contribute? 
 	for (k in 1:ncol1){ 
 		for(j in 1:ncol1){
-			ntemp = freq[k]*fij[j,k] *log(fij[j,k]/freq[j] )
-			if(is.na(ntemp)){ntemp =0 }
-			mI = mI + ntemp 
+			mI$per[k,j] = freq[k]*fij[j,k] *log(fij[j,k]/freq[j] )
+			if(is.na(mI$per[k,j])){mI$per[k,j]=0 } 
 		}
 	}
+	mI$mean = sum(rowSums(mI$per))
 	return(mI)
 }
 
@@ -310,7 +312,8 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 
 	#Information theoretic quantities 
 	rweb$sD = matrix(0,tuse, 1) #Shannon entropy
-	rweb$mI = matrix(0,tuse, 1) #Mutual Information
+	rweb$mI_mean = matrix(0,tuse, 1) #Mutual Information
+	rweb$mI_per =array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
 	rweb$ce = matrix(0,tuse, 1) #Conditional Entropy
 
 	###For now, loop through each time step. Is there a faster way to do this with matrix math? 
@@ -368,8 +371,10 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 
 		#Information theoretic quantities 
 		rweb$sD[n] = shannon_D(rweb$Qi[,n])
-		rweb$mI[n] = get_mI (rweb$Qi[,n], rweb$fij[,,n]  )
-		rweb$ce[n] = rweb$sD[n] - rweb$mI[n]
+		mI_temp = get_mI (rweb$Qi[,n], rweb$fij[,,n]  )
+		rweb$mI_mean[n] = mI_temp$mean
+		rweb$mI_per[,,n] = mI_temp$per
+		rweb$ce[n] = rweb$sD[n] - rweb$mI_mean[n]
 	}
 return (rweb)
 }
