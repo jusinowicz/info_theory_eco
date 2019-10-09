@@ -27,7 +27,7 @@ tend = 200
 delta1 = 0.01
 
 #Number of food webs to generate
-nwebs = 100
+nwebs = 1
 #Output of each web
 out1 = list(matrix(0,nwebs,1))
 #Converting the web to Rutledge's compartment model and calculating the information
@@ -82,9 +82,15 @@ for (w in 1:nwebs){
 	# Inner loop. Run the food web model, calculate information theoretic 
 	# quantities. 
 	#=============================================================================
-
+	#=============================================================================
+	# This function gives: 
+	# out 		The time series for of population growth for each species in the web
+	#			This can be set to just give the final time step of the web with
+	#			"final = TRUE"
+	# spp_prms	The parameters of all species in the food web
+	#=============================================================================
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-		tend, delta1, res_R = NULL ))}, error = function(e){}) 
+		tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
 
 	
 	#=============================================================================
@@ -98,7 +104,17 @@ for (w in 1:nwebs){
 	## This version creates a compartment for each "event" where biomass is gained 
 	## or loss. This includes birth, death, and "inefficiency" in the form of the 
 	## way that biomass consumed translates to new population biomass. 
-
+	#=============================================================================
+	# This function gives:
+	# Qi(t)		Biomass proportion flow through a node at time t
+	# fij(t)	Probability of biomass flow between i and j at t
+	# fijQi(t)  Total biomass flowing from i to j at t
+	# sD 		Shannon entropy
+	# mI_mean	Average mutual information
+	# mI_per	Mutual information per interaction
+	# ce 		Conditional entropy		
+	#=============================================================================
+	
 	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out,
 		spp_prms = out1[[w]]$spp_prms) )
 
