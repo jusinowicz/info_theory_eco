@@ -25,6 +25,7 @@ source("./food_web_functions.R")
 #Length and time steps of each model run
 tend = 200
 delta1 = 0.01
+tl=tend/delta1
 
 #Number of food webs to generate
 nwebs = 1
@@ -41,6 +42,7 @@ for (w in 1:nwebs){
 	nRsp = ceiling(runif(1)*30)
 	nCsp = ceiling(runif(1)*20)
 	nPsp = ceiling(runif(1)*10)
+	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
 	spp_prms = NULL
@@ -115,7 +117,7 @@ for (w in 1:nwebs){
 	# ce 		Conditional entropy		
 	#=============================================================================
 	
-	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out,
+	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
 		spp_prms = out1[[w]]$spp_prms) )
 
 	

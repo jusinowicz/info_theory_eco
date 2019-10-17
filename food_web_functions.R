@@ -41,11 +41,12 @@ shifter = function(x, n = 1) {
 #						the resource growth. The forcing function is lognormal. 
 #						It should contain two values:
 #						[1] variance and [2] the mean of the undelying normal 
-#			
+# final 				Only return the last transition (final 2 time steps)? 
+#						Do this mainly to reduce memory usage. 			
 #=============================================================================
 
 food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000, 
-	delta1 = 0.01, res_R = NULL ){ 
+	delta1 = 0.01, res_R = NULL, final=FALSE){ 
 
 	###Time to simulate over: 
 	times  = seq(from = 0, to = tend, by = delta1)
@@ -211,8 +212,21 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 	#=============================================================================
 	winit = c(matrix(3,nspp,1))
 	out=NULL
-	out$out=ode(y=winit,times=times,func=food_web,parms=parms)
+	out_temp = ode(y=winit,times=times,func=food_web,parms=parms)
+	#Zero out very small values: 
+	out_temp[out_temp<1e-3] = 0
+
+	#Return the whole time series or just the last two time steps? 
+	if(final == FALSE){
+		out$out= out_temp
+	} else { 
+
+		out$out = out_temp[(tl-1):tl,]
+	}
 	out$spp_prms=parms
+	
+
+
 	return(out)
 
 }
@@ -237,8 +251,47 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 shannon_D = function ( freq = freq) {
 
 	sD =  - sum ( freq*log(freq),na.rm=T )
+	return(sD)
 
 }
+ 
+#a1 is the joint probability distribution, p(x,y)
+#marginals are then: rowSums(a1) = p(x), colSums(a1) = p(y)
+x1 = rowSums(a1)
+y1 = colSums(a1)
+
+a1l = log2(a1); a1l[is.na(a1l)] = 0 ; a1l[is.infinite(a1l)] = 0
+je = -sum(rowSums(a1*a1l)) #Joint entropy 
+
+HX=sum(y1*log2(y1)) #H(X)
+a2=a1/matrix(x1,4,4) #P(X|Y)
+ce = -sum(x1*colSums((a2)*log2(a2),na.rm=T)) #H(X|Y) = sum over x{ p(x)*H(X|Y=x)}
+
+pxpy=t(t(x1))%*%y1 #This is p(y)*p(x)
+itmp=(a1*log2(a1/pxpy));itmp[is.na(itmp)]=0
+mI = sum(rowSums(itmp)) #Mutual information
+
+#=============================================================================
+# get_cw
+# Conditional entropy in the Rutldege web model. This is mostly implemented to
+# double check the math and have multiple routes to the answer.
+#
+# freq 			A frequency distribution that is standardized to 1
+# fij 			The transition rates from the Rutledge web 
+#=============================================================================
+
+get_ce = function (fij=fij) {
+	ncol1 = dim(fij)[1]
+
+	fij_x = rowSums(fij) #Marginals of x and y
+	fij_y = colSums(fij)
+	cp = fij/matrix(fij_x,ncol1,ncol1) #Conditional probability table P(X|Y)
+	ce = -sum(fij_x*rowSums((cp)*log(cp),na.rm=T)) #H(X|Y) = sum over x{ p(x)*H(X|Y=x)}
+
+	return(ce)
+}
+
+
 #=============================================================================
 # get_mI
 # Average mutual information in the Rutldege web model. The MI is interpreted 
@@ -257,13 +310,44 @@ get_mI = function (freq=freq, fij=fij) {
 	mI = NULL
 	mI$mean = 0
 	mI$per = matrix(0,dim(fij)[1],dim(fij)[2]) #How much does each link contribute? 
+
+	Pi = fij%*%freq #Biomass proportions at next time
+	diag(fij) = 0*diag(fij)
 	for (k in 1:ncol1){ 
 		for(j in 1:ncol1){
-			mI$per[k,j] = freq[k]*fij[j,k] *log(fij[j,k]/freq[j] )
-			if(is.na(mI$per[k,j])){mI$per[k,j]=0 } 
+			mI$per[k,j] = freq[k]*fij[k,j] *log(fij[k,j]/(Pi[j]) )
+			#print(paste ("first ",freq[k]*fij[k,j],"     then    ",fij[k,j]/(Pi[j]) ))
+			# if(is.na(mI$per[k,j])){mI$per[k,j]=0 }
+			# if(is.infinite(mI$per[k,j])){mI$per[k,j]=0 } 
 		}
 	}
-	mI$mean = sum(rowSums(mI$per))
+	
+	mI$mean = sum(rowSums(mI$per,na.rm=T),na.rm=T)
+	return(mI)
+}
+
+#=============================================================================
+# get_mI2
+# Average mutual information in the Rutldege web model. The MI is interpreted 
+# as the uncertainty resolved by knowing food web structure.
+# When energy flow is based on pop size, then the "fij" are the per food source
+# conversion rate to new population (I think this should be scaled by the freq of  
+# the population i.e. e*c*pop_freq vs. e*c only). This is a second implementation
+# based on the standard definition of the MI 
+#
+# fij 			The transition rates from the Rutledge web 
+#=============================================================================
+
+get_mI2 = function (fij=fij) {
+	ncol1 = dim(fij)[1]
+
+	fij_x = rowSums(fij) #Marginals of x and y
+	fij_y = colSums(fij)
+	
+	pxpy=t(t(fij_x))%*%fij_y #This is p(y)*p(x)
+	itmp=(fij*log(fij/pxpy)); itmp[is.na(itmp)]=0
+	mI = sum(rowSums(itmp, na.rm=T),na.rm=T) #Mutual information
+	
 	return(mI)
 }
 
@@ -293,7 +377,7 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 	nPsp=spp_list[3] #Predator species
 	nspp = nRsp+nCsp+nPsp #Total number of species
 
-	ncol1 = nRsp+2*nCsp+2*nPsp+1
+	ncol1 = 1+nRsp+2*nCsp+2*nPsp+1
 	nrow1 = ncol1
 
 	#Read off the parameters from the model
@@ -317,7 +401,7 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 	rweb$ce = matrix(0,tuse, 1) #Conditional Entropy
 
 	###For now, loop through each time step. Is there a faster way to do this with matrix math? 
-	for(n in 1:(tuse)) { 
+	for(n in 1:(tuse-1)) { 
 
 		#Make a block matrix of biomass transfer for each trophic level 
 
@@ -335,43 +419,48 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 		## Calculate the actual biomass flow between each element. 
 		## Productions: 
 		#Resource production: 
-		diag(rweb$fijQi[1:nRsp,1:nRsp,n]) = (rR)*R1[,1]
+		#diag(rweb$fijQi[1:nRsp,1:nRsp,n]) = (rR)*R1[,1]
+		rweb$fijQi[(1+1:nRsp),(1),n] = (rR)*R1[,1]
+		rweb$fijQi[(1),(1),n] = sum((rR)*R1[,1] )
 		#Consumer production: 
-		rweb$fijQi[(1+nRsp):(nRsp+nCsp),1:nRsp,n] = t((frC*R1*cC)*t(C1r) )
+		rweb$fijQi[(1+(1+nRsp):(nRsp+nCsp)),(1+1:nRsp),n] = t((frC*R1*cC)*t(C1r) )
 		#Predator production: 
-		rweb$fijQi[(1+nRsp+nCsp):nspp,(1+nRsp):(nRsp+nCsp),n] = (frP*C1p*cP)*t(P1)
+		rweb$fijQi[(1+(1+nRsp+nCsp):nspp),(1+(1+nRsp):(nRsp+nCsp)),n] = t((frP*C1p*cP)*t(P1))
 
 		##Energetic loss: 
 		#Resource to consumer: 
-		rweb$fijQi[(nspp+1):(nspp+nCsp),1:nRsp,n ] = t(( R1*cC)*t(C1r) ) - t((frC*R1*cC)*t(C1r) )
+		rweb$fijQi[(1+(nspp+1):(nspp+nCsp)),(1+1:nRsp),n ] = t(( R1*cC)*t(C1r) ) - t((frC*R1*cC)*t(C1r) )
 		#Consumer to Predator: 
-		rweb$fijQi[(nspp+nCsp+1):(nspp+nCsp+nPsp),(1+nRsp):(nRsp+nCsp),n ] = t( (C1p*cP)*t(P1) - (frP*C1p*cP)*t(P1) )
+		rweb$fijQi[(1+(nspp+nCsp+1):(nspp+nCsp+nPsp)),(1+(1+nRsp):(nRsp+nCsp)),n ] = t( (C1p*cP)*t(P1) - (frP*C1p*cP)*t(P1) )
 
 		##Mortality loss:
 		#Resource: 
-		rweb$fijQi[ncol1,1:nRsp,n ] =(rR)*R1[,1]*(R1[,1]/Ki)
+		rweb$fijQi[ncol1,(1+1:nRsp),n ] =(rR)*R1[,1]*(R1[,1]/Ki)
 		#Consumer:
-		rweb$fijQi[ncol1,(1+nRsp):(nRsp+nCsp),n ] = t((t(C1r)*fmuC)[1,])
+		rweb$fijQi[ncol1,(1+(1+nRsp):(nRsp+nCsp)),n ] = t((t(C1r)*fmuC)[1,])
 		#Predator
-		rweb$fijQi[ncol1,(1+nRsp+nCsp):nspp,n ] = (t(P1)*fmuP)[1,]
+		rweb$fijQi[ncol1,(1+(1+nRsp+nCsp):nspp),n ] = (t(P1)*fmuP)[1,]
 
 		#Now make Qi/Pi
 		rweb$Qi[,n] = rowSums( rweb$fijQi[,,n]) #*as.numeric(lower.tri(fijQi[,,n])) )
 		
 		#Now make fij by standardizing (dividing by Qi)
-		rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(rweb$Qi[,n],ncol1,nrow1,byrow=T)
+		#rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(rweb$Qi[,n],ncol1,nrow1,byrow=T)
+		rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(sum(rweb$Qi[,n],na.rm=T),ncol1,nrow1,byrow=T)
 		rweb$fij[,,n][is.na(rweb$fij[,,n])] = 0
-
+		rweb$fij[,,n][is.infinite(rweb$fij[,,n])] = 0
+		diag(rweb$fij[,,n]) = diag(rweb$fij[,,n])
 		#Pi should be the same as Qi[,n+1]. Should also work equally well before or after 
 		#standardizing Qi.
 		#Pi[,n] = fij[,,n]%*%Qi[,n] 
 		
 		#Standardize Qi to be proportions: 
-		rweb$Qi[,n] = rweb$Qi[,n]/sum(rweb$Qi[,n])
+		#rweb$Qi[,n] = rweb$Qi[,n]/sum(rweb$Qi[,n])
+		rweb$Qi[,n] = rowSums( rweb$fij[,,n]) 
 
 		#Information theoretic quantities 
-		rweb$sD[n] = shannon_D(rweb$Qi[,n])
-		mI_temp = get_mI (rweb$Qi[,n], rweb$fij[,,n]  )
+		rweb$sD[n] = shannon_D(freq = rweb$Qi[,n])
+		mI_temp = get_mI (freq =rweb$Qi[,n], fij=rweb$fij[,,n]  )
 		rweb$mI_mean[n] = mI_temp$mean
 		rweb$mI_per[,,n] = mI_temp$per
 		rweb$ce[n] = rweb$sD[n] - rweb$mI_mean[n]
