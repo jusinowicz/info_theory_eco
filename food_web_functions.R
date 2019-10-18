@@ -238,6 +238,11 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 #=============================================================================
 #=============================================================================
 # This code adapts the approach of  Rutledge, Basore, and Mulholland 1976
+# A caution when interpreting some of these terms and functions: the fij 
+# matrix at the heart of Rutledge's approach are not joint probabilities, but 
+# conditional probabilities. See model_notes1.txt for some more clarification
+# on this point. In application, this means be sure about whether you are 
+# passing the joint or conditional probabilities to functions. 
 #=============================================================================
 #=============================================================================
 # shannon_D
@@ -255,26 +260,13 @@ shannon_D = function ( freq = freq) {
 
 }
  
-#a1 is the joint probability distribution, p(x,y)
-#marginals are then: rowSums(a1) = p(x), colSums(a1) = p(y)
-x1 = rowSums(a1)
-y1 = colSums(a1)
-
-a1l = log2(a1); a1l[is.na(a1l)] = 0 ; a1l[is.infinite(a1l)] = 0
-je = -sum(rowSums(a1*a1l)) #Joint entropy 
-
-HX=sum(y1*log2(y1)) #H(X)
-a2=a1/matrix(x1,4,4) #P(X|Y)
-ce = -sum(x1*colSums((a2)*log2(a2),na.rm=T)) #H(X|Y) = sum over x{ p(x)*H(X|Y=x)}
-
-pxpy=t(t(x1))%*%y1 #This is p(y)*p(x)
-itmp=(a1*log2(a1/pxpy));itmp[is.na(itmp)]=0
-mI = sum(rowSums(itmp)) #Mutual information
 
 #=============================================================================
-# get_cw
+# get_ce
 # Conditional entropy in the Rutldege web model. This is mostly implemented to
 # double check the math and have multiple routes to the answer.
+# Note: The code is written to give H(X|Y) but for the Rutledge web we actually
+# want H(Y|X). Make sure the t(fij) is being passed to this function! 
 #
 # freq 			A frequency distribution that is standardized to 1
 # fij 			The transition rates from the Rutledge web 
@@ -299,6 +291,7 @@ get_ce = function (fij=fij) {
 # When energy flow is based on pop size, then the "fij" are the per food source
 # conversion rate to new population (I think this should be scaled by the freq of  
 # the population i.e. e*c*pop_freq vs. e*c only). 
+# Note: in this definition, fij is a conditional probability! 
 #
 # freq 			A frequency distribution that is standardized to 1
 # fij 			The transition rates from the Rutledge web 
@@ -344,10 +337,13 @@ get_mI2 = function (fij=fij) {
 	fij_x = rowSums(fij) #Marginals of x and y
 	fij_y = colSums(fij)
 	
+	mI = NULL
+
 	pxpy=t(t(fij_x))%*%fij_y #This is p(y)*p(x)
 	itmp=(fij*log(fij/pxpy)); itmp[is.na(itmp)]=0
-	mI = sum(rowSums(itmp, na.rm=T),na.rm=T) #Mutual information
-	
+	mI$mean = sum(rowSums(itmp, na.rm=T),na.rm=T) #Mutual information
+	mI$per = itmp 
+
 	return(mI)
 }
 
@@ -367,9 +363,12 @@ get_mI2 = function (fij=fij) {
 #						the model at each of the 3 trophic levels: 
 #						If this is NULL, then it will be generate randomly with
 #						each parameter generated as: 
+# if_conditional		Switch to determine which mathematical approach to take
+#						See the notes below. FALSE by default. 
 #=============================================================================
 
-rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) {
+rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
+							if_conditional = FALSE) {
 
 	tuse = dim(pop_ts)[1]
 	nRsp=spp_list[1] #Resource species
@@ -399,7 +398,9 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 	rweb$mI_mean = matrix(0,tuse, 1) #Mutual Information
 	rweb$mI_per =array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
 	rweb$ce = matrix(0,tuse, 1) #Conditional Entropy
-
+	rweb$ce2 = matrix(0,tuse, 1) #Conditional Entropy, calculated 2nd way as a check
+	rweb$mI_mean2 = matrix(0,tuse, 1) #Mutual Information, calculated 2nd way as a check
+	
 	###For now, loop through each time step. Is there a faster way to do this with matrix math? 
 	for(n in 1:(tuse-1)) { 
 
@@ -444,26 +445,71 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms) 
 		#Now make Qi/Pi
 		rweb$Qi[,n] = rowSums( rweb$fijQi[,,n]) #*as.numeric(lower.tri(fijQi[,,n])) )
 		
-		#Now make fij by standardizing (dividing by Qi)
-		#rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(rweb$Qi[,n],ncol1,nrow1,byrow=T)
-		rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(sum(rweb$Qi[,n],na.rm=T),ncol1,nrow1,byrow=T)
-		rweb$fij[,,n][is.na(rweb$fij[,,n])] = 0
-		rweb$fij[,,n][is.infinite(rweb$fij[,,n])] = 0
-		diag(rweb$fij[,,n]) = diag(rweb$fij[,,n])
-		#Pi should be the same as Qi[,n+1]. Should also work equally well before or after 
-		#standardizing Qi.
-		#Pi[,n] = fij[,,n]%*%Qi[,n] 
-		
-		#Standardize Qi to be proportions: 
-		#rweb$Qi[,n] = rweb$Qi[,n]/sum(rweb$Qi[,n])
-		rweb$Qi[,n] = rowSums( rweb$fij[,,n]) 
+		###Now make fij by standardizing:
+		#Note, there are 2 different ways to do this! Each way utilizes a slightly
+		#different (but related) set of equations to arrive at the infromation 
+		#theoretic quantities. 
+		if( if_conditional == TRUE){ 
+			
+			###1) This is more directly in tune with Rutledge's approach. 
+			#	This makes fij a conditional probability matrix.
+			rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(rweb$Qi[,n],ncol1,nrow1,byrow=T)
+			rweb$fij[,,n][is.na(rweb$fij[,,n])] = 0
+			rweb$fij[,,n][is.infinite(rweb$fij[,,n])] = 0
+			#Standardize Qi to be proportions: 
+			rweb$Qi[,n] = rweb$Qi[,n]/sum(rweb$Qi[,n])
+			#Information theoretic quantities 
+			rweb$sD[n] = shannon_D(freq = rweb$Qi[,n])
+			mI_temp = get_mI (freq =rweb$Qi[,n], fij=rweb$fij[,,n]  )
+			rweb$mI_mean[n] = mI_temp$mean
+			rweb$mI_per[,,n] = mI_temp$per
+			rweb$ce[n] = rweb$sD[n] - rweb$mI_mean[n]
 
-		#Information theoretic quantities 
-		rweb$sD[n] = shannon_D(freq = rweb$Qi[,n])
-		mI_temp = get_mI (freq =rweb$Qi[,n], fij=rweb$fij[,,n]  )
-		rweb$mI_mean[n] = mI_temp$mean
-		rweb$mI_per[,,n] = mI_temp$per
-		rweb$ce[n] = rweb$sD[n] - rweb$mI_mean[n]
+			
+		} else {
+			
+			###2) This is a more general info theory approach.
+			#	This makes fij a joint probability matrix. 
+			rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(sum(rweb$Qi[,n],na.rm=T),ncol1,nrow1,byrow=T)
+			rweb$fij[,,n][is.na(rweb$fij[,,n])] = 0
+			rweb$fij[,,n][is.infinite(rweb$fij[,,n])] = 0
+			#Standardize Qi to be proportions: 
+			rweb$Qi[,n] = rowSums( rweb$fij[,,n]) 
+			#Information theoretic quantities
+			rweb$sD[n] = shannon_D(freq = rweb$Qi[,n])
+			mI_temp = get_mI2 (fij=rweb$fij[,,n])
+			rweb$mI_mean[n] = mI_temp$mean
+			rweb$mI_per[,,n] = mI_temp$per
+			rweb$ce2[n] = get_ce(fij=t(rweb$fij[,,n]))
+			rweb$mI_mean2 = rweb$sD[n] - web$ce2[n]
+		
+		}
+		
 	}
 return (rweb)
 }
+
+#=============================================================================
+#Noise and notes:
+#=============================================================================
+#Pi should be the same as Qi[,n+1]. Should also work equally well before or after 
+#standardizing Qi.
+#Pi[,n] = fij[,,n]%*%Qi[,n] 
+
+#This is just an example taken from a lecture I found online to help make 
+#the functions work. 
+# #a1 is the joint probability distribution, p(x,y)
+# #marginals are then: rowSums(a1) = p(x), colSums(a1) = p(y)
+# x1 = rowSums(a1)
+# y1 = colSums(a1)
+
+# a1l = log2(a1); a1l[is.na(a1l)] = 0 ; a1l[is.infinite(a1l)] = 0
+# je = -sum(rowSums(a1*a1l)) #Joint entropy 
+
+# HX=sum(y1*log2(y1)) #H(X)
+# a2=a1/matrix(x1,4,4) #P(X|Y)
+# ce = -sum(x1*colSums((a2)*log2(a2),na.rm=T)) #H(X|Y) = sum over x{ p(x)*H(X|Y=x)}
+
+# pxpy=t(t(x1))%*%y1 #This is p(y)*p(x)
+# itmp=(a1*log2(a1/pxpy));itmp[is.na(itmp)]=0
+# mI = sum(rowSums(itmp)) #Mutual information

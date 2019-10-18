@@ -87,7 +87,7 @@ for (w in 1:nwebs){
 	#=============================================================================
 	# This function gives: 
 	# out 		The time series for of population growth for each species in the web
-	#			This can be set to just give the final time step of the web with
+	#			This can be set to just give the final 2 time steps of the web with
 	#			"final = TRUE"
 	# spp_prms	The parameters of all species in the food web
 	#=============================================================================
