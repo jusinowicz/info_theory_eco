@@ -116,8 +116,8 @@ food_web = function(times,sp,parms){
 	###Resource dynamics: Logistic growth, reduced by consumption
 	dR = R
 	for( i in 1:nRsp){
-		dR[i] = R[i]*( (rR[i]+a(times)) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
-		#dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+		#dR[i] = R[i]*( (rR[i]+a(times)) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+		dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 
 	}
 
