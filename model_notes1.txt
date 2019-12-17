@@ -1,4 +1,67 @@
 #Notes
+
+December 13, 2019: The way forward is to think about information processing specifically, and try to mimic some of the information-theoretic approaches that have been applied elsewhere -- notably, in neuroscience. This is the lowest hanging fruit, in terms of asking whether foodwebs display information processing capabilities, and identifying tools that could quickly be ported to exiting data sets. 
+
+In this regard, start using the R library "rinform" and it's accompanying documentation to understand the dynamic information theoretic measures that can help elucidate generic information processing features. 
+
+From the rinform vignette, Transfer Entropy:
+Examples:
+
+One initial condition, no background:
+
+xs <- c(0, 1, 1, 1, 1, 0, 0, 0, 0)
+ys <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
+transfer_entropy(xs, ys, ws = NULL, k = 2)
+and local variant:
+
+te <- transfer_entropy(xs, ys, ws = NULL, k = 2, local = T)
+t(te)
+Two initial conditions, no background:
+
+xs <- matrix(0, nrow = 9, ncol = 2)
+xs[, 1] <- c(1, 0, 0, 0, 0, 1, 1, 1, 1)
+xs[, 2] <- c(1, 1, 1, 1, 0, 0, 0, 1, 1)
+ys <- matrix(0, nrow = 9, ncol = 2)
+ys[, 1] <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
+ys[, 2] <- c(1, 0, 0, 0, 0, 1, 1, 1, 0)
+transfer_entropy(xs, ys, ws = NULL, k = 2)
+and local variant:
+
+te <- transfer_entropy(xs, ys, ws = NULL, k = 2, local = T)
+t(te)
+One initial condition, one background process:
+
+xs <- c(0, 1, 1, 1, 1, 0, 0, 0, 0)
+ys <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
+ws <- c(0, 1, 1, 1, 1, 0, 1, 1, 1)
+transfer_entropy(xs, ys, ws, k = 2)
+and local variant:
+
+te <- transfer_entropy(xs, ys, ws, k = 2, local = T)
+t(te)
+The following example is interesting in that the two background processes provide the same information about the destination as the source process does ($X = W_1 \oplus W_2$) but they don't separately.
+
+One initial condition, two background processes:
+
+xs <- c(0, 1, 1, 1, 1, 0, 0, 0, 0)
+ys <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
+ws <- matrix(c(1, 0, 1, 0, 1, 1, 1, 1, 1,
+               1, 1, 0, 1, 0, 1, 1, 1, 1), ncol = 2)
+transfer_entropy(xs, ys, ws, k = 2)
+and local variant:
+
+te <- transfer_entropy(xs, ys, ws, k = 2, local = T)
+t(te) 
+
+
+
+October 18, 2019: There are a few different ways to build the compartment model/web out of the underlying functions. Obviously, the fact that this specification is not unique is somewhat troubling. But I think the only thing to do at this point is to be able to enumerate the main ways that the specification can change and be able to account for the impacts of these changes on the information theoretic quantities. 
+	1.	With (1+nRsp+2*nCsp+2*nPsp+1)^2 compartments. The first row/column represents 
+		biomass/energetic input into the system. The last row/column represents mortality and thus biomass lost from the system. The inefficiency in consumption -> biomass production is accounted for. 
+	2.	With (nRsp+2*nCsp+2*nPsp+1)^2 compartments. The last row/column represents mortality	and thus biomass lost from the system. The inefficiency in consumption -> biomass 		production is accounted for. 
+	3.	With (nRsp+2*nCsp+2*nPsp+1)^2 compartments. The last row/column represents mortality	and thus biomass lost from the system. The inefficiency in consumption -> biomass 		production is accounted for. However, the resource biomass is assumed to stay in the 	 system instead of going into the mortality bin --> EDIT: This shouldn't make a 			difference because only the location of the compartments changes, but the number of 	compartments and strength of the links stays the same.
+	4.  With (nRsp+nCsp+nPsp+1)^2 compartments. The last row/column represents mortality		and thus biomass lost from the system. There is no accounting for inefficiency. Does	this throw off the overall balance of the system? Look at this later.   
+
 October 17, 2019: Here is a key point that I was missing: The fij are actually conditional probabilities, and NOT joint probabilities. This is highlighted in eqn. (5) and eqn (6) of Rutledge et al 1976. This makes a big difference to the math. Assuming that the fij are conditional probabilities, then it actually takes a little effort to extract the joint probabilities. From the definition of conditional and joint probabilities (using the notation of eqn 5 and 6) P(ak/bk)/P(ak) = P(ak,bk)/(P(ak)*P(bk)) because P(ak/bk) = P(ak,bk)/P(bk).  
 
 
