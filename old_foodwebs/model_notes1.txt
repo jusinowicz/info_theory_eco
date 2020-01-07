@@ -1,0 +1,66 @@
+#Notes
+
+December 13, 2019: The way forward is to think about information processing specifically, and try to mimic some of the information-theoretic approaches that have been applied elsewhere -- notably, in neuroscience. This is the lowest hanging fruit, in terms of asking whether foodwebs display information processing capabilities, and identifying tools that could quickly be ported to exiting data sets. 
+
+In this regard, start using the R library "rinform" and it's accompanying documentation to understand the dynamic information theoretic measures that can help elucidate generic information processing features. 
+
+For example, trying to understand the multivariate indexing over multiple variables, vs. the local indexing of a single process. Start with the Multivariate Mutual Information (e.g. Eqn. A7 in the JDITdoc.pdf manual). From the rinform vignette, Multivariate Mutual Information:
+
+Examples:
+
+Black-box 4 time series (each of length 8) into a single time series:
+
+xs      <- matrix(0, nrow = 8, ncol = 4)
+xs[, 1] <- c(0, 1, 1, 0, 1, 0, 0, 1)
+xs[, 2] <- c(1, 0, 0, 1, 1, 0, 1, 0)
+xs[, 3] <- c(0, 0, 0, 1, 1, 1, 0, 0)
+xs[, 4] <- c(1, 0, 1, 0, 1, 1, 1, 0)
+parts   <- c(1, 1, 1, 1)
+black_box_parts(xs, parts)
+This could have been more simple using black_box, but it is for illustrative purpose.
+
+Black-box 4 time series (of length 8) into two time series using the partitioning scheme $(1,2,2,1)$. That is, combine the 1st and 4th, and the 2nd and 3rd.
+
+parts   <- c(1, 2, 2, 1)
+x <- black_box_parts(xs, parts)
+x
+Note that the two time series each have a base of 4, and the bases are returned as $b.
+
+Finally, in this example, we compute the multivariate mutual information between 4 time series (each of length 8) for all partitionings of the system (except the very first since that only yields a single time series). That is, each partition is treated as a seperate variable and the mutual information is computed between the partitioned variables.
+
+xs         <- matrix(0, nrow = 8, ncol = 4)
+xs[, 1]    <- c(0, 1, 1, 0, 1, 0, 0, 1)
+xs[, 2]    <- c(1, 0, 0, 1, 1, 0, 1, 0)
+xs[, 3]    <- c(0, 0, 0, 1, 1, 1, 0, 0)
+xs[, 4]    <- c(1, 0, 1, 0, 1, 1, 1, 0)
+all_parts  <- partitioning(4)
+mmi        <- rep(0, dim(all_parts)[2] - 1)
+
+for (i in 2:dim(all_parts)[2]) {
+  x          <- black_box_parts(xs, all_parts[, i])
+  mmi[i - 1] <- mutual_info(x$box)
+}
+round(mmi, 3)
+
+The calculation of the mmi between the 4 time series is equivalent to: 
+
+sum (H ( each series )) - H(X1,X2,X3,X4)
+
+In R: 
+
+X_probs = apply( (apply(xs,2,table)),2,  prop.table) #Prob of 0 and 1 in each vector
+X_joint = c( prop.table(table( as.data.frame(xs) ))) #Joint probabilities across all 4 vectors
+mmi4 =sum ( apply(X_probs,2,shannon_D2) ) - shannon_D2(X_joint)
+
+
+October 18, 2019: There are a few different ways to build the compartment model/web out of the underlying functions. Obviously, the fact that this specification is not unique is somewhat troubling. But I think the only thing to do at this point is to be able to enumerate the main ways that the specification can change and be able to account for the impacts of these changes on the information theoretic quantities. 
+	1.	With (1+nRsp+2*nCsp+2*nPsp+1)^2 compartments. The first row/column represents 
+		biomass/energetic input into the system. The last row/column represents mortality and thus biomass lost from the system. The inefficiency in consumption -> biomass production is accounted for. 
+	2.	With (nRsp+2*nCsp+2*nPsp+1)^2 compartments. The last row/column represents mortality	and thus biomass lost from the system. The inefficiency in consumption -> biomass 		production is accounted for. 
+	3.	With (nRsp+2*nCsp+2*nPsp+1)^2 compartments. The last row/column represents mortality	and thus biomass lost from the system. The inefficiency in consumption -> biomass 		production is accounted for. However, the resource biomass is assumed to stay in the 	 system instead of going into the mortality bin --> EDIT: This shouldn't make a 			difference because only the location of the compartments changes, but the number of 	compartments and strength of the links stays the same.
+	4.  With (nRsp+nCsp+nPsp+1)^2 compartments. The last row/column represents mortality		and thus biomass lost from the system. There is no accounting for inefficiency. Does	this throw off the overall balance of the system? Look at this later.   
+
+October 17, 2019: Here is a key point that I was missing: The fij are actually conditional probabilities, and NOT joint probabilities. This is highlighted in eqn. (5) and eqn (6) of Rutledge et al 1976. This makes a big difference to the math. Assuming that the fij are conditional probabilities, then it actually takes a little effort to extract the joint probabilities. From the definition of conditional and joint probabilities (using the notation of eqn 5 and 6) P(ak/bk)/P(ak) = P(ak,bk)/(P(ak)*P(bk)) because P(ak/bk) = P(ak,bk)/P(bk).  
+
+
+October 3, 2019: The food web model becomes novel when we add compartments for wasted energy. An innovation that might turn out to be key is the fact that "waste" is essentially defined by the amount of biomass that is consumed by, but not used by the next trophic level up. This has the effect of scaling the biomass consumed into an "edible biomass." In an emprical setting, what we would want to know is the absolute biomass of an organism relative to that which has nutritional value -- presumably, the non-nutritional biomass is almost entirely related to structures etc that make the organism inedible, and so are themselves inedible. 
