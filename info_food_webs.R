@@ -35,9 +35,14 @@ out1 = list(matrix(0,nwebs,1))
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
 rweb1 = list(matrix(0,nwebs,1))
 
+#Random resources:
+c = 0.1
+amp = 1
+res_R = c(amp,c)
 
 for (w in 1:nwebs){ 
 	print(w)
+
 	#Assume 3 trophic levels unless otherwise specified.
 	nRsp = ceiling(runif(1)*30)
 	nCsp = ceiling(runif(1)*20)
@@ -91,6 +96,9 @@ for (w in 1:nwebs){
 	#			"final = TRUE"
 	# spp_prms	The parameters of all species in the food web
 	#=============================================================================
+	# tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
+	# 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
+	#Random resource fluctuations:
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
 		tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
 
