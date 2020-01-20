@@ -1,4 +1,160 @@
 #Notes
+Jan 8, 2020: Another example, trying to figure out how to apply the dynamic information metrics to the food web models. 
+
+library(rinform)
+#Use this function to simulate the birth-death process
+
+get_bdi_lgs2 = function (bs, ds, gs, Ki, nsims=30000, ip=1) {
+
+	out=NULL
+	pop = matrix(0,nsims,1) #Population matrix (queue)
+	gr = matrix(0,nsims,1) #Pop growth rate
+	probs = matrix(0,nsims,1) #Each transition probability
+	pop[1] = ip
+	p = runif(nsims,0,1) #Probabilities of birth/death
+	pt =1 
+
+	for (t in 2:nsims) { 
+ 		if(pt>0) {
+ 			pop[t] = pt
+ 			#Make bs ands ds density-dependent
+ 			bs_d = bs*pop[t]+gs
+			ds_d = ds*pop[t]^2
+			gr[t] = bs_d-ds_d
+			probs[t] = bs_d/(bs_d+ds_d)
+			pt=ifelse (p[t]<bs_d/(bs_d+ds_d),
+	            pt+1, # arrival
+	            pt-1) # departure
+		} else {
+			pop[t] = pt
+			if(p[t]<bs/(bs+ds)){pt=1}
+	        gr[t] = bs-ds 
+	        probs[t] = bs/(bs+ds) 
+
+		}
+	}
+	out$pop = pop
+	out$probs = probs
+	out$gr = gr
+	return(out)
+}
+
+
+#Birth rate
+r = 1.1
+#Carrying capacity
+K=30
+#Mean death rate
+ds = r/K
+#Mean immigration rate
+gs = 0
+
+pop_bdi_d = get_bdi_lgs2(r,ds,gs,K)
+par(mfrow=c(2,1))
+d1 = data.frame (pop=pop_bdi_d$pop, gr=pop_bdi_d$gr)
+plot(d1$pop,d1$gr)
+abline(h=0)
+abline(v=K)
+d2 = data.frame (pop=pop_bdi_d$pop, probs=pop_bdi_d$probs)
+plot(d2$pop,d2$probs)
+abline(h=0.5)
+abline(v=K)
+
+#Calculate the k-block excess entropy using rinform library: 
+d1_use = d1$pop[100:200]
+d1_use = d1_use - min(d1_use) #Something about the rinform code, it works better this way
+k = 2
+excess_entropy(c(d1_use),k=k)
+
+#Generate each of k-blocks for the time series
+#Find the marginals of each k block
+k2=k*2 
+ngensb = length(d1_use) - k2-1
+blocks_k2 = matrix(0.0, ngensb, k2) #joint
+blocks_k = matrix(0.0, ngensb, k) #Marginals
+#l1rb = matrix(0.0, ngensb, k2)
+for (n in 1:ngensb) { 
+	blocks_k[n,] = d1_use[n:((n+k-1))]
+	blocks_k2[n,] =  d1_use[n:((n+k2-1))]
+	#l1rb[n,] = l1r[n:((n+k-1))]
+}
+
+#Prob of each symbol in each vector
+X_probs = apply( (apply(blocks_k2,2,table)),2,  prop.table) 
+#Marginal probabilities of blocks k
+#The length of X_marg tell us our new alphabet
+X_marg = ( prop.table(table( as.data.frame(blocks_k) )))
+#Joint probabilities 
+X_joint = ( prop.table(table( as.data.frame(blocks_k2) )))
+#Joint probabilities across all
+#X_joint = c( prop.table(table( as.data.frame(blocks_k2) ))) 
+
+#Turn these into a 1D vector of marginals and a 2D matrix of joint probabilities
+#The first k indexes in the matrix X_joint are the block. 
+X_marg_c = c(X_marg)
+new_alph = length(X_marg)
+X_joint_c = matrix(X_joint, new_alph,new_alph)
+#E.g. 18,19 is X_marg[1,2] and 20,19 is X_marg[3,2] and these are in positions 13 and 15
+#in X_marg_c. These 4 indexes correspond to X_joint[1,2,3,2]
+
+ngens=100
+k = 2
+l1 = matrix(1, ngens,1)
+l1r = matrix(1, ngens,1)
+
+for (n in 1:(ngens-1)){ 
+	l1[n+1] = l1[n]*(1 + 0.1*(1-l1[n]/10)) 
+	l1r[n+1] = l1[n]*( 0.1*(1-l1[n]/10)) 
+}
+l2 = floor(l1)
+l3 = l2[l2<3] #Make this a sequence of integers and set an arbitrary threshold, b
+
+#Calculate the k-block excess entropy using rinform library: 
+excess_entropy(l3,k=k)
+
+#For comparison, do this all from scratch using my functions for the Rutledge version
+#of MI
+#Define shannon_D in base 2
+shannon_D2 = function ( freq = freq) {
+
+	sD =  - sum ( freq*log2(freq),na.rm=T )
+	return(sD)
+
+}
+
+#Define the MI in base 2
+get_mIb2 = function (fij=fij) {
+	ncol1 = dim(fij)[1]
+
+	fij_x = rowSums(fij) #Marginals of x and y
+	fij_y = colSums(fij)
+	
+	mI = NULL
+
+	pxpy=t(t(fij_x))%*%fij_y #This is p(y)*p(x)
+	itmp=(fij*log2(fij/pxpy)); itmp[is.na(itmp)]=0
+	mI$mean = sum(rowSums(itmp, na.rm=T),na.rm=T) #Mutual information
+	mI$per = itmp 
+
+	return(mI)
+}
+
+#Generate each of k-blocks for the time series
+ngensb = length(l3) - k-1
+l1b = matrix(0.0, ngensb, k)
+l1rb = matrix(0.0, ngensb, k)
+for (n in 1:ngensb) { 
+	l1b[n,] =  l3[n:((n+k-1))]
+	l1rb[n,] = l1r[n:((n+k-1))]
+}
+
+X_probs = apply( (apply(l1b,2,table)),2,  prop.table) #Prob of each symbol in each vector
+X_joint = c( prop.table(table( as.data.frame(l1b) ))) #Joint probabilities across all
+X_joint = ( prop.table(table( as.data.frame(l1b) ))) #Joint probabilities across all
+
+mmi4 =sum ( apply(X_probs,2,shannon_D2) ) - shannon_D2(X_joint)
+
+
 
 December 13, 2019: The way forward is to think about information processing specifically, and try to mimic some of the information-theoretic approaches that have been applied elsewhere -- notably, in neuroscience. This is the lowest hanging fruit, in terms of asking whether foodwebs display information processing capabilities, and identifying tools that could quickly be ported to exiting data sets. 
 
