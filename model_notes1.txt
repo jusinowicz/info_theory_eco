@@ -1,9 +1,36 @@
 #Notes
-Jan 8, 2020: Another example, trying to figure out how to apply the dynamic information metrics to the food web models. 
+Jan 8-20, 2020: Another example, trying to figure out how to apply the dynamic information metrics to the food web models. 
 
 library(rinform)
-#Use this function to simulate the birth-death process
 
+#For comparison, do this all from scratch using my functions for the Rutledge version
+#of MI
+#Define shannon_D in base 2
+shannon_D2 = function ( freq = freq) {
+
+	sD =  - sum ( freq*log2(freq),na.rm=T )
+	return(sD)
+
+}
+
+#Define the MI in base 2
+get_mIb2 = function (fij=fij) {
+	ncol1 = dim(fij)[1]
+
+	fij_x = rowSums(fij) #Marginals of x and y
+	fij_y = colSums(fij)
+	
+	mI = NULL
+
+	pxpy=t(t(fij_x))%*%fij_y #This is p(y)*p(x)
+	itmp=(fij*log2(fij/pxpy)); itmp[is.na(itmp)]=0
+	mI$mean = sum(rowSums(itmp, na.rm=T),na.rm=T) #Mutual information
+	mI$per = itmp 
+
+	return(mI)
+}
+
+#Use this function to simulate the birth-death process
 get_bdi_lgs2 = function (bs, ds, gs, Ki, nsims=30000, ip=1) {
 
 	out=NULL
@@ -95,10 +122,20 @@ X_marg_c = c(X_marg)
 new_alph = length(X_marg)
 X_joint_c = matrix(X_joint, new_alph,new_alph)
 #E.g. 18,19 is X_marg[1,2] and 20,19 is X_marg[3,2] and these are in positions 13 and 15
-#in X_marg_c. These 4 indexes correspond to X_joint[1,2,3,2]
+#in X_marg_c. These 4 indexes correspond to X_joint[1,2,3,2]. 
+#The matrix resizing of X_joint takes each column of each "page" and stacks them into #the corresponding column of X_joint_c. I.e. X_joint[,,1,1] becomes X_joint_c[,1].
+# 
+
+mi2 = get_mIb2(X_joint_c)
+mi2$mean
+
+21,22,23,24,25,26
+0.33000000 0.29333333 0.25666667 0.22000000  0.18333333
+
+#How are these empirical probabilities related to the ones calculated with knowledge
+#of the population process? 
 
 ngens=100
-k = 2
 l1 = matrix(1, ngens,1)
 l1r = matrix(1, ngens,1)
 
@@ -106,38 +143,13 @@ for (n in 1:(ngens-1)){
 	l1[n+1] = l1[n]*(1 + 0.1*(1-l1[n]/10)) 
 	l1r[n+1] = l1[n]*( 0.1*(1-l1[n]/10)) 
 }
+
 l2 = floor(l1)
 l3 = l2[l2<3] #Make this a sequence of integers and set an arbitrary threshold, b
 
 #Calculate the k-block excess entropy using rinform library: 
 excess_entropy(l3,k=k)
 
-#For comparison, do this all from scratch using my functions for the Rutledge version
-#of MI
-#Define shannon_D in base 2
-shannon_D2 = function ( freq = freq) {
-
-	sD =  - sum ( freq*log2(freq),na.rm=T )
-	return(sD)
-
-}
-
-#Define the MI in base 2
-get_mIb2 = function (fij=fij) {
-	ncol1 = dim(fij)[1]
-
-	fij_x = rowSums(fij) #Marginals of x and y
-	fij_y = colSums(fij)
-	
-	mI = NULL
-
-	pxpy=t(t(fij_x))%*%fij_y #This is p(y)*p(x)
-	itmp=(fij*log2(fij/pxpy)); itmp[is.na(itmp)]=0
-	mI$mean = sum(rowSums(itmp, na.rm=T),na.rm=T) #Mutual information
-	mI$per = itmp 
-
-	return(mI)
-}
 
 #Generate each of k-blocks for the time series
 ngensb = length(l3) - k-1
