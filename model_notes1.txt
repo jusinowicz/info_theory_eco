@@ -1,5 +1,26 @@
 #Notes
-Jan 8-20, 2020: Another example, trying to figure out how to apply the dynamic information metrics to the food web models. 
+Jan 22, 2020: More examples, trying to learn the dynamic information metrics and apply them to food web models. Today: Transfer Entropy
+A useful reference: https://stats.stackexchange.com/questions/12573/calculating-the-transfer-entropy-in-r
+
+#Will need a new kind of "block" which includes k, k(t+1) only!, and y(l), the state of #other nodes, neighbors, or entities at t. Not sure if there is a clear way to do this 
+#generically for any form of y(l). So far would include: 1) One other time series, 2)
+#N-other time series, 3) Nearest neighbors in space, 4)connected nodes in network. The
+#network approach might be the most robust. 
+
+#NOTE: THIS IS MASSIVELY SUPERIOR IF DONE WITH STRINGS! The advantage is only keeping track of the blocks (words) that actually appear, instead of every possible combination, whether or not it appears. 
+
+
+
+Examples:
+
+One initial condition, no background:
+
+xs <- c(0, 1, 1, 1, 1, 0, 0, 0, 0)
+ys <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
+transfer_entropy(xs, ys, ws = NULL, k = 2)
+#> [1] 0.6792696
+
+Jan 8-20, 2020: Another example, trying to figure out how to apply the dynamic information metrics to the food web models. (Univariate) Excess Entropy
 
 library(rinform)
 
@@ -116,6 +137,7 @@ X_joint = ( prop.table(table( as.data.frame(blocks_k2) )))
 #Joint probabilities across all
 #X_joint = c( prop.table(table( as.data.frame(blocks_k2) ))) 
 
+
 #Turn these into a 1D vector of marginals and a 2D matrix of joint probabilities
 #The first k indexes in the matrix X_joint are the block. 
 X_marg_c = c(X_marg)
@@ -133,38 +155,60 @@ mi2$mean
 0.33000000 0.29333333 0.25666667 0.22000000  0.18333333
 
 #How are these empirical probabilities related to the ones calculated with knowledge
-#of the population process? 
-
-ngens=100
-l1 = matrix(1, ngens,1)
-l1r = matrix(1, ngens,1)
-
-for (n in 1:(ngens-1)){ 
-	l1[n+1] = l1[n]*(1 + 0.1*(1-l1[n]/10)) 
-	l1r[n+1] = l1[n]*( 0.1*(1-l1[n]/10)) 
-}
-
-l2 = floor(l1)
-l3 = l2[l2<3] #Make this a sequence of integers and set an arbitrary threshold, b
-
-#Calculate the k-block excess entropy using rinform library: 
-excess_entropy(l3,k=k)
+#of the population process? Can a k block be reconstructed by multiplying underlying 
+#probabilities? E.g.
+21->22->23->24->25->26
+0.33000000 0.29333333 0.25666667 0.22000000  0.18333333
+#It's close, but also need the probability of finding the process in state X,i.e. the 
+#the stationary state here. 
 
 
+####
+#Alternatively, do this with text. Compare speed/memory concerns. 
 #Generate each of k-blocks for the time series
-ngensb = length(l3) - k-1
-l1b = matrix(0.0, ngensb, k)
-l1rb = matrix(0.0, ngensb, k)
-for (n in 1:ngensb) { 
-	l1b[n,] =  l3[n:((n+k-1))]
-	l1rb[n,] = l1r[n:((n+k-1))]
+#Find the marginals of each k block
+k2=k*2 
+ngensa = length(d1_use) - k-1
+ngensb = length(d1_use) - k2-1
+blocks_k2 = matrix(0.0, ngensb, 1) #joint
+blocks_k = matrix(0.0, ngensb, 1) #Marginals
+
+#Need some additional pre-formatting to make this work: 
+#Find number of digits in largest integer: 
+width_A = nchar(trunc(max(d1_use)))
+
+for (n in 1:ngensa) { 
+	#Use width_A to format the "names" of blocks by adding zeros in front as needed
+	blocks_k[n] = paste(c (formatC(d1_use[n:((n+k-1))],width=width_A, flag = "0" )),collapse="")
 }
 
-X_probs = apply( (apply(l1b,2,table)),2,  prop.table) #Prob of each symbol in each vector
-X_joint = c( prop.table(table( as.data.frame(l1b) ))) #Joint probabilities across all
-X_joint = ( prop.table(table( as.data.frame(l1b) ))) #Joint probabilities across all
+for (n in 1:ngensb) { 
+	
+	blocks_k2[n] =  paste(c (formatC(d1_use[n:((n+k-1))],width=width_A, flag = "0" ), "i", formatC(d1_use[((n+k):(n+k2-1))],width=width_A, flag = "0" ) ),collapse="")
 
-mmi4 =sum ( apply(X_probs,2,shannon_D2) ) - shannon_D2(X_joint)
+}
+
+#Prob of each symbol in each vector
+X_probs = apply( (apply(blocks_k2,2,table)),2,  prop.table) 
+#Marginal probabilities of blocks k
+#The length of X_marg tell us our new alphabet
+X_marg = ( prop.table(table( as.data.frame(blocks_k) )))
+#Joint probabilities 
+X_joint = ( prop.table(table( as.data.frame(blocks_k2) )))
+#Joint probabilities across all
+#X_joint = c( prop.table(table( as.data.frame(blocks_k2) ))) 
+
+nblocks = length(X_joint)
+MI1 =matrix(0.0, nblocks, 1)
+for (n in 1:nblocks){ 
+	#The left/past block
+	block1 = unlist(strsplit(names(X_joint)[n],"i") )[1] 
+	#The right/future block
+	block2 = unlist(strsplit(names(X_joint)[n],"i") )[2]
+	MI1[n] = X_joint[n]*log2(X_joint[n]/( X_marg[block1]*X_marg[block2]  )) 
+}
+
+###
 
 
 
