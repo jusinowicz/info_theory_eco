@@ -1,3 +1,78 @@
+#Notes 
+Jan, 24, 2020: More exmples, trying to learn the dynamic information metrics and apply them to food web models. Today: Active Information Storage. 
+
+Examples (from rinform vignette):
+
+series <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
+active_info(series, k = 2)
+
+k2=k+1 
+ngensa = length(series) - k+1
+ngensb = length(series) - k2+1
+blocks_1 = matrix(0.0, length(series), 1) #marg of X(k)+1
+blocks_k = matrix(0.0, ngensa, 1) # marg of X(k)
+blocks_1k = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k) 
+
+#Need some additional pre-formatting to make this work: 
+#Find number of digits in largest integer: 
+width_A = nchar(trunc(max(d1_use)))
+
+
+######################
+# p( X(k)+1 )
+######################
+
+for (n in 1:ngensb ) { 
+	#Use width_A to format the "names" of blocks by adding zeros in front as needed
+	#blocks_1[n] = paste(c (formatC(series[n],width=width_A, flag = "0" )),collapse="")
+	blocks_1[n] = paste(c (formatC(series[n+k2-1],width=width_A, flag = "0" )),collapse="")
+}
+
+marg_1 =  ( prop.table(table( as.data.frame(blocks_1) )))
+
+######################
+# p( X(k) )
+######################
+
+for (n in 1:ngensa) { 
+	#Use width_A to format the "names" of blocks by adding zeros in front as needed
+	blocks_k[n] = paste(c (formatC(series[n:((n+k-1)) ],width=width_A, flag = "0" )),collapse="")
+}
+
+marg_k =  ( prop.table(table( as.data.frame(blocks_k) )))
+
+######################
+# p( X(k)+s,X(k) )
+######################
+
+for (n in 1:ngensb) { 
+	
+	#In order, this is X(k)+1, X(k)
+	blocks_1k[n] =  paste(c (formatC(series[ (n+k2-1)],width=width_A, flag = "0" ), "i", formatC(series[(n:(n+k-1))],width=width_A, flag = "0" ) ),collapse="")
+
+}
+
+joint_1k = ( prop.table(table( as.data.frame(blocks_1k) )))
+
+nblocks = length(joint_1k)
+AIS1 =matrix(0.0, nblocks, 1)
+for (n in 1:nblocks){ 
+
+	#Split the whole block into its subblock, X(k)+1, X(k), and Y(l)
+	#The right/future block
+	block1 = unlist(strsplit(names(joint_1k)[n],"i") )[1] 
+	#The left/past block
+	block2 = unlist(strsplit(names(joint_1k)[n],"i") )[2]
+
+	AIS1[n] = joint_1k[n]*log2( (joint_1k[n])/( marg_k[ block2 ]*marg_1[ block1 ] ) ) 
+	#AIS1[n] = log2( (joint_1k[n])/( marg_k[ block2 ]*marg_1[ block1 ] ) ) 
+
+
+}
+
+sum(AIS1)
+
+
 #Notes
 Jan 22, 2020: More examples, trying to learn the dynamic information metrics and apply them to food web models. Today: Transfer Entropy
 A useful reference: https://stats.stackexchange.com/questions/12573/calculating-the-transfer-entropy-in-r
