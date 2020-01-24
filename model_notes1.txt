@@ -10,8 +10,7 @@ A useful reference: https://stats.stackexchange.com/questions/12573/calculating-
 #NOTE: THIS IS MASSIVELY SUPERIOR IF DONE WITH STRINGS! The advantage is only keeping track of the blocks (words) that actually appear, instead of every possible combination, whether or not it appears. 
 
 
-
-Examples:
+Examples (from rinform vignette):
 
 One initial condition, no background:
 
@@ -19,6 +18,105 @@ xs <- c(0, 1, 1, 1, 1, 0, 0, 0, 0)
 ys <- c(0, 0, 1, 1, 1, 1, 0, 0, 0)
 transfer_entropy(xs, ys, ws = NULL, k = 2)
 #> [1] 0.6792696
+
+test1 = data.frame(xs=xs,ys=ys)
+ds = 2 # Which column is the series of interest? 
+k=2
+#Make l everything but the source series
+l=(1:dim(test1)[2])[-ds]
+k2=k+1 
+ngensa = dim(test1)[1] - k+1
+ngensb = dim(test1)[1] - k2+1
+blocks_k = matrix(0.0, ngensa, 1) #Block marginals
+blocks_1kl = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k), Y(l)
+blocks_kl = matrix(0.0, ngensa, 1) #joint of X(k), Y(l)
+blocks_1k = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k)
+
+#Need some additional pre-formatting to make this work: 
+#Find number of digits in largest integer: 
+width_A = nchar(trunc(max(d1_use)))
+
+#There are four total probabilities that are calculated here. These include three #different joint probability distributions and one marginal distribution
+
+######################
+# p( X(k) )
+######################
+
+for (n in 1:ngensa) { 
+	#Use width_A to format the "names" of blocks by adding zeros in front as needed
+	blocks_k[n] = paste(c (formatC(test1[n:((n+k-1)), ds ],width=width_A, flag = "0" )),collapse="")
+}
+
+marg_k =  ( prop.table(table( as.data.frame(blocks_k) )))
+
+######################
+# p( X(k)+1,X(k),Y(l) )
+######################
+
+for (n in 1:ngensb) { 
+	
+	#In order, this is X(k)+1, X(k),Y(l)
+	blocks_1kl[n] =  paste(c (formatC(test1[n+k2-1,ds],width=width_A, flag = "0" ), "i", formatC(test1[(n:(n+k-1)),ds],width=width_A, flag = "0" ),"i",
+	formatC(test1[(n+k-1),l],width=width_A, flag = "0" )  ),collapse="")
+
+}
+
+joint_1kl =   ( prop.table(table( as.data.frame(blocks_1kl) )))
+
+######################
+# p( X(k),Y(l) )
+######################
+
+for (n in 1:ngensa) { 
+	
+	#In order, this is X(k),Y(l)
+	blocks_kl[n] =  paste(c (formatC(test1[(n:(n+k-1)),ds],width=width_A, flag = "0" ),"i", formatC(test1[(n+k-1),l],width=width_A, flag = "0" )  ),collapse="")
+
+}
+joint_kl =  ( prop.table(table( as.data.frame(blocks_kl) )))
+
+######################
+# p( X(k)+s,X(k) )
+######################
+
+for (n in 1:ngensb) { 
+	
+	#In order, this is X(k)+1, X(k)
+	blocks_1k[n] =  paste(c (formatC(test1[ (n+k2-1),ds],width=width_A, flag = "0" ), "i", formatC(test1[(n:(n+k-1)),ds],width=width_A, flag = "0" ) ),collapse="")
+
+}
+
+joint_1k = ( prop.table(table( as.data.frame(blocks_1k) )))
+
+nblocks = length(joint_1kl)
+TE1 =matrix(0.0, nblocks, 1)
+for (n in 1:nblocks){ 
+
+	#Split the whole block into its subblock, X(k)+1, X(k), and Y(l)
+	#The right/future block
+	block1 = unlist(strsplit(names(joint_1kl)[n],"i") )[1] 
+	#The left/past block
+	block2 = unlist(strsplit(names(joint_1kl)[n],"i") )[2]
+	#The neighborhood block
+	block3 = unlist(strsplit(names(joint_1kl)[n],"i") )[3]
+
+	TE1[n] = joint_1kl[n]*log2( (joint_1kl[n]*marg_k[block2])/( joint_kl[ paste( c(block2,"i",block3) ,collapse="") ]*joint_1k[paste( c(block1,"i",block2) ,collapse="") ] ) ) 
+
+}
+
+sum(TE1)
+
+#My numbers are always slightly different than the rinform numbers, but close. But 
+#they consistently match up with other examples. Like the one at 
+#http://users.utu.fi/attenka/TEpresentation081128.pdf
+
+TPvector2T = marg_k
+TPvector3T = joint_kl
+TPvector4T = joint_1k
+        SUMvector[n]=TPvector1T[n]*log10((TPvector1T[n]*TPvector2T[(unlist(strsplit(names(TPvector1T)[n],"i")))[2]])/(TPvector3T[paste((unlist(strsplit(names(TPvector1T)[n],"i")))[2],"i",(unlist(strsplit(names(TPvector1T)[n],"i")))[3],sep="",collapse="")]*TPvector4T[paste((unlist(strsplit(names(TPvector1T)[n],"i")))[1],"i",(unlist(strsplit(names(TPvector1T)[n],"i")))[2],sep="",collapse="")]))
+
+###
+
 
 Jan 8-20, 2020: Another example, trying to figure out how to apply the dynamic information metrics to the food web models. (Univariate) Excess Entropy
 
@@ -168,8 +266,8 @@ mi2$mean
 #Generate each of k-blocks for the time series
 #Find the marginals of each k block
 k2=k*2 
-ngensa = length(d1_use) - k-1
-ngensb = length(d1_use) - k2-1
+ngensa = length(d1_use) - k+1
+ngensb = length(d1_use) - k2+1
 blocks_k2 = matrix(0.0, ngensb, 1) #joint
 blocks_k = matrix(0.0, ngensb, 1) #Marginals
 
