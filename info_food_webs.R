@@ -15,7 +15,9 @@
 # load libraries
 #=============================================================================
 library(deSolve)
+library(fields)
 source("./food_web_functions.R")
+source("./info_theory_functions.R")
 
 #=============================================================================
 # Outer loop. Set the number of trials and determine how to generate 
@@ -27,6 +29,10 @@ tend = 200
 delta1 = 0.01
 tl=tend/delta1
 
+#The maximum block depth for dynamic info metrics (larger is more accurate, but
+#slower and could cause crashing if too large)
+k= 10 
+
 #Number of food webs to generate
 nwebs = 1
 #Output of each web
@@ -34,6 +40,8 @@ out1 = list(matrix(0,nwebs,1))
 #Converting the web to Rutledge's compartment model and calculating the information
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
 rweb1 = list(matrix(0,nwebs,1))
+#Dynamic information metrics calculated from the (discretized) time series 
+di_web = list(matrix(0,nwebs,1))
 
 #Random resources:
 c = 0.1
@@ -52,8 +60,8 @@ for (w in 1:nwebs){
 	#Randomly generate the species parameters for the model as well: 
 	spp_prms = NULL
 	#Resource: Nearly identical resource dynamics: 
-	spp_prms$rR = matrix(rnorm(nRsp,30,0.1), nRsp, 1) #intrinsic growth
-	spp_prms$Ki = matrix(rnorm(nRsp,50,0.1), nRsp, 1) #carrying capacity
+	spp_prms$rR = matrix(rnorm(nRsp,300,10), nRsp, 1) #intrinsic growth
+	spp_prms$Ki = matrix(rnorm(nRsp,500,10), nRsp, 1) #carrying capacity
 
 	#Consumers: 
 	spp_prms$rC = matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
@@ -100,7 +108,7 @@ for (w in 1:nwebs){
 	# 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
 	#Random resource fluctuations:
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-		tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
+		tend, delta1, res_R = res_R,final = FALSE ))}, error = function(e){}) 
 
 	
 	#=============================================================================
@@ -128,8 +136,24 @@ for (w in 1:nwebs){
 	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
 		spp_prms = out1[[w]]$spp_prms) )
 
-	
-	
+	#=============================================================================
+	# Information processing networks
+	#=============================================================================
+	## This code takes the population time-series counts output by the ODEs and 
+	## calculates Excess Entropy, Active Information Storage, and Transfer Entropy. 
+	#=============================================================================
+	# This function gives:
+	# EE_mean		Average mutual information per species
+	# AI_mean		Average active information per species
+	# TE_mean		Average transfer entropy per species
+	# 
+	# EE_local		Local mutual information per species
+	# AI_local		Local active information per species
+	# TE_local		Local transfer entropy per species
+	#=============================================================================
+	nt1 = 1
+	nt2 = tl
+	di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), k=k ))
 
 }
 
@@ -153,6 +177,33 @@ lines(out[,paste(n)],t="l",col="blue")
 for( n in ((nRsp+nCsp):nspp ) ) {
 lines(out[,paste(n)],t="l")
 }
+
+#=============================================================================
+# Plot the dynamic information metrics with time 
+#=============================================================================
+#Local excess entropy
+nt_use = dim(di_web[[w]]$ee_local)[1]
+image.plot( 1:nt_use, 1:nspp, di_web[[w]]$ee_local, ylab="Species number", xlab="Time" )
+
+#Local active information storage
+nt_use = dim(di_web[[w]]$ai_local)[1]
+image.plot( 1:nt_use, 1:nspp, di_web[[w]]$ai_local, ylab="Species number", xlab="Time" )
+
+#Local transfer entropy
+nt_use = dim(di_web[[w]]$te_local)[1]
+image.plot( 1:nt_use, 1:nspp, di_web[[w]]$te_local, ylab="Species number", xlab="Time" )
+
+###Or plot a subset of the data: 
+nt1 = 1000
+nt2 = 2000
+image.plot( nt1:nt2, 1:nspp, di_web[[w]]$ee_local[nt1:nt2,], ylab="Species number", xlab="Time" )
+
+#Local active information storage
+image.plot( nt1:nt2, 1:nspp, di_web[[w]]$ai_local[nt1:nt2,], ylab="Species number", xlab="Time" )
+
+#Local transfer entropy
+image.plot( nt1:nt2, 1:nspp, di_web[[w]]$te_local[nt1:nt2,], ylab="Species number", xlab="Time" )
+
 
 out1[[w]]$out[10000,]>1e-5
 
