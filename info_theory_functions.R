@@ -319,105 +319,151 @@ get_ais = function ( series1, k=2, s=1, focal = 1 ){
 
 #=============================================================================
 # get_TE()
-# The Transfer entropy. 
+# The Transfer entropy. Which version of the TE gets calculated depends on 
+# what gets passed to the function. E.g. when all other linked nodes, agents, 
+# etc. are given in series1 then this is the complete transfer entropy. 
+# Otherwise it will be some version of the apparent TE.   
 # series1			The full time series on which to do the calculations, as a
 #					matrix or data frame. 
 # k 				The size of the block history to be used. 
 # focal				Which column in series1 is the time series of interest? 
 #					The default is to assume it is the first column. 
-# ntype				The neighborhood type to be used. Currently "all" is the 
-#					only available option, which uses all other variables in
-#					the multivariate time-series of series1.
 #=============================================================================
 
-get_TE = function ( series1, k=2, s=1, focal = 1, ntype="all" ){ 
+get_TE = function ( series1, k=2, s=1, focal = 1 ){ 
 	
 	TE1 = NULL #Attach both the average and the local version to this
 
-	if(ntype =="all") { 
-		#Make l everything but the source series
-		Yl=(1:dim(series1)[2])[-focal]
-		k2=k+1 
-		ngensa = dim(series1)[1] - k+1
-		ngensb = dim(series1)[1] - k2+1
-		blocks_k = matrix(0.0, ngensa, 1) #Block marginals
-		blocks_1kY = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k), Y(l)
-		blocks_kY = matrix(0.0, ngensa, 1) #joint of X(k), Y(l)
-		blocks_1k = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k)
+	#Make l everything but the source series
+	Yl=(1:dim(series1)[2])[-focal]
+	k2=k+1 
+	ngensa = dim(series1)[1] - k+1
+	ngensb = dim(series1)[1] - k2+1
+	blocks_k = matrix(0.0, ngensa, 1) #Block marginals
+	blocks_1kY = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k), Y(l)
+	blocks_kY = matrix(0.0, ngensa, 1) #joint of X(k), Y(l)
+	blocks_1k = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k)
 
-		#Need some additional pre-formatting to make this work: 
-		#Find number of digits in largest integer: 
-		width_A = nchar(trunc(max(d1_use)))
+	#Need some additional pre-formatting to make this work: 
+	#Find number of digits in largest integer: 
+	width_A = nchar(trunc(max(d1_use)))
 
-		#There are four total probabilities that are calculated here. 
-		#These include three different joint probability distributions 
-		#and one marginal distribution
-		######################
-		# p( X(k) )
-		######################
-		blocks_k = get_k(series1[,focal],k,width_A )
-		marg_k =  ( prop.table(table( as.data.frame(blocks_k) )))
+	#There are four total probabilities that are calculated here. 
+	#These include three different joint probability distributions 
+	#and one marginal distribution
+	######################
+	# p( X(k) )
+	######################
+	blocks_k = get_k(series1[,focal],k,width_A )
+	marg_k =  ( prop.table(table( as.data.frame(blocks_k) )))
 
-		######################
-		# p( X(k)+1,X(k),Y(l) )
-		######################
-		blocks_1kY = get_1kY(series1,k,focal,width_A ) 
-		joint_1kY =   ( prop.table(table( as.data.frame(blocks_1kY) )))
+	######################
+	# p( X(k)+1,X(k),Y(l) )
+	######################
+	blocks_1kY = get_1kY(series1,k,focal,width_A ) 
+	joint_1kY =   ( prop.table(table( as.data.frame(blocks_1kY) )))
 
-		######################
-		# p( X(k),Y(l) )
-		######################
-		blocks_kY = get_kY(series1,k,focal,width_A ) 
-		joint_kY =  ( prop.table(table( as.data.frame(blocks_kY) )))
+	######################
+	# p( X(k),Y(l) )
+	######################
+	blocks_kY = get_kY(series1,k,focal,width_A ) 
+	joint_kY =  ( prop.table(table( as.data.frame(blocks_kY) )))
 
-		######################
-		# p( X(k)+1,X(k) )
-		######################
-		blocks_1k = get_kpf(series1[,focal],k,s,width_A)
-		joint_1k = ( prop.table(table( as.data.frame(blocks_1k) )))
+	######################
+	# p( X(k)+1,X(k) )
+	######################
+	blocks_1k = get_kpf(series1[,focal],k,s,width_A)
+	joint_1k = ( prop.table(table( as.data.frame(blocks_1k) )))
 
-		#Now calculate the transfer entropy
-		nblocks = length(joint_1kY)
-		TE1_mean =matrix(0.0, nblocks, 1)
-		for (n in 1:nblocks){ 
+	#Now calculate the transfer entropy
+	nblocks = length(joint_1kY)
+	TE1_mean =matrix(0.0, nblocks, 1)
+	for (n in 1:nblocks){ 
 
-			#Split the whole block into its subblock, X(k)+1, X(k), and Y(l)
-			#The right/future block
-			block1 = unlist(strsplit(names(joint_1kY)[n],"i") )[1] 
-			#The left/past block
-			block2 = unlist(strsplit(names(joint_1kY)[n],"i") )[2]
-			#The neighborhood block
-			block3 = unlist(strsplit(names(joint_1kY)[n],"i") )[3]
+		#Split the whole block into its subblock, X(k)+1, X(k), and Y(l)
+		#The right/future block
+		block1 = unlist(strsplit(names(joint_1kY)[n],"i") )[1] 
+		#The left/past block
+		block2 = unlist(strsplit(names(joint_1kY)[n],"i") )[2]
+		#The neighborhood block
+		block3 = unlist(strsplit(names(joint_1kY)[n],"i") )[3]
 
-			TE1_mean[n] = joint_1kY[n]*log2( (joint_1kY[n]*marg_k[block2])/( 
-				joint_kY[ paste( c(block2,"i",block3) ,collapse="") ]*
-				joint_1k[paste( c(block1,"i",block2) ,collapse="") ] ) ) 
+		TE1_mean[n] = joint_1kY[n]*log2( (joint_1kY[n]*marg_k[block2])/( 
+			joint_kY[ paste( c(block2,"i",block3) ,collapse="") ]*
+			joint_1k[paste( c(block1,"i",block2) ,collapse="") ] ) ) 
 
-		}	
+	}	
 
-		#Calculate the local transfer entropy
-		nblocks = length(blocks_1kY)
-		TE1_local =matrix(0.0, nblocks, 1)
-		for (n in 1:nblocks){ 
+	#Calculate the local transfer entropy
+	nblocks = length(blocks_1kY)
+	TE1_local =matrix(0.0, nblocks, 1)
+	for (n in 1:nblocks){ 
 
-			#Split the whole block into its subblock, X(k)+1, X(k), and Y(l)
-			#The right/future block
-			block1 = unlist(strsplit(blocks_1kY[n],"i") )[1] 
-			#The left/past block
-			block2 = unlist(strsplit(blocks_1kY[n],"i") )[2]
-			#The neighborhood block
-			block3 = unlist(strsplit(blocks_1kY[n],"i") )[3]
+		#Split the whole block into its subblock, X(k)+1, X(k), and Y(l)
+		#The right/future block
+		block1 = unlist(strsplit(blocks_1kY[n],"i") )[1] 
+		#The left/past block
+		block2 = unlist(strsplit(blocks_1kY[n],"i") )[2]
+		#The neighborhood block
+		block3 = unlist(strsplit(blocks_1kY[n],"i") )[3]
 
-			TE1_local[n] = log2( (joint_1kY[blocks_1kY[n]]*marg_k[block2])/( 
-				joint_kY[ paste( c(block2,"i",block3) ,collapse="") ]*
-				joint_1k[paste( c(block1,"i",block2) ,collapse="") ] ) ) 
+		TE1_local[n] = log2( (joint_1kY[blocks_1kY[n]]*marg_k[block2])/( 
+			joint_kY[ paste( c(block2,"i",block3) ,collapse="") ]*
+			joint_1k[paste( c(block1,"i",block2) ,collapse="") ] ) ) 
 
-		}	
+	}	
 
-		TE1$mean = sum(TE1_mean)
-		TE1$local = TE1_local
-	 return( TE1 )
-	}
+	TE1$mean = sum(TE1_mean)
+	TE1$local = TE1_local
+ 	return( TE1 )
+	
+
+}
+
+#=============================================================================
+# get_SI()
+# The Separable Information 
+# series1			The full time series on which to do the calculations, as a
+#					matrix or data frame. 
+# k 				The size of the block history to be used. 
+# focal				Which column in series1 is the time series of interest? 
+#					The default is to assume it is the first column. 
+#=============================================================================
+
+get_SI= function ( series1, k=2, s=1, focal = 1 ){ 
+	
+	SI1 = NULL #Attach both the average and the local version to this
+	
+
+	#Make l everything but the source series
+	Yl=(1:dim(series1)[2])[-focal]
+	
+	#First calculate the active information storage:
+	AIS_temp = get_ais ( series1, k=k, s=s, focal = focal )
+	
+	#Sum over the apparent transfer entropy between series1 and each other node
+	TE_temp = NULL
+	TE_temp$mean = NULL
+	TE_temp$local = NULL
+
+	for (i in 1:length(Yl)){
+		TE_temp2 = get_TE(series1[,c(focal,Yl[i])],k=k,s=s,focal=1)
+		
+		if(is.null(TE_temp$mean)){
+			TE_temp$mean = TE_temp2$mean
+			TE_temp$local = TE_temp2$local
+		} else {
+			TE_temp$mean = TE_temp$mean + TE_temp2$mean
+			TE_temp$local = TE_temp$local + TE_temp2$local
+		}
+		
+
+	} 
+	
+	SI1$mean = AIS_temp$mean + TE_temp$mean
+	SI1$local = AIS_temp$local + TE_temp$local
+ 	return( SI1 )
+	
 
 }
 
@@ -442,24 +488,31 @@ get_info_dynamics = function (pop_ts, k=2 ) {
 	di_ee_means = matrix(0,nspp,1)
 	di_ai_means = matrix(0,nspp,1)
 	di_te_means = matrix(0,nspp,1)
+	di_si_means = matrix(0,nspp,1)
+
 	
 	di_ee_local = matrix(0,(ngens-2*k+1),nspp)
 	di_ai_local = matrix(0,(ngens-k),nspp)
 	di_te_local = matrix(0,(ngens-k),nspp)
+	di_si_local = matrix(0,(ngens-k),nspp)
+
 
 	for ( n in 1:nspp) {
-
+		print(n)
 		di_ee_temp = get_EE (pop_ts,k=k,focal=n)
 		di_ai_temp = get_ais (pop_ts,k=k,focal=n)
 		di_te_temp = get_TE (pop_ts,k=k,focal=n)
-		
+		di_si_temp = get_SI (pop_ts,k=k,focal=n)
+
 		di_ee_means[n] = di_ee_temp$mean
 		di_ai_means[n] = di_ai_temp$mean
 		di_te_means[n] = di_te_temp$mean
+		di_si_means[n] = di_si_temp$mean
 		
 		di_ee_local[,n] = di_ee_temp$local
 		di_ai_local[,n] = di_ai_temp$local
 		di_te_local[,n] = di_te_temp$local
+		di_si_local[,n] = di_si_temp$local
 
 
 	}
@@ -468,11 +521,13 @@ get_info_dynamics = function (pop_ts, k=2 ) {
 	d1_web$ee_means = di_ee_means
 	d1_web$ai_means = di_ai_means
 	d1_web$te_means = di_te_means
+	d1_web$si_means = di_si_means
 
 	#Local quantities
 	d1_web$ee_local = di_ee_local
 	d1_web$ai_local = di_ai_local
 	d1_web$te_local = di_te_local
+	d1_web$si_local = di_si_local
 
 	return(d1_web)
 }

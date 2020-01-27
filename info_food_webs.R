@@ -184,18 +184,43 @@ lines(out[,paste(n)],t="l")
 #Local excess entropy
 nt_use = dim(di_web[[w]]$ee_local)[1]
 image.plot( 1:nt_use, 1:nspp, di_web[[w]]$ee_local, ylab="Species number", xlab="Time" )
+abline(h =out1[[w]]$spp_prms$nRsp )
+mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
+mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
 
 #Local active information storage
 nt_use = dim(di_web[[w]]$ai_local)[1]
 image.plot( 1:nt_use, 1:nspp, di_web[[w]]$ai_local, ylab="Species number", xlab="Time" )
+abline(h =out1[[w]]$spp_prms$nRsp )
+mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
+mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
 
 #Local transfer entropy
 nt_use = dim(di_web[[w]]$te_local)[1]
 image.plot( 1:nt_use, 1:nspp, di_web[[w]]$te_local, ylab="Species number", xlab="Time" )
+abline(h =out1[[w]]$spp_prms$nRsp )
+mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
+mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+
+#Local separable information
+nt_use = dim(di_web[[w]]$si_local)[1]
+image.plot( 1:nt_use, 1:nspp, di_web[[w]]$si_local, ylab="Species number", xlab="Time" )
+abline(h =out1[[w]]$spp_prms$nRsp )
+mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
+mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+
 
 ###Or plot a subset of the data: 
-nt1 = 1000
-nt2 = 2000
+nt1 = 5000
+nt2 = tl-50
 image.plot( nt1:nt2, 1:nspp, di_web[[w]]$ee_local[nt1:nt2,], ylab="Species number", xlab="Time" )
 
 #Local active information storage
@@ -203,6 +228,15 @@ image.plot( nt1:nt2, 1:nspp, di_web[[w]]$ai_local[nt1:nt2,], ylab="Species numbe
 
 #Local transfer entropy
 image.plot( nt1:nt2, 1:nspp, di_web[[w]]$te_local[nt1:nt2,], ylab="Species number", xlab="Time" )
+
+#Local separable information
+image.plot( nt1:nt2, 1:nspp, di_web[[w]]$si_local[nt1:nt2,], ylab="Species number", xlab="Time" )
+abline(h =out1[[w]]$spp_prms$nRsp )
+mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
+mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+
 
 
 out1[[w]]$out[10000,]>1e-5

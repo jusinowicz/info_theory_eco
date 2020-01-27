@@ -1,4 +1,8 @@
 #Notes 
+Jan, 24, 2020; part 2: The Transfer Entropy must be considered more carefully, and my thinking on it may not have been totally correct. It is in th example here, but not in the function implemented in info_theory_functions.R. The apparent transfer entropy only considers the contribution per-source, and the nodes that can be sources must be chosen. The complete transfer entropy includes the entire set of everything that might influence the target node. But then the separable information is the sum over all of the individual apparent TEs. 
+1. What is the most useful way to implement the aTE in the food web? Consider only a species' immediate interactions (i.e. a species predators, competitors, prey)? One at a time, or collectively? Each trophic level as  collection? There are multiple ways to organize this...
+2. Same for the separable information: Is the sum over aTEs all members in the foodweb? Or just the same, immediate links? I guess the key is to compare a TE and SI for the same collection of potential influencers...  
+
 Jan, 24, 2020: More exmples, trying to learn the dynamic information metrics and apply them to food web models. Today: Active Information Storage. 
 
 Examples (from rinform vignette):
@@ -9,7 +13,7 @@ active_info(series, k = 2)
 k2=k+1 
 ngensa = length(series) - k+1
 ngensb = length(series) - k2+1
-blocks_1 = matrix(0.0, length(series), 1) #marg of X(k)+1
+blocks_1 = matrix(0.0, ngensb, 1) #marg of X(k)+1
 blocks_k = matrix(0.0, ngensa, 1) # marg of X(k)
 blocks_1k = matrix(0.0, ngensb, 1) #joint of X(k)+1, X(k) 
 
