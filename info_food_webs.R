@@ -179,6 +179,70 @@ for (n in 6:14){
 }
 
 #=============================================================================
+#Export the average information theoretic quantities into tables.  
+#  !!! Make sure to set the name of the excel file below!!!!
+#=============================================================================
+library(xlsx)
+
+var_load = di_web[[w]]$ee_means #These start at variable 5 and go to 14
+write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet1", row.names=FALSE)
+var_load = di_web[[w]]$ai_means #These start at variable 5 and go to 14
+write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet2",append=TRUE,row.names=FALSE)
+var_load = di_web[[w]]$te_means #These start at variable 5 and go to 14
+write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet3",append=TRUE,row.names=FALSE)
+var_load = di_web[[w]]$si_means #These start at variable 5 and go to 14
+write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet4",append=TRUE,row.names=FALSE)
+
+#=============================================================================
+# Plot each of the average information theoretic metrics as a bar graph
+#=============================================================================
+fig.name = paste("average_dynamics_rweb1.pdf",sep="")
+pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
+layout(mat = layout.matrix,
+       heights = c(5,5), # Heights of the rows
+       widths = c(5,5)) # Widths of columns
+
+#layout.show(4)
+
+barplot(di_web[[w]]$ee_means,cex.lab =1.3, beside = TRUE,ylab="Bits of information", xlab = "")
+abline(v =out1[[w]]$spp_prms$nRsp+1,col="red")
+mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1,col="blue" )
+mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+
+barplot(di_web[[w]]$ai_means,cex.lab =1.3, beside = TRUE,ylab="Bits of information", xlab = "Species #")
+abline(v =out1[[w]]$spp_prms$nRsp+1,col="red" )
+mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1,col="blue" )
+mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+mtext("Average Information Storage", side = 3, line =4)
+
+
+barplot(di_web[[w]]$te_means,cex.lab =1.3, beside = TRUE,ylab="", xlab = "")
+abline(v =out1[[w]]$spp_prms$nRsp+1,col="red" )
+mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1,col="blue"  )
+mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+mtext("Average Information Transfer", side = 3, line = 2)
+
+
+barplot(di_web[[w]]$si_means,cex.lab =1.3, beside = TRUE,ylab="", xlab = "Species #")
+abline(v =out1[[w]]$spp_prms$nRsp+1,col="red"  )
+mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
+abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1 ,col="blue" )
+mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
+mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+mtext("Average Information Modification", side = 3, line = 2)
+
+dev.off()
+
+
+#=============================================================================
 # Plot the population dynamics
 #=============================================================================
 out = out1[[w]]$out
@@ -249,14 +313,17 @@ mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
 # Make combined plots of population and dynamic information metrics with time 
 #=============================================================================
 
-t1 = 100
-
 #===========================================#
 #plot1: Info storage (Excess Entropy or AIS)
 #===========================================#
 
-fig.name = paste("dynamic_info_AIS_rweb1.pdf",sep="")
+# fig.name = paste("dynamic_info_AIS_rweb1.pdf",sep="")
+# pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+#When the figure is only over a subset of the time to show transient dynamics: 
+fig.name = paste("dynamic_info_AIS_rweb1_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
 
 layout.matrix=matrix(c(1:12), nrow = 6, ncol = 2)
 layout(mat = layout.matrix,
@@ -269,12 +336,13 @@ layout(mat = layout.matrix,
 #par(mfrow=c(2,1),mai= c( 0.0, 0.2, 0.0, 0.2), omi=c(0.5,0.75,0.5,0.75)) #,mai= c( 1, 0, 0.2, 0), omi=c(2,0.75,2,0.75))
 
 ###Common figure properties
+
+t1 = 5840
 nlevel = 64 #For viridis color scheme
-# ylimR1 =c(-1,70) # Common y limits for row 1 
-# ylimR2 =c(-1,280) # Common y limits for row 2  
-# xlimC1 =c(0,3500) # Common x limits for Column 1 
-# xlimC2 =c(0,3500) # Common x limits for Column 2
-# x.txt = c(1600,2000,1200) #X location of labels on ranges
+#nt_use = dim(di_web[[w]]$ai_local)[1]
+nt_use = 5940
+rs1 = 450 #lower bound for Resource population plot 
+
 par(oma = c(3,2,3,3) )
 
 #===========================================#
@@ -282,10 +350,10 @@ par(oma = c(3,2,3,3) )
 ###Predator species
 par( mar = c(0.5,4,0,4) )
 
-plot(out[,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
+plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
 	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[,paste(n)],t="l")
+lines(out[t1:nt_use,paste(n)],t="l")
 }
 mtext("Local Information Storage", side = 3, line = 0, outer = TRUE)
 
@@ -294,27 +362,19 @@ mtext("Local Information Storage", side = 3, line = 0, outer = TRUE)
 # nt_use = dim(di_web[[w]]$ee_local)[1]
 #image( 1:nt_use, 1:nCsp, di_web[[w]]$ee_local[,(nRsp+nCsp+1):(nspp)], ylab="Species number", 
 #	xlab="Time",col=viridis(nlevel) )
-# image.plot( 1:nt_use, 1:nCsp, di_web[[w]]$ee_local[,(nRsp+nCsp+1):(nspp)], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel)  )
 
 #Local active information storage
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$ai_local)[1]
-image( 1:nt_use, 1:nPsp, di_web[[w]]$ai_local[,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
+image( t1:nt_use, 1:nPsp, di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3)
-#image.plot( 1:nt_use, 1:nCsp, di_web[[w]]$ai_local[,(nRsp+nCsp+1):(nspp)], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel)  )
-
-
-
 
 ###Consumer species
 par( mar = c(0.5,4,0,4) )
 #Consumer species in BLUE
-plot(out[,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
+plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
 	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[,paste(n)],t="l",col="blue")
+lines(out[t1:nt_use,paste(n)],t="l",col="blue")
 }
 
 #Local excess entropy
@@ -322,24 +382,19 @@ lines(out[,paste(n)],t="l",col="blue")
 # nt_use = dim(di_web[[w]]$ee_local)[1]
 #image( 1:nt_use, 1:nCsp, di_web[[w]]$ee_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species number", 
 #	xlab="Time",col=viridis(nlevel) )
-# image.plot( 1:nt_use, 1:nCsp, di_web[[w]]$ee_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel)  )
 
 #Local active information storage
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$ai_local)[1]
-image( 1:nt_use, 1:nCsp, di_web[[w]]$ai_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
+image( t1:nt_use, 1:nCsp, di_web[[w]]$ai_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),,cex.main=1.3,cex.lab=1.3 )
-#image.plot( 1:nt_use, 1:nCsp, di_web[[w]]$ai_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel)  )
 
 ###Resource Species
 par( mar = c(0.5,4,0,4) )
 #Resource species in RED
-plot(out[1:tl,"1"],t="l",col="red",ylim = c(0,max(out[tl,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
+plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(rs1,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
   xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
 for( n in 1:(nRsp) ) {
-lines(out[,paste(n)],t="l",col="red")
+lines(out[t1:nt_use,paste(n)],t="l",col="red")
 }
 
 #Local excess entropy
@@ -347,16 +402,11 @@ lines(out[,paste(n)],t="l",col="red")
 # nt_use = dim(di_web[[w]]$ee_local)[1]
 #image( 1:nt_use, 1:nRsp, di_web[[w]]$ee_local[,1:nRsp], ylab="Species number", 
 #	xlab="Time",col=viridis(nlevel) )
-# image.plot( 1:nt_use, 1:nRsp, di_web[[w]]$ee_local[,1:nRsp], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel)  )
 
 #Local active information storage
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$ai_local)[1]
-image( 1:nt_use, 1:nRsp, di_web[[w]]$ai_local[,1:nRsp], ylab="Species #", 
+image( t1:nt_use, 1:nRsp, di_web[[w]]$ai_local[t1:nt_use,1:nRsp], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3 )
-#image.plot( 1:nt_use, 1:nRsp, di_web[[w]]$ai_local[,1:nRsp], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel)  )
 
 ###Plot color bars for image plots: 
 
@@ -364,7 +414,7 @@ image( 1:nt_use, 1:nRsp, di_web[[w]]$ai_local[,1:nRsp], ylab="Species #",
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$ai_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -373,7 +423,7 @@ image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)),
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$ai_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -383,17 +433,24 @@ image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)),
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$ai_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
+
+
+
 dev.off()
 
 #===========================================#
 #plot2: Information transmission (TE)
 #===========================================#
 
-fig.name = paste("dynamic_info_TE_rweb1.pdf",sep="")
+# fig.name = paste("dynamic_info_TE_rweb1.pdf",sep="")
+# pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+#When the figure is only over a subset of the time to show transient dynamics: 
+fig.name = paste("dynamic_info_TE_rweb1_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -408,12 +465,13 @@ layout(mat = layout.matrix,
 #par(mfrow=c(2,1),mai= c( 0.0, 0.2, 0.0, 0.2), omi=c(0.5,0.75,0.5,0.75)) #,mai= c( 1, 0, 0.2, 0), omi=c(2,0.75,2,0.75))
 
 ###Common figure properties
+nlevel = 64 #For viridis color 
+t1 = 5840
 nlevel = 64 #For viridis color scheme
-# ylimR1 =c(-1,70) # Common y limits for row 1 
-# ylimR2 =c(-1,280) # Common y limits for row 2  
-# xlimC1 =c(0,3500) # Common x limits for Column 1 
-# xlimC2 =c(0,3500) # Common x limits for Column 2
-# x.txt = c(1600,2000,1200) #X location of labels on ranges
+#nt_use = dim(di_web[[w]]$ai_local)[1]
+nt_use = 5940
+rs1 = 450 #lower bound for Resource population plot 
+
 par(oma = c(3,2,3,3) )
 
 #===========================================#
@@ -421,47 +479,44 @@ par(oma = c(3,2,3,3) )
 ###Predator species
 par( mar = c(0.5,4,0,4) )
 
-plot(out[,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
+plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
 	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[,paste(n)],t="l")
+lines(out[t1:nt_use,paste(n)],t="l")
 }
 mtext("Local Transfer Entropy", side = 3, line = 0, outer = TRUE)
 
 #Local Transfer Entropy 
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$te_local)[1]
-image( 1:nt_use, 1:nPsp, di_web[[w]]$te_local[,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
+image( t1:nt_use, 1:nPsp, di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3)
 
 ###Consumer species
 par( mar = c(0.5,4,0,4) )
 #Consumer species in BLUE
-plot(out[,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
+plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
 	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[,paste(n)],t="l",col="blue")
+lines(out[t1:nt_use,paste(n)],t="l",col="blue")
 }
 
 #Local transfer entropy
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$te_local)[1]
-image( 1:nt_use, 1:nCsp, di_web[[w]]$te_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
+image( t1:nt_use, 1:nCsp, di_web[[w]]$te_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),,cex.main=1.3,cex.lab=1.3 )
 
 ###Resource Species
 par( mar = c(0.5,4,0,4) )
 #Resource species in RED
-plot(out[1:tl,"1"],t="l",col="red",ylim = c(0,max(out[tl,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
+plot(out[1:tl,"1"],t="l",col="red",ylim = c(rs1,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
   xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
 for( n in 1:(nRsp) ) {
-lines(out[,paste(n)],t="l",col="red")
+lines(out[t1:nt_use,paste(n)],t="l",col="red")
 }
 
 #local transfer entropy
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$te_local)[1]
-image( 1:nt_use, 1:nRsp, di_web[[w]]$te_local[,1:nRsp], ylab="Species #", 
+image( t1:nt_use, 1:nRsp, di_web[[w]]$te_local[t1:nt_use,1:nRsp], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3 )
 
 ###Plot color bars for image plots: 
@@ -470,7 +525,7 @@ image( 1:nt_use, 1:nRsp, di_web[[w]]$te_local[,1:nRsp], ylab="Species #",
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$te_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -479,7 +534,7 @@ image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)),
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$te_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -488,7 +543,8 @@ image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)),
 #Color bar 3
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
-par( mar = c(3,0,0,2) )var_dist =  di_web[[w]]$te_local[,(nRsp+nCsp+1):(nspp)]
+par( mar = c(3,0,0,2) )
+var_dist =  di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -498,8 +554,13 @@ dev.off()
 #===========================================#
 #plot3: Information modification (SI)
 #===========================================#
-fig.name = paste("dynamic_info_SI_rweb1.pdf",sep="")
+# fig.name = paste("dynamic_info_SI_rweb1.pdf",sep="")
+# pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+#When the figure is only over a subset of the time to show transient dynamics: 
+fig.name = paste("dynamic_info_SI_rweb1_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
 
 layout.matrix=matrix(c(1:12), nrow = 6, ncol = 2)
 layout(mat = layout.matrix,
@@ -512,12 +573,13 @@ layout(mat = layout.matrix,
 #par(mfrow=c(2,1),mai= c( 0.0, 0.2, 0.0, 0.2), omi=c(0.5,0.75,0.5,0.75)) #,mai= c( 1, 0, 0.2, 0), omi=c(2,0.75,2,0.75))
 
 ###Common figure properties
+nlevel = 64 #For viridis color 
+t1 = 5840
 nlevel = 64 #For viridis color scheme
-# ylimR1 =c(-1,70) # Common y limits for row 1 
-# ylimR2 =c(-1,280) # Common y limits for row 2  
-# xlimC1 =c(0,3500) # Common x limits for Column 1 
-# xlimC2 =c(0,3500) # Common x limits for Column 2
-# x.txt = c(1600,2000,1200) #X location of labels on ranges
+#nt_use = dim(di_web[[w]]$ai_local)[1]
+nt_use = 5940
+rs1 = 450 #lower bound for Resource population plot 
+
 par(oma = c(3,2,3,3) )
 
 #===========================================#
@@ -525,47 +587,44 @@ par(oma = c(3,2,3,3) )
 ###Predator species
 par( mar = c(0.5,4,0,4) )
 
-plot(out[,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
+plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
 	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[,paste(n)],t="l")
+lines(out[t1:nt_use,paste(n)],t="l")
 }
 mtext("Local Seprable Information", side = 3, line = 0, outer = TRUE)
 
 #Local seprable informatio
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$si_local)[1]
-image( 1:nt_use, 1:nPsp, di_web[[w]]$si_local[,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
+image( t1:nt_use, 1:nPsp, di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3)
 
 ###Consumer species
 par( mar = c(0.5,4,0,4) )
 #Consumer species in BLUE
-plot(out[,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
+plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
 	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[,paste(n)],t="l",col="blue")
+lines(out[t1:nt_use,paste(n)],t="l",col="blue")
 }
 
 #Local separable information
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$si_local)[1]
-image( 1:nt_use, 1:nCsp, di_web[[w]]$si_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
+image( t1:nt_use, 1:nCsp, di_web[[w]]$si_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),,cex.main=1.3,cex.lab=1.3 )
 
 ###Resource Species
 par( mar = c(0.5,4,0,4) )
 #Resource species in RED
-plot(out[1:tl,"1"],t="l",col="red",ylim = c(0,max(out[tl,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
+plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(rs1,max(out[tl,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
   xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
 for( n in 1:(nRsp) ) {
-lines(out[,paste(n)],t="l",col="red")
+lines(out[t1:nt_use,paste(n)],t="l",col="red")
 }
 
 #Local separable information
 par( mar = c(2,4,0,4) )
-nt_use = dim(di_web[[w]]$si_local)[1]
-image( 1:nt_use, 1:nRsp, di_web[[w]]$si_local[,1:nRsp], ylab="Species #", 
+image( t1:nt_use, 1:nRsp, di_web[[w]]$si_local[t1:nt_use,1:nRsp], ylab="Species #", 
 	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3 )
 
 ###Plot color bars for image plots: 
@@ -574,7 +633,7 @@ image( 1:nt_use, 1:nRsp, di_web[[w]]$si_local[,1:nRsp], ylab="Species #",
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$si_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -583,7 +642,7 @@ image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)),
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$si_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
@@ -593,7 +652,7 @@ image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)),
 par( mar = c(0.5,0.5,0.5,0.5) )
 frame()
 par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$si_local[,(nRsp+nCsp+1):(nspp)]
+var_dist =  di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
 image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
 	ylab="",xaxt='n',col=viridis(nlevel))
