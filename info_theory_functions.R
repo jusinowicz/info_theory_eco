@@ -171,8 +171,13 @@ get_1kY = function (series1, k=2, focal=1, width_A) {
 # k 				The size of the block history to be used. 
 # focal				Which column in series1 is the time series of interest? 
 #					The default is to assume it is the first column. 
+# with_blocks=F		When set to TRUE, the function will also append all of 
+#					the lists of blocks.
+# blocks_only=F 	When set to TRUE, the function will ONLY return the 
+#					lists of blocks. 
 #=============================================================================
-get_EE = function ( series1, k=2, s=k, focal = 1){
+get_EE = function ( series1, k=2, s=k, focal = 1, with_blocks=FALSE, 
+	blocks_only=FALSE){
 	
 	EE1 = NULL #Attach both the average and the local version to this
 
@@ -228,8 +233,21 @@ get_EE = function ( series1, k=2, s=k, focal = 1){
 			marg_k[block2]*marg_k[block1]  )) 
 	}
 
-	EE1$mean = sum(EE1_mean)
-	EE1$local = EE1_local
+	if (with_blocks == TRUE ){
+		EE1$mean = sum(EE1_mean)
+		EE1$local = EE1_local
+		EE1$blocks_k = blocks_k
+		EE1$blocks_kpf = blocks_kpf
+
+
+	} else if (blocks_only == TRUE ){
+		EE1$blocks_k = blocks_k
+		EE1$blocks_kpf = blocks_kpf
+	} else {  
+		EE1$mean = sum(EE1_mean)
+		EE1$local = EE1_local
+	}
+	
 	return(EE1)
 
 }
@@ -242,8 +260,13 @@ get_EE = function ( series1, k=2, s=k, focal = 1){
 # k 				The size of the block history to be used. 
 # focal				Which column in series1 is the time series of interest? 
 #					The default is to assume it is the first column. 
+# with_blocks=F		When set to TRUE, the function will also append all of 
+#					the lists of blocks.
+# blocks_only=F 	When set to TRUE, the function will ONLY return the 
+#					lists of blocks. 
 #=============================================================================
-get_ais = function ( series1, k=2, s=1, focal = 1 ){
+get_ais = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE, 
+	blocks_only=FALSE){
 	
 	AIS1 = NULL #Attach both the average and the local version to this
 
@@ -309,8 +332,22 @@ get_ais = function ( series1, k=2, s=1, focal = 1 ){
 
 	}
 
-	AIS1$mean = sum(AIS1_mean)
-	AIS1$local = AIS1_local
+	if (with_blocks == TRUE ){
+		AIS1$mean = sum(AIS1_mean)
+		AIS1$local = AIS1_local
+		AIS1$blocks_1=blocks_1
+		AIS1$blocks_k = blocks_k
+		AIS1$blocks_1k = blocks_1k
+
+	} else if (blocks_only == TRUE ){
+		AIS1$blocks_1=blocks_1
+		AIS1$blocks_k = blocks_k
+		AIS1$blocks_1k = blocks_1k
+	} else {  
+		AIS1$mean = sum(AIS1_mean)
+		AIS1$local = AIS1_local
+	}
+	
 	return(AIS1)
 
 
@@ -328,9 +365,14 @@ get_ais = function ( series1, k=2, s=1, focal = 1 ){
 # k 				The size of the block history to be used. 
 # focal				Which column in series1 is the time series of interest? 
 #					The default is to assume it is the first column. 
+# with_blocks=F		When set to TRUE, the function will also append all of 
+#					the lists of blocks.
+# blocks_only=F 	When set to TRUE, the function will ONLY return the 
+#					lists of blocks. 
 #=============================================================================
 
-get_TE = function ( series1, k=2, s=1, focal = 1 ){ 
+get_TE = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE, 
+	blocks_only=FALSE){
 	
 	TE1 = NULL #Attach both the average and the local version to this
 
@@ -413,8 +455,25 @@ get_TE = function ( series1, k=2, s=1, focal = 1 ){
 
 	}	
 
-	TE1$mean = sum(TE1_mean)
-	TE1$local = TE1_local
+	if (with_blocks == TRUE ){
+		TE1$mean = sum(TE1_mean)
+		TE1$local = TE1_local
+		TE1$blocks_k=blocks_k
+		TE1$blocks_kY = blocks_kY
+		TE1$blocks_1k = blocks_1k
+		TE1$blocks_1kY = blocks_1kY
+
+	} else if (blocks_only == TRUE ){
+		TE1$blocks_k=blocks_k
+		TE1$blocks_kY = blocks_kY
+		TE1$blocks_1k = blocks_1k
+		TE1$blocks_1kY = blocks_1kY
+
+	} else {  
+		TE1$mean = sum(TE1_mean)
+		TE1$local = TE1_local
+	}
+	
  	return( TE1 )
 	
 
@@ -428,42 +487,97 @@ get_TE = function ( series1, k=2, s=1, focal = 1 ){
 # k 				The size of the block history to be used. 
 # focal				Which column in series1 is the time series of interest? 
 #					The default is to assume it is the first column. 
+# with_blocks=F		When set to TRUE, the function will also append all of 
+#					the probability disributions of blocks.
+# blocks_only=F 	When set to TRUE, the function will ONLY return the 
+#					probability distributions of blocks. 
 #=============================================================================
 
-get_SI= function ( series1, k=2, s=1, focal = 1 ){ 
+get_SI= function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE, 
+	blocks_only=FALSE){
 	
 	SI1 = NULL #Attach both the average and the local version to this
 	
-
 	#Make l everything but the source series
 	Yl=(1:dim(series1)[2])[-focal]
 	
 	#First calculate the active information storage:
-	AIS_temp = get_ais ( series1, k=k, s=s, focal = focal )
+	AIS_temp = get_ais ( series1, k=k, s=s, focal = focal, with_blocks=with_blocks,
+		blocks_only=blocks_only )
 	
 	#Sum over the apparent transfer entropy between series1 and each other node
 	TE_temp = NULL
 	TE_temp$mean = NULL
 	TE_temp$local = NULL
+	blocks_k = list(matrix(0.0, Yl, 1)) #Block marginals
+	blocks_1kY = list(matrix(0.0, Yl, 1)) #joint of X(k)+1, X(k), Y(l)
+	blocks_kY = list(matrix(0.0, Yl, 1)) #joint of X(k), Y(l)
+	blocks_1k = list(matrix(0.0, Yl, 1)) #joint of X(k)+1, X(k)
+ 
 
 	for (i in 1:length(Yl)){
-		TE_temp2 = get_TE(series1[,c(focal,Yl[i])],k=k,s=s,focal=1)
+		TE_temp2 = get_TE( series1[,c(focal,Yl[i])],k=k,s=s,focal=1,
+			with_blocks=with_blocks, blocks_only=blocks_only )
 		
-		if(is.null(TE_temp$mean)){
-			TE_temp$mean = TE_temp2$mean
-			TE_temp$local = TE_temp2$local
-		} else {
-			TE_temp$mean = TE_temp$mean + TE_temp2$mean
-			TE_temp$local = TE_temp$local + TE_temp2$local
+		if (with_blocks == TRUE ){
+
+			if(is.null(TE_temp$mean)){
+				TE_temp$mean = TE_temp2$mean
+				TE_temp$local = TE_temp2$local
+			} else {
+				TE_temp$mean = TE_temp$mean + TE_temp2$mean
+				TE_temp$local = TE_temp$local + TE_temp2$local
+			}
+
+			blocks_k[i]=list(blocks_k)
+			blocks_kY[i] = list(blocks_kY)
+			blocks_1k[i] = list(blocks_1k)
+			blocks_1kY[i] = list(blocks_1kY)
+
+		} else if (blocks_only == TRUE ){
+			blocks_k[i]=list(blocks_k)
+			blocks_kY[i] = list(blocks_kY)
+			blocks_1k[i] = list(blocks_1k)
+			blocks_1kY[i] = list(blocks_1kY)
+
+		} else {  
+
+			if(is.null(TE_temp$mean)){
+				TE_temp$mean = TE_temp2$mean
+				TE_temp$local = TE_temp2$local
+			} else {
+				TE_temp$mean = TE_temp$mean + TE_temp2$mean
+				TE_temp$local = TE_temp$local + TE_temp2$local
+			}	
 		}
+
+
+		
 		
 
 	} 
 	
-	SI1$mean = AIS_temp$mean + TE_temp$mean
-	SI1$local = AIS_temp$local + TE_temp$local
+	if (with_blocks == TRUE ){
+		SI1$mean = AIS_temp$mean + TE_temp$mean
+		SI1$local = AIS_temp$local + TE_temp$local
+		SI1$blocks_k=blocks_k
+		SI1$blocks_kY = blocks_kY
+		SI1$blocks_1k = blocks_1k
+		SI1$blocks_1kY = blocks_1kY
+
+	} else if (blocks_only == TRUE ){
+		SI1$blocks_k=blocks_k
+		SI1$blocks_kY = blocks_kY
+		SI1$blocks_1k = blocks_1k
+		SI1$blocks_1kY = blocks_1kY
+
+	} else {  
+		SI1$mean = AIS_temp$mean + TE_temp$mean
+		SI1$local = AIS_temp$local + TE_temp$local
+	}
+
  	return( SI1 )
-	
+	 
 
 }
 
@@ -475,59 +589,212 @@ get_SI= function ( series1, k=2, s=1, focal = 1 ){
 #
 # pop_ts				Population matrix with time as rows, each species as column
 # k 				The size of the block history to be used. 
+# with_blocks=F		When set to TRUE, the function will also append all of 
+#					the probability disributions of blocks.
+# blocks_only=F 	When set to TRUE, the function will ONLY return the 
+#					probability distributions of blocks. 
 #=============================================================================
 
-get_info_dynamics = function (pop_ts, k=2 ) { 
+get_info_dynamics = function (pop_ts, k=2,with_blocks=FALSE, blocks_only=FALSE ) { 
 
 	d1_web = NULL
 
 	ngens = dim(pop_ts)[1] #Time
 	nspp = dim(pop_ts)[2] #Number of species
 
-	#Use these to store the local and global average values
-	di_ee_means = matrix(0,nspp,1)
-	di_ai_means = matrix(0,nspp,1)
-	di_te_means = matrix(0,nspp,1)
-	di_si_means = matrix(0,nspp,1)
-
+	if (with_blocks == TRUE ){
 	
-	di_ee_local = matrix(0,(ngens-2*k+1),nspp)
-	di_ai_local = matrix(0,(ngens-k),nspp)
-	di_te_local = matrix(0,(ngens-k),nspp)
-	di_si_local = matrix(0,(ngens-k),nspp)
+		#Use these to store the local and global average values
+		di_ee_means = matrix(0,nspp,1)
+		di_ai_means = matrix(0,nspp,1)
+		di_te_means = matrix(0,nspp,1)
+		di_si_means = matrix(0,nspp,1)
+
+		
+		di_ee_local = matrix(0,(ngens-2*k+1),nspp)
+		di_ai_local = matrix(0,(ngens-k),nspp)
+		di_te_local = matrix(0,(ngens-k),nspp)
+		di_si_local = matrix(0,(ngens-k),nspp)
+
+		di_ee_blocks = list(matrix(0,nspp,1))
+		di_ai_blocks = list(matrix(0,nspp,1))
+		di_te_blocks= list(matrix(0,nspp,1))
+		di_si_blocks = list(matrix(0,nspp,1))
+
+		for ( n in 1:nspp) {
+			print(n)
+			di_ee_temp = get_EE (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_ai_temp = get_ais (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_te_temp = get_TE (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_si_temp = get_SI (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+
+			di_ee_means[n] = di_ee_temp$mean
+			di_ai_means[n] = di_ai_temp$mean
+			di_te_means[n] = di_te_temp$mean
+			di_si_means[n] = di_si_temp$mean
+			
+			di_ee_local[,n] = di_ee_temp$local
+			di_ai_local[,n] = di_ai_temp$local
+			di_te_local[,n] = di_te_temp$local
+			di_si_local[,n] = di_si_temp$local
+
+			di_ee_blocks[n] = list(di_ee_temp[grepl("block",names(di_ee_temp))])
+			di_ai_blocks[n] = list(di_ai_temp[grepl("block",names(di_ai_temp))])
+			di_te_blocks[n] = list(di_te_temp[grepl("block",names(di_te_temp))])
+			di_si_blocks[n] = list(di_si_temp[grepl("block",names(di_si_temp))])
+
+
+		}
+
+		#Mean quantities
+		d1_web$ee_means = di_ee_means
+		d1_web$ai_means = di_ai_means
+		d1_web$te_means = di_te_means
+		d1_web$si_means = di_si_means
+
+		#Local quantities
+		d1_web$ee_local = di_ee_local
+		d1_web$ai_local = di_ai_local
+		d1_web$te_local = di_te_local
+		d1_web$si_local = di_si_local
+
+
+		d1_web$ee_blocks = di_ee_blocks 
+		d1_web$ai_blocks = di_ai_blocks 
+		d1_web$te_blocks = di_te_blocks 
+		d1_web$si_blocks = di_si_blocks 
+
+
+	} else if (blocks_only == TRUE ){
+
+		di_ee_blocks = list(matrix(0,nspp,1))
+		di_ai_blocks = list(matrix(0,nspp,1))
+		di_te_blocks= list(matrix(0,nspp,1))
+		di_si_blocks = list(matrix(0,nspp,1))
+
+		for ( n in 1:nspp) {
+			print(n)
+			di_ee_temp = get_EE (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_ai_temp = get_ais (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_te_temp = get_TE (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_si_temp = get_SI (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+
+			di_ee_blocks[n] = list(di_ee_temp[grepl("block",names(di_ee_temp))])
+			di_ai_blocks[n] = list(di_ai_temp[grepl("block",names(di_ai_temp))])
+			di_te_blocks[n] = list(di_te_temp[grepl("block",names(di_te_temp))])
+			di_si_blocks[n] = list(di_si_temp[grepl("block",names(di_si_temp))])
+
+
+		}
+
+		d1_web$ee_blocks = di_ee_blocks 
+		d1_web$ai_blocks = di_ai_blocks 
+		d1_web$te_blocks = di_te_blocks 
+		d1_web$si_blocks = di_si_blocks 
+
+
+	} else { 
+	#Use these to store the local and global average values
+		di_ee_means = matrix(0,nspp,1)
+		di_ai_means = matrix(0,nspp,1)
+		di_te_means = matrix(0,nspp,1)
+		di_si_means = matrix(0,nspp,1)
+
+		
+		di_ee_local = matrix(0,(ngens-2*k+1),nspp)
+		di_ai_local = matrix(0,(ngens-k),nspp)
+		di_te_local = matrix(0,(ngens-k),nspp)
+		di_si_local = matrix(0,(ngens-k),nspp)
+
+
+		for ( n in 1:nspp) {
+			print(n)
+			di_ee_temp = get_EE (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_ai_temp = get_ais (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_te_temp = get_TE (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+			di_si_temp = get_SI (pop_ts,k=k,focal=n,with_blocks=with_blocks, blocks_only=blocks_only)
+
+			di_ee_means[n] = di_ee_temp$mean
+			di_ai_means[n] = di_ai_temp$mean
+			di_te_means[n] = di_te_temp$mean
+			di_si_means[n] = di_si_temp$mean
+			
+			di_ee_local[,n] = di_ee_temp$local
+			di_ai_local[,n] = di_ai_temp$local
+			di_te_local[,n] = di_te_temp$local
+			di_si_local[,n] = di_si_temp$local
+
+
+		}
+
+		#Mean quantities
+		d1_web$ee_means = di_ee_means
+		d1_web$ai_means = di_ai_means
+		d1_web$te_means = di_te_means
+		d1_web$si_means = di_si_means
+
+		#Local quantities
+		d1_web$ee_local = di_ee_local
+		d1_web$ai_local = di_ai_local
+		d1_web$te_local = di_te_local
+		d1_web$si_local = di_si_local
+
+	}
+	
+
+	return(d1_web)
+}
+
+#=============================================================================
+#get_te_web
+# This is a wrapper to cycle through and get the Transfer Entropy on a pairwise
+# basis for all species pairs in the food web. 
+#
+# pop_ts			Population matrix with time as rows, each species as column
+# k 				The size of the block history to be used. 
+#=============================================================================
+
+get_te_web = function (pop_ts, k=2, s=1 ) { 
+
+	ngens = dim(pop_ts)[1] #Time
+	nspp = dim(pop_ts)[2] #Number of species
+	
+	te_web = matrix(0,nspp,nspp)
 
 
 	for ( n in 1:nspp) {
-		print(n)
-		di_ee_temp = get_EE (pop_ts,k=k,focal=n)
-		di_ai_temp = get_ais (pop_ts,k=k,focal=n)
-		di_te_temp = get_TE (pop_ts,k=k,focal=n)
-		di_si_temp = get_SI (pop_ts,k=k,focal=n)
-
-		di_ee_means[n] = di_ee_temp$mean
-		di_ai_means[n] = di_ai_temp$mean
-		di_te_means[n] = di_te_temp$mean
-		di_si_means[n] = di_si_temp$mean
-		
-		di_ee_local[,n] = di_ee_temp$local
-		di_ai_local[,n] = di_ai_temp$local
-		di_te_local[,n] = di_te_temp$local
-		di_si_local[,n] = di_si_temp$local
-
-
+		for ( n2 in 1:nspp) {
+			print( paste( n," ",n2) )
+			te_temp = get_TE( pop_ts[,c(n,n2)],k=k,s=s,focal=1)
+			te_web[n,n2] = te_temp$mean
+		}
 	}
+	return(te_web)
+}
 
-	#Mean quantities
-	d1_web$ee_means = di_ee_means
-	d1_web$ai_means = di_ai_means
-	d1_web$te_means = di_te_means
-	d1_web$si_means = di_si_means
+#=============================================================================
+#get_si_web
+# This is a wrapper to cycle through and get the Separable Information on a 
+# pairwise basis for all species pairs in the food web. 
+#
+# pop_ts			Population matrix with time as rows, each species as column
+# k 				The size of the block history to be used. 
+#=============================================================================
 
-	#Local quantities
-	d1_web$ee_local = di_ee_local
-	d1_web$ai_local = di_ai_local
-	d1_web$te_local = di_te_local
-	d1_web$si_local = di_si_local
+get_si_web = function (pop_ts, k=2, s=1 ) { 
 
-	return(d1_web)
+	ngens = dim(pop_ts)[1] #Time
+	nspp = dim(pop_ts)[2] #Number of species
+	
+	si_web = matrix(0,nspp,nspp)
+
+
+	for ( n in 1:nspp) {
+		for ( n2 in 1:nspp) {
+			print( paste( n," ",n2) )
+			si_temp = get_SI( pop_ts[,c(n,n2)],k=k,s=s,focal=1)
+			si_web[n,n2] = si_temp$mean
+		}
+	}
+	return(si_web)
 }

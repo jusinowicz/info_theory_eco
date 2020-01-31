@@ -42,7 +42,10 @@ out1 = list(matrix(0,nwebs,1))
 rweb1 = list(matrix(0,nwebs,1))
 #Dynamic information metrics calculated from the (discretized) time series 
 di_web = list(matrix(0,nwebs,1))
-
+#Track the average transfer entropy and separable information between each pair of 
+#species as a way to build a network of information flow through the network. 
+te_web = list(matrix(0,nwebs,1))
+si_web = list(matrix(0,nwebs,1)) 
 #Random resources:
 c = 0.1
 amp = 1
@@ -140,7 +143,8 @@ for (w in 1:nwebs){
 	# Information processing networks
 	#=============================================================================
 	## This code takes the population time-series counts output by the ODEs and 
-	## calculates Excess Entropy, Active Information Storage, and Transfer Entropy. 
+	## calculates Excess Entropy, Active Information Storage, and Transfer Entropy.
+	## Each quantity is calculated at both the average and local level.  
 	#=============================================================================
 	# This function gives:
 	# EE_mean		Average mutual information per species
@@ -153,8 +157,30 @@ for (w in 1:nwebs){
 	#=============================================================================
 	nt1 = 1
 	nt2 = tl
-	di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), k=k ))
+	di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+		k=k,with_blocks=TRUE))
 
+	## This code takes the population time-series counts output by the ODEs and 
+	## calculates the average Transfer Entropy from each species to every other 
+	## species. The goal is to get an overview of the major information pathways 
+	## in the web.   
+	#=============================================================================
+	# This function gives:
+	# te_web		Average transfer entropy per species as a pairwise matrix
+	#=============================================================================
+	te_web[w] = list( get_te_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+		k=k) )
+
+	## This code takes the population time-series counts output by the ODEs and 
+	## calculates the average Separable Information from each species to every other 
+	## species. The goal is to get an overview of the major information pathways 
+	## in the web.   
+	#=============================================================================
+	# This function gives:
+	# si_web		Average separable information per species as a pairwise matrix
+	#=============================================================================
+	si_web[w] = list( get_si_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+		k=k) )
 }
 
 #=============================================================================
@@ -162,6 +188,9 @@ for (w in 1:nwebs){
 #=============================================================================
 library(viridis)
 library(fields)
+library(igraph)
+library(visNetwork)
+
 w=1
 #=============================================================================
 #Export parameters into csv tables for easier reading. 
@@ -267,7 +296,7 @@ lines(out[,paste(n)],t="l",col="blue")
 #Predator species in BLACK
 plot(out[,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[,paste(n)],t="l")
+lines(out[3900:4000,paste(n)],t="l")
 }
 
 #=============================================================================
@@ -308,6 +337,96 @@ mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
 abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
 mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
 mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+
+
+#=============================================================================
+# Network plots of information transfer.
+# 	This uses the average Transfer Entropy between each species pair to create
+#	a directed network of information transfers. 
+#=============================================================================
+
+###This shows the network, but only highlights the largest link between each
+###node
+#Pair down the graph by removing species that have essentially gone extinct
+#from the system. 
+spp_use = (1:nspp)[out1[[w]]$out[10000,2:nspp]>1e-5]
+te_web1 = te_web[[w]][spp_use,spp_use]
+#Make an igraph object
+te_gr = graph_from_adjacency_matrix(te_web1, mode="directed", weighted=T)
+#Convert to VisNetwork list
+te_visn = toVisNetworkData(te_gr)
+te_visn$nodes$value = te_visn$nodes$id
+#Copy column "weight" to new column "value" in list "edges"
+te_visn$edges$value = te_visn$edges$weight
+#Color code the nodes by trophic level 
+spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
+	matrix("black",nPsp,1) )
+spp_colors = spp_colors [spp_use]
+te_visn$nodes$color = spp_colors
+
+#Plot this as an HTML object 
+#Add arrows to show direction
+#Add an option that when a node is clicked on only the "from" arrows are shown
+visNetwork(te_visn$nodes, te_visn$edges) %>%
+	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
+		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
+		  	visIgraphLayout(layout = "layout_in_circle") %>%
+		  		visSave(file="te_graph1", selfcontained = FALSE, background = "white")
+  				#visExport( type = "pdf", name = "te_web_biggest_1")
+
+#Because transfer can be asymmetrical, make 2 different graphs showing direction
+#of flows. 
+
+te_gr1 = graph_from_adjacency_matrix( (te_web[[w]]*lower.tri(te_web[[w]])), mode="directed", weighted=T)
+te_gr2 = graph_from_adjacency_matrix( (te_web[[w]]*upper.tri(te_web[[w]])), mode="directed", weighted=T)
+
+#Convert to VisNetwork list
+te_visn1 = toVisNetworkData(te_gr1)
+te_visn2 = toVisNetworkData(te_gr2)
+#Copy column "weight" to new column "value" in list "edges"
+te_visn1$edges$value = te_visn1$edges$weight
+te_visn2$edges$value = te_visn2$edges$weight
+#Color code the nodes by trophic level 
+te_visn1$nodes$color = c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
+	matrix("black",nPsp,1) )
+te_visn2$nodes$color = c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
+	matrix("black",nPsp,1) )
+#te_visn1$nodes$color = c( matrix(c("red","blue","black"),9,1) )
+#te_visn2$nodes$color = c( matrix(c("red","blue","black"),9,1) )
+
+#Plot this as an HTML object 
+#Add arrows to show direction: 
+te_visn1$edges$arrows = c(matrix("to",dim(te_visn1$edges)[1]))
+te_visn2$edges$arrows = c(matrix("to",dim(te_visn2$edges)[1]))
+
+visNetwork(te_visn1$nodes, te_visn1$edges) %>%
+  visIgraphLayout(layout = "layout_in_circle") %>%
+  	visExport( type = "pdf", name = "te_web_clock_1")
+
+visNetwork(te_visn2$nodes, te_visn2$edges) %>%
+  visIgraphLayout(layout = "layout_in_circle") %>%
+  	visExport( type = "pdf", name = "te_web_clock_1")
+
+
+#=============================================================================
+# Network plots of information transfer.
+# 	This uses the average Transfer Entropy between each species pair to create
+#	a directed network of information transfers. 
+#=============================================================================
+
+#Make an igraph object
+si_gr = graph_from_adjacency_matrix(si_web[[w]], mode="direcsid", weighsid=T)
+#Convert to VisNetwork list
+si_visn = toVisNetworkData(si_gr)
+#Copy column "weight" to new column "value" in list "edges"
+si_visn$edges$value = si_visn$edges$weight
+#Color code the nodes by trophic level 
+si_vsn$nodes$color = c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
+	matrix("black",nPsp,1) )
+#Plot this as an HTML object 
+visNetwork(si_visn$nodes, si_visn$edges) %>%
+  visIgraphLayout(layout = "layout_in_circle") %>%
+  	visExport( type = "pdf", name = "si_web1.pdf")
 
 #=============================================================================
 # Make combined plots of population and dynamic information metrics with time 
