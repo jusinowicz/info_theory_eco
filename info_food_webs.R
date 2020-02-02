@@ -340,6 +340,13 @@ mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
 
 
 #=============================================================================
+# Network plots of information storage.
+#	The local exess entropy or active information could be used to show the 
+#	dominant cycles involved in information storage...
+#=============================================================================
+
+
+#=============================================================================
 # Network plots of information transfer.
 # 	This uses the average Transfer Entropy between each species pair to create
 #	a directed network of information transfers. 
@@ -371,12 +378,11 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
 		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
 		  	visIgraphLayout(layout = "layout_in_circle") %>%
-		  		visSave(file="te_graph1", selfcontained = FALSE, background = "white")
+		  		visSave(file="te_graph1.html", selfcontained = FALSE, background = "white")
   				#visExport( type = "pdf", name = "te_web_biggest_1")
 
 #Because transfer can be asymmetrical, make 2 different graphs showing direction
 #of flows. 
-
 te_gr1 = graph_from_adjacency_matrix( (te_web[[w]]*lower.tri(te_web[[w]])), mode="directed", weighted=T)
 te_gr2 = graph_from_adjacency_matrix( (te_web[[w]]*upper.tri(te_web[[w]])), mode="directed", weighted=T)
 
@@ -409,24 +415,39 @@ visNetwork(te_visn2$nodes, te_visn2$edges) %>%
 
 
 #=============================================================================
-# Network plots of information transfer.
-# 	This uses the average Transfer Entropy between each species pair to create
+# Network plots of information modification.
+# 	This uses the average Separable Information between each species pair to create
 #	a directed network of information transfers. 
 #=============================================================================
-
+###This shows the network, but only highlights the largest link between each
+###node
+#Pair down the graph by removing species that have essentially gone extinct
+#from the system. 
+spp_use = (1:nspp)[out1[[w]]$out[10000,2:nspp]>1e-5]
+si_web1 = si_web[[w]][spp_use,spp_use]
 #Make an igraph object
-si_gr = graph_from_adjacency_matrix(si_web[[w]], mode="direcsid", weighsid=T)
+si_gr = graph_from_adjacency_matrix(si_web1, mode="directed", weighted=T)
 #Convert to VisNetwork list
 si_visn = toVisNetworkData(si_gr)
+si_visn$nodes$value = si_visn$nodes$id
 #Copy column "weight" to new column "value" in list "edges"
 si_visn$edges$value = si_visn$edges$weight
 #Color code the nodes by trophic level 
-si_vsn$nodes$color = c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
+spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
 	matrix("black",nPsp,1) )
+spp_colors = spp_colors [spp_use]
+si_visn$nodes$color = spp_colors
+
 #Plot this as an HTML object 
+#Add arrows to show direction
+#Add an option that when a node is clicked on only the "from" arrows are shown
 visNetwork(si_visn$nodes, si_visn$edges) %>%
-  visIgraphLayout(layout = "layout_in_circle") %>%
-  	visExport( type = "pdf", name = "si_web1.pdf")
+	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
+		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
+		  	visIgraphLayout(layout = "layout_in_circle") %>%
+		  		visSave(file="si_graph1.html", selfcontained = FALSE, background = "white")
+  				#visExport( type = "pdf", name = "si_web_biggest_1")
+
 
 #=============================================================================
 # Make combined plots of population and dynamic information metrics with time 

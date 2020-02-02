@@ -767,9 +767,12 @@ get_te_web = function (pop_ts, k=2, s=1 ) {
 			print( paste( n," ",n2) )
 			te_temp = get_TE( pop_ts[,c(n,n2)],k=k,s=s,focal=1)
 			te_web[n,n2] = te_temp$mean
+			#In this format, each row is the effect of n2 ON n. Might be 
+			#more logical to transpose this matrix so that each row is the
+			#information from n TO n2. 
 		}
 	}
-	return(te_web)
+	return(t(te_web)) 
 }
 
 #=============================================================================
@@ -796,5 +799,5 @@ get_si_web = function (pop_ts, k=2, s=1 ) {
 			si_web[n,n2] = si_temp$mean
 		}
 	}
-	return(si_web)
+	return(t(si_web))
 }
