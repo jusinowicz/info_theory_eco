@@ -10,6 +10,8 @@
 #	 C. Relative non-linearity allows 2 consumers per Resource
 # 2. Generate a bunch of random food webs 
 # 3. Use information theory to track the resulting food-web structures. 
+# 4. This file has a lot of code for visualizing output of both the foodweb 
+#	 its information theoretic properties after the main loop. 
 #=============================================================================
 #=============================================================================
 # load libraries
@@ -365,11 +367,17 @@ te_visn = toVisNetworkData(te_gr)
 te_visn$nodes$value = te_visn$nodes$id
 #Copy column "weight" to new column "value" in list "edges"
 te_visn$edges$value = te_visn$edges$weight
+#Further prune links that are smaller than the 95% interval
+m1 = mean(c(log(te_visn$edges$value)))
+sd1 = sqrt(var(c(log(te_visn$edges$value))))
+te_visn$edges =te_visn$edges[log(te_visn$edges$value) > (m1-sd1), ]
+
 #Color code the nodes by trophic level 
 spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
 	matrix("black",nPsp,1) )
 spp_colors = spp_colors [spp_use]
 te_visn$nodes$color = spp_colors
+
 
 #Plot this as an HTML object 
 #Add arrows to show direction
@@ -378,9 +386,27 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
 		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
 		  	visIgraphLayout(layout = "layout_in_circle") %>%
-		  		visSave(file="te_graph1.html", selfcontained = FALSE, background = "white")
+		  		#visSave(file="te_graph1p.html", selfcontained = FALSE, background = "white")
+  				visExport( type = "pdf", name = "te_web_biggest_1")
+
+
+######################################################
+# Add information storage (AIS or EE) as a self-loop!#
+######################################################
+edges_tmp = data.frame(from = c(1:length(spp_use)), to =(1:length(spp_use)),weight =(1:length(spp_use))  )
+edges_tmp$value = di_web[[1]]$ai_means[spp_use]
+te_visn$edges=rbind(te_visn$edges,edges_tmp)
+
+visNetwork(te_visn$nodes, te_visn$edges) %>%
+	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
+		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
+		  	visIgraphLayout(layout = "layout_in_circle") %>%
+		  		visSave(file="ai_te_graph1.html", selfcontained = FALSE, background = "white")
   				#visExport( type = "pdf", name = "te_web_biggest_1")
 
+
+
+######################################
 #Because transfer can be asymmetrical, make 2 different graphs showing direction
 #of flows. 
 te_gr1 = graph_from_adjacency_matrix( (te_web[[w]]*lower.tri(te_web[[w]])), mode="directed", weighted=T)
