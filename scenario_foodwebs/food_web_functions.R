@@ -107,8 +107,8 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 		#Make the a variable -- see the documentation for forcings for an example
 		amp = res_R[1] #1
 		xint = res_R[2] #0
-		a = approxfun( x = times, y = amp*exp(rnorm(times)+xint), method = "linear", rule = 2) 
-		a_t = exp(amp*rnorm(times)+xint)
+		a = approxfun( x = times, y = amp*exp(rnorm(times) )+xint, method = "linear", rule = 2) 
+		a_t = amp*exp(rnorm(times) )+xint
 		#a = approxfun( x = times, y = amp*rnorm(times)+xint, method = "linear", rule = 2) 
 		#a_t = amp*rnorm(times)+xint
 		print( paste("Var in a(t) = ", var(a_t),sep="")) 
@@ -144,7 +144,7 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				###Resource dynamics: Logistic growth, reduced by consumption
 				dR = R
 				for( i in 1:nRsp){
-					dR[i] = R[i]*( (rR[i]+a(times)) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+					dR[i] = a(times)+R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					#dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 
 				}
@@ -162,6 +162,7 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				}
 
 				a = a(times) 
+				#a = (rR[1]+a(times))
 
 			return(list(c(dR,dC,dP)))
 
