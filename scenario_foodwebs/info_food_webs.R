@@ -70,7 +70,7 @@ for (w in 1:nwebs){
 
 	#Assume 3 trophic levels unless otherwise specified.
 	nRsp = 3 #ceiling(runif(1)*30)
-	nCsp = 1 #ceiling(runif(1)*20)
+	nCsp = 3 #ceiling(runif(1)*20)
 	nPsp = 1 #ceiling(runif(1)*10)
 	nspp = nRsp+nCsp+nPsp
 
@@ -304,13 +304,13 @@ lines(out[,paste(n)],t="l",col="red")
 }
 
 #Consumer species in BLUE 
-plot(out[,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
+plot(out[,paste(nRsp+1)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
 lines(out[,paste(n)],t="l",col="blue")
 }
 
 #Predator species in BLACK
-plot(out[,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
+plot(out[,paste(nRsp+nCsp+1)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
 lines(out[3900:4000,paste(n)],t="l")
 }
