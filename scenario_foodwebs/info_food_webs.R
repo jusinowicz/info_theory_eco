@@ -8,7 +8,7 @@
 #		2. Parameters at each level can be made a function of temperature. 
 #	 B. Resources can be stochastic due to environmental fluctuations. 
 #	 C. Relative non-linearity allows 2 consumers per Resource
-# 2. Generate a bunch of random food webs 
+# 2. Generate a series of foodwebs building from simple to complex structure
 # 3. Use information theory to track the resulting food-web structures. 
 # 4. This file has a lot of code for visualizing output of both the foodweb 
 #	 its information theoretic properties after the main loop. 
@@ -35,8 +35,12 @@ tl=tend/delta1
 #slower and could cause crashing if too large)
 k= 10 
 
+###Build a series of scenarios going from simple to more complex dynamics
 #Number of food webs to generate
-nwebs = 1
+nwebs = 5
+# scenarios = list(matrix(0,nwebs,1))
+
+###
 #Output of each web
 out1 = list(matrix(0,nwebs,1))
 #Converting the web to Rutledge's compartment model and calculating the information
@@ -48,34 +52,43 @@ di_web = list(matrix(0,nwebs,1))
 #species as a way to build a network of information flow through the network. 
 te_web = list(matrix(0,nwebs,1))
 si_web = list(matrix(0,nwebs,1)) 
+
 #Random resources:
-c = 0.1
-amp = 1
-res_R = c(amp,c)
+# c = 0.1
+# amp = 1
+# res_R = c(amp,c)
+
+
+# scenarios[[1]] = list(nRsp = 1, nCsp =0, nPsp = 0)
+# scenarios[[2]] = list(nRsp = 3, nCsp =0, nPsp = 0)
+# scenarios[[3]] = list(nRsp = 3, nCsp =0, nPsp = 0)
+# scenarios[[4]] = list(nRsp = 2, nCsp =1, nPsp = 0)
+# scenarios[[5]] = list(nRsp = 1, nCsp =1, nPsp = 1)
 
 for (w in 1:nwebs){ 
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*30)
-	nCsp = ceiling(runif(1)*20)
-	nPsp = ceiling(runif(1)*10)
+	nRsp = 3 #ceiling(runif(1)*30)
+	nCsp = 1 #ceiling(runif(1)*20)
+	nPsp = 1 #ceiling(runif(1)*10)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
 	spp_prms = NULL
 	#Resource: Nearly identical resource dynamics: 
-	spp_prms$rR = matrix(rnorm(nRsp,300,10), nRsp, 1) #intrinsic growth
-	spp_prms$Ki = matrix(rnorm(nRsp,500,10), nRsp, 1) #carrying capacity
+	spp_prms$rR = matrix(rnorm(nRsp,300,0), nRsp, 1) #intrinsic growth
+	spp_prms$Ki = matrix(rnorm(nRsp,500,0), nRsp, 1) #carrying capacity
 
 	#Consumers: 
-	spp_prms$rC = matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
+	spp_prms$rC = matrix(0.5, nCsp, 1) #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
 	spp_prms$eFc = matrix(1,nCsp,nRsp) # just make the efficiency for everything 1 for now
-	spp_prms$muC = matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
+	spp_prms$muC = matrix(0.6, nCsp, 1) #matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
 	#Consumption rates: 
 	#Generate a hierarchy where each species predominantly feeds on particular resource. 
 	dspp = abs((nCsp - nRsp))
-	hier1= seq(1/nRsp, (1-1/nRsp), length=nRsp)
+	#hier1= seq(1/nRsp, (1-1/nRsp), length=nRsp)
+	hier1 = c(matrix(0.5,nRsp,1))
 	spp_prms$cC = hier1 
 	for( n in 1:nCsp) {
 		spp_prms$cC = cbind(spp_prms$cC, shifter(hier1,n))
@@ -83,14 +96,15 @@ for (w in 1:nwebs){
 	spp_prms$cC = matrix(spp_prms$cC[1:nRsp,1:nCsp ],nRsp,nCsp)
 
 	#Predators: 
-	spp_prms$rP = matrix(rnorm(nPsp,0.5,0.2), nPsp, 1) #intrisic growth
+	spp_prms$rP = matrix(rnorm(nPsp,0.5,0), nPsp, 1) #intrisic growth
 	spp_prms$eFp = matrix(1,nPsp,nCsp) # just make the efficiency for everything 1 for now
-	spp_prms$muP = matrix(rnorm(nPsp,0.6,0.1), nPsp, 1) #mortality rates
+	spp_prms$muP = matrix(rnorm(nPsp,0.6,0), nPsp, 1)  #mortality rates
 	#Consumption rates: 
 	#Generate a hierarchy where each species predominantly feeds on particular resource. 
 	dspp = ((nPsp - nCsp))
 	if(dspp<0){dspp = 0 }
-	hier1= seq(1/nCsp, (1-1/nCsp), length = nCsp)
+	#hier1= seq(1/nCsp, (1-1/nCsp), length = nCsp)
+	hier1 = c(matrix(0.5,nCsp,1))
 	spp_prms$cP = hier1
 	for( n in 1:nPsp) {
 		spp_prms$cP = cbind(spp_prms$cP, shifter(hier1,n))

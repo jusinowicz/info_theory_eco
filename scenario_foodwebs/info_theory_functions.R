@@ -189,7 +189,7 @@ get_EE = function ( series1, k=2, s=k, focal = 1, with_blocks=FALSE,
 
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
-	width_A = nchar(trunc(max(d1_use)))
+	width_A = nchar(trunc(max(series1)))
 
 	######################
 	# p( X(k) )
@@ -279,7 +279,7 @@ get_ais = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE,
 
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
-	width_A = nchar(trunc(max(d1_use)))
+	width_A = nchar(trunc(max(series1)))
 
 	######################
 	# p( X(k)+1 )
@@ -388,7 +388,7 @@ get_TE = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE,
 
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
-	width_A = nchar(trunc(max(d1_use)))
+	width_A = nchar(trunc(max(series1)))
 
 	#There are four total probabilities that are calculated here. 
 	#These include three different joint probability distributions 
