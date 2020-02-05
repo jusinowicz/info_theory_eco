@@ -18,3 +18,6 @@ rand_fweb1_400g.var
 rand_fweb1_te.var
 rand_fweb1_si.var
 scenario_foodwebs/scen_fweb1.var
+scenario_foodwebs/figures/
+scenario_foodwebs/spreadsheets/
+scenario_foodwebs/.~lock.avg_dit_sweb1.xlsx#

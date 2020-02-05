@@ -64,12 +64,12 @@ te_web_tr = te_web #Transient dynamics
 si_web_tr = si_web
 
 #Random resources:
-c = 1
-amp = 1000
-res_R = c(amp,c)
+# c = 1
+# amp = 1000
+# res_R = c(amp,c)
 
 #or 
-# res_R = NULL
+ res_R = NULL
 
 # scenarios[[1]] = list(nRsp = 1, nCsp =0, nPsp = 0)
 # scenarios[[2]] = list(nRsp = 3, nCsp =0, nPsp = 0)
@@ -83,7 +83,7 @@ for (w in 1:nwebs){
 	#Assume 3 trophic levels unless otherwise specified.
 	nRsp = 3 #ceiling(runif(1)*30)
 	nCsp = 3 #ceiling(runif(1)*20)
-	nPsp = 1 #ceiling(runif(1)*10)
+	nPsp = 3 #ceiling(runif(1)*10)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
@@ -94,6 +94,7 @@ for (w in 1:nwebs){
 
 	#Consumers: 
 	spp_prms$rC = matrix(0.5, nCsp, 1) #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
+	#spp_prms$rC[2] = 0.199999 #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
 	spp_prms$eFc = matrix(1,nCsp,nRsp) # just make the efficiency for everything 1 for now
 	spp_prms$muC = matrix(0.6, nCsp, 1) #matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
 	#Consumption rates: 
@@ -106,9 +107,12 @@ for (w in 1:nwebs){
 		spp_prms$cC = cbind(spp_prms$cC, shifter(hier1,n))
 	}
 	spp_prms$cC = matrix(spp_prms$cC[1:nRsp,1:nCsp ],nRsp,nCsp)
+	spp_prms$cC[,1] = c(0.5,0.0,0.0)
+	spp_prms$cC[,2] = c(0.0,0.6,0.0)
+	spp_prms$cC[,3] = c(0.0,0.0,0.5)
 
 	#Predators: 
-	spp_prms$rP =  matrix(0.5, nPsp, 1) #matrix(rnorm(nPsp,0.5,0), nPsp, 1) #intrisic growth
+	spp_prms$rP =  matrix(0.1, nPsp, 1) #matrix(rnorm(nPsp,0.5,0), nPsp, 1) #intrisic growth
 	spp_prms$eFp = matrix(1,nPsp,nCsp) # just make the efficiency for everything 1 for now
 	spp_prms$muP = matrix(0.6, nPsp, 1)#matrix(rnorm(nPsp,0.6,0), nPsp, 1)  #mortality rates
 	#Consumption rates: 
@@ -116,13 +120,15 @@ for (w in 1:nwebs){
 	dspp = ((nPsp - nCsp))
 	if(dspp<0){dspp = 0 }
 	#hier1= seq(1/nCsp, (1-1/nCsp), length = nCsp)
-	hier1 = c(matrix(0.5,nCsp,1))
+	hier1 = c(matrix( c(0.5,0.5,0.5),nCsp,1))
 	spp_prms$cP = hier1
 	for( n in 1:nPsp) {
 		spp_prms$cP = cbind(spp_prms$cP, shifter(hier1,n))
 	}
 	spp_prms$cP = matrix(spp_prms$cP[1:nCsp,1:nPsp],nCsp,nPsp)
-
+	spp_prms$cP[,1] = c(0.5,0.1,0.1)
+	spp_prms$cP[,2] = c(0.1,0.6,0.1)
+	spp_prms$cP[,3] = c(0.1,0.1,0.5)
 
 	#=============================================================================
 	# Inner loop. Run the food web model, calculate information theoretic 
@@ -141,7 +147,7 @@ for (w in 1:nwebs){
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
 		tend, delta1, res_R = res_R,final = FALSE ))}, error = function(e){}) 
 
-	
+	out1[[w]]$out[tl,]
 	#=============================================================================
 	# Information theoretic assessment of the foodweb.
 	#=============================================================================
@@ -287,41 +293,99 @@ plot(out[1:tlg,paste(nRsp+nCsp+1)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(ns
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
 lines(out[1:tlg,paste(n)],t="l")
 }
+#=============================================================================
+# Network plot of the food web
+#=============================================================================
+for(w in 1:nwebs) {
 
+fig.name = paste("food_web",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name2 = paste("food_web",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
+
+nRsp = out1[[w]]$spp_prms$nRsp
+nCsp = out1[[w]]$spp_prms$nCsp
+nPsp = out1[[w]]$spp_prms$nPsp
+
+nspp = nRsp+nCsp+nPsp
+###This shows the network, but only highlights the largest link between each
+###node
+#Pair down the graph by removing species that have essentially gone extinct
+#from the system. 
+pop_web1 = matrix(0,nspp,nspp)
+pop_web1 [1:nRsp,1:nRsp] = diag(1,nRsp,nRsp)
+#pop_web1 [(nRsp+1):(nRsp+nCsp),(nRsp+1):(nRsp+nCsp)] = out1[[w]]$spp_prms$cC
+pop_web1 [(nRsp+1):(nRsp+nCsp),(nRsp+1):(nRsp+nCsp)] = 
+	diag(c(out1[[w]]$spp_prms$muC),nCsp,nCsp)
+pop_web1 [1:nRsp,(nRsp+1):(nRsp+nCsp)] = out1[[w]]$spp_prms$cC
+
+pop_web1 [(nRsp+1):(nRsp+nCsp),(nRsp+nCsp+1):(nspp)] = out1[[w]]$spp_prms$cP
+pop_web1 [(nRsp+nCsp+1):(nspp),(nRsp+nCsp+1):(nspp)] = 
+	diag(c(out1[[w]]$spp_prms$muP),nPsp,nPsp)
+
+#Make an igraph object
+pop_gr = graph_from_adjacency_matrix(pop_web1, mode="directed", weighted=T)
+#Convert to VisNetwork list
+pop_visn = toVisNetworkData(pop_gr)
+pop_visn$nodes$value = pop_visn$nodes$id
+#Copy column "weight" to new column "value" in list "edges"
+pop_visn$edges$value = pop_visn$edges$weight
+#Color code the nodes by trophic level 
+spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
+	matrix("black",nPsp,1) )
+pop_visn$nodes$color = spp_colors
+
+#Plot this as an HTML object 
+#Add arrows to show direction
+#Add an option that when a node is clicked on only the "from" arrows are shown
+visNetwork(pop_visn$nodes, pop_visn$edges) %>%
+	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
+		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
+		  	visIgraphLayout(layout = "layout_in_circle") %>%
+		  		visSave(file=fig.name, selfcontained = FALSE, background = "white")
+  				#visExport( type = "pdf", name = fig.name2)
+
+}
 #=============================================================================
 #Export parameters into csv tables for easier reading. 
 #  !!! Make sure to set the name of the excel file below!!!!
 #=============================================================================
 library(xlsx)
 
+for(w in 1:nwebs) {
+file.name = paste("spp_prms_sweb",w,".xlsx",sep="")
+
 var_load = out1[[w]]$spp_prms[5] #These start at variable 5 and go to 14
-write.xlsx(var_load, file="spp_prms_sweb1.xlsx", sheetName="sheet1", row.names=FALSE)
+write.xlsx(var_load, file=file.name, sheetName="sheet1", row.names=FALSE)
 for (n in 6:14){
 	var_load = out1[[w]]$spp_prms[n]
 	sheet = paste("sheet",n-4, sep='')
 
-	write.xlsx(var_load, file="spp_prms_sweb1.xlsx", sheetName=sheet, append=TRUE,row.names=FALSE)
+	write.xlsx(var_load, file=file.name, sheetName=sheet, append=TRUE,row.names=FALSE)
 }
 
+}
 #=============================================================================
 #Export the average information theoretic quantities into tables.  
 #  !!! Make sure to set the name of the excel file below!!!!
 #=============================================================================
 library(xlsx)
+file.name = paste("avg_dit_sweb",w,".xlsx",sep="")
 
 var_load = di_web[[w]]$ee_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_sweb1.xlsx", sheetName="sheet1", row.names=FALSE)
+write.xlsx(var_load, file=file.name, sheetName="sheet1", row.names=FALSE)
 var_load = di_web[[w]]$ai_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_sweb1.xlsx", sheetName="sheet2",append=TRUE,row.names=FALSE)
+write.xlsx(var_load, file=file.name, sheetName="sheet2",append=TRUE,row.names=FALSE)
 var_load = di_web[[w]]$te_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_sweb1.xlsx", sheetName="sheet3",append=TRUE,row.names=FALSE)
+write.xlsx(var_load, file=file.name, sheetName="sheet3",append=TRUE,row.names=FALSE)
 var_load = di_web[[w]]$si_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_sweb1.xlsx", sheetName="sheet4",append=TRUE,row.names=FALSE)
+write.xlsx(var_load, file=file.name, sheetName="sheet4",append=TRUE,row.names=FALSE)
 
 #=============================================================================
 # Plot each of the average information theoretic metrics as a bar graph
 #=============================================================================
-fig.name = paste("average_dynamics_sweb1.pdf",sep="")
+
+for(w in 1:nwebs) {
+
+fig.name = paste("average_dynamics_sweb",w,".pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
@@ -366,12 +430,22 @@ mtext("Average Information Modification", side = 3, line = 2)
 
 dev.off()
 
+}
+
 #=============================================================================
 # Equilibrium region only: 
 # Plot each of the average information theoretic metrics as a bar graph
 #=============================================================================
-fig.name = paste("average_dynamics_sweb_eq1.pdf",sep="")
-pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+for(w in 1:nwebs) {
+
+#fig.name = paste("average_dynamics_sweb_eq",w,".pdf",sep="")
+#pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+fig.name = paste("average_dynamics_sweb_eq",w,".png",sep="")
+png(file=fig.name, height=5, width=5, units = "in",res=300)
+
+
 
 layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
 layout(mat = layout.matrix,
@@ -415,12 +489,20 @@ mtext("Average Information Modification", side = 3, line = 2)
 
 dev.off()
 
+}
+
 #=============================================================================
 # Transient dynamics region only: 
 # Plot each of the average information theoretic metrics as a bar graph
 #=============================================================================
-fig.name = paste("average_dynamics_sweb_tr1.pdf",sep="")
-pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+for(w in 1:nwebs) {
+
+#fig.name = paste("average_dynamics_sweb_tr",w,".pdf",sep="")
+#pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+
+fig.name = paste("average_dynamics_sweb_tr",w,".png",sep="")
+png(file=fig.name, height=5, width=5, units = "in",res=300)
+
 
 layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
 layout(mat = layout.matrix,
@@ -464,6 +546,7 @@ mtext("Average Information Modification", side = 3, line = 2)
 
 dev.off()
 
+}
 
 #=============================================================================
 # Plot the dynamic information metrics with time 
@@ -518,7 +601,12 @@ mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
 #	a directed network of information transfers. 
 #=============================================================================
 
-fig.name = paste("te_graph_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+for(w in 1:nwebs) {
+
+#fig.name = paste("average_dynamics_sweb_eq",w,".png",sep="")
+#png(file=fig.name, height=5, width=5, units = "in",res=300)
+
+fig.name = paste("te_graph",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 ###This shows the network, but only highlights the largest link between each
 ###node
@@ -554,12 +642,14 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 		  	visIgraphLayout(layout = "layout_in_circle") %>%
 		  		visSave(file=fig.name, selfcontained = FALSE, background = "white")
   				#visExport( type = "pdf", name = fig.name)
-
+}
 
 ######################################################
 # Add information storage (AIS or EE) as a self-loop!#
 ######################################################
-fig.name = paste("ai_te_graph_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+for(w in 1:nwebs) {
+
+fig.name = paste("ai_te_graph",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 edges_tmp = data.frame(from = c(1:length(spp_use)), to =(1:length(spp_use)),weight =(1:length(spp_use))  )
 edges_tmp$value = di_web[[1]]$ai_means[spp_use]
@@ -572,7 +662,7 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 		  		visSave(file=fig.name, selfcontained = FALSE, background = "white")
   				#visExport( type = "pdf", name = "te_web_biggest_1")
 
-
+}
 
 ######################################
 #Because transfer can be asymmetrical, make 2 different graphs showing direction
@@ -613,7 +703,9 @@ visNetwork(te_visn2$nodes, te_visn2$edges) %>%
 # 	This uses the average Separable Information between each species pair to create
 #	a directed network of information transfers. 
 #=============================================================================
-fig.name = paste("si_graph_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+for(w in 1:nwebs) {
+
+fig.name = paste("si_graph",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 ###This shows the network, but only highlights the largest link between each
 ###node
@@ -644,7 +736,7 @@ visNetwork(si_visn$nodes, si_visn$edges) %>%
 		  		visSave(file=fig.name, selfcontained = FALSE, background = "white")
   				#visExport( type = "pdf", name = "si_web_biggest_1")
 
-
+}
 #=============================================================================
 # Make combined plots of population and dynamic information metrics with time 
 #=============================================================================
