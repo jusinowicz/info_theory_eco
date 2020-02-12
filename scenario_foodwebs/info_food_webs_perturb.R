@@ -9,6 +9,9 @@
 #	 B. Resources can be stochastic due to environmental fluctuations. 
 #	 C. Relative non-linearity allows 2 consumers per Resource
 # 2. Generate a series of foodwebs building from simple to complex structure
+# 3. Perturb the food web in one of two ways: 
+#	 A. Remove a species
+#	 B. Add a pulse or press perturbation to a species growth rate
 # 3. Use information theory to track the resulting food-web structures. 
 # 4. This file has a lot of code for visualizing output of both the foodweb 
 #	 its information theoretic properties after the main loop. 
@@ -27,7 +30,7 @@ source("./info_theory_functions.R")
 #=============================================================================
 
 #Length and time steps of each model run
-tend = 200
+tend = 400
 delta1 = 0.01
 tl=tend/delta1
 
@@ -64,12 +67,12 @@ te_web_tr = te_web #Transient dynamics
 si_web_tr = si_web
 
 #Random resources:
-# c = 1
-# amp = 1000
-# res_R = c(amp,c)
+ c = 1
+ amp = 1000
+ res_R = c(amp,c)
 
 #or 
- res_R = NULL
+# res_R = NULL
 
 # scenarios[[1]] = list(nRsp = 1, nCsp =0, nPsp = 0)
 # scenarios[[2]] = list(nRsp = 3, nCsp =0, nPsp = 0)
@@ -77,77 +80,128 @@ si_web_tr = si_web
 # scenarios[[4]] = list(nRsp = 2, nCsp =1, nPsp = 0)
 # scenarios[[5]] = list(nRsp = 1, nCsp =1, nPsp = 1)
 
-for (w in 1:nwebs){ 
-	print(w)
+#The structure of this code is based on taking an initial food web and 
+#going through a series of perturbations. The "w" index now corresponds
+#to each of the perturbations. 
+w = 1 
+#for (w in 1:nwebs){ 
+print(w)
 
-	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = 3 #ceiling(runif(1)*30)
-	nCsp = 3 #ceiling(runif(1)*20)
-	nPsp = 3 #ceiling(runif(1)*10)
-	nspp = nRsp+nCsp+nPsp
+#Assume 3 trophic levels unless otherwise specified.
+nRsp = 2 #ceiling(runif(1)*30)
+nCsp = 2 #ceiling(runif(1)*20)
+nPsp = 2 #ceiling(runif(1)*10)
+nspp = nRsp+nCsp+nPsp
 
-	#Randomly generate the species parameters for the model as well: 
-	spp_prms = NULL
-	#Resource: Nearly identical resource dynamics: 
-	spp_prms$rR = matrix(rnorm(nRsp,10,0), nRsp, 1) #intrinsic growth
-	spp_prms$Ki = matrix(rnorm(nRsp,10,0), nRsp, 1) #carrying capacity
+#Randomly generate the species parameters for the model as well: 
+spp_prms = NULL
+#Resource: Nearly identical resource dynamics: 
+spp_prms$rR = matrix(rnorm(nRsp,15,0), nRsp, 1) #intrinsic growth
+spp_prms$Ki = matrix(rnorm(nRsp,15,0), nRsp, 1) #carrying capacity
 
-	#Consumers: 
-	spp_prms$rC = matrix(0.75, nCsp, 1) #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
-	#spp_prms$rC[2] = 0.199999 #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
-	spp_prms$eFc = matrix(1,nCsp,nRsp) # just make the efficiency for everything 1 for now
-	spp_prms$muC = matrix(0.6, nCsp, 1) #matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
-	#Consumption rates: 
-	#Generate a hierarchy where each species predominantly feeds on particular resource. 
-	dspp = abs((nCsp - nRsp))
-	#hier1= seq(1/nRsp, (1-1/nRsp), length=nRsp)
-	hier1 = c(matrix(0.5,nRsp,1))
-	spp_prms$cC = hier1 
-	for( n in 1:nCsp) {
-		spp_prms$cC = cbind(spp_prms$cC, shifter(hier1,n))
-	}
-	spp_prms$cC = matrix(spp_prms$cC[1:nRsp,1:nCsp ],nRsp,nCsp)
-	 spp_prms$cC[,1] = c(0.5,0.0,0.0)
-	 spp_prms$cC[,2] = c(0.1,0.6,0.0)
-	 spp_prms$cC[,3] = c(0.1,0.0,0.5)
+#Consumers: 
+spp_prms$rC = matrix(0.6, nCsp, 1) #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
+#spp_prms$rC[2] = 0.199999 #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
+spp_prms$eFc = matrix(1,nCsp,nRsp) # just make the efficiency for everything 1 for now
+spp_prms$muC = matrix(0.3, nCsp, 1) #matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
+#Consumption rates: 
+#Generate a hierarchy where each species predominantly feeds on particular resource. 
+dspp = abs((nCsp - nRsp))
+#hier1= seq(1/nRsp, (1-1/nRsp), length=nRsp)
+hier1 = c(matrix(0.9,nRsp,1)) #1
+#hier1 = c(matrix(0.2,nRsp,1)) #2
 
-	#Predators: 
-	spp_prms$rP =  matrix(0.75, nPsp, 1) #matrix(rnorm(nPsp,0.5,0), nPsp, 1) #intrisic growth
-	spp_prms$eFp = matrix(1,nPsp,nCsp) # just make the efficiency for everything 1 for now
-	spp_prms$muP = matrix(0.6, nPsp, 1)#matrix(rnorm(nPsp,0.6,0), nPsp, 1)  #mortality rates
-	#Consumption rates: 
-	#Generate a hierarchy where each species predominantly feeds on particular resource. 
-	dspp = ((nPsp - nCsp))
-	if(dspp<0){dspp = 0 }
-	#hier1= seq(1/nCsp, (1-1/nCsp), length = nCsp)
-	hier1 = c(matrix( c(0.5,0.5,0.5),nCsp,1))
-	spp_prms$cP = hier1
-	for( n in 1:nPsp) {
-		spp_prms$cP = cbind(spp_prms$cP, shifter(hier1,n))
-	}
-	spp_prms$cP = matrix(spp_prms$cP[1:nCsp,1:nPsp],nCsp,nPsp)
-	 spp_prms$cP[,1] = c(0.5,0.1,0.1)
-	 spp_prms$cP[,2] = c(0.1,0.6,0.1)
-	 spp_prms$cP[,3] = c(0.1,0.1,0.5)
+spp_prms$cC = hier1 
+for( n in 1:nCsp) {
+	spp_prms$cC = cbind(spp_prms$cC, shifter(hier1,n))
+}
+spp_prms$cC = matrix(spp_prms$cC[1:nRsp,1:nCsp ],nRsp,nCsp)
+#spp_prms$cC[,1] = c(0.5,0.1)
+#spp_prms$cC[,2] = c(0.5,0.1)
 
-	#=============================================================================
-	# Inner loop. Run the food web model, calculate information theoretic 
-	# quantities. 
-	#=============================================================================
-	#=============================================================================
-	# This function gives: 
-	# out 		The time series for of population growth for each species in the web
-	#			This can be set to just give the final 2 time steps of the web with
-	#			"final = TRUE"
-	# spp_prms	The parameters of all species in the food web
-	#=============================================================================
-	# tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-	# 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
-	#Random resource fluctuations:
-	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-		tend, delta1, res_R = res_R,final = FALSE ))}, error = function(e){}) 
+#  spp_prms$cC[,1] = c(0.5,0.0,0.1)
+#  spp_prms$cC[,2] = c(0.1,0.6,0.1)
+#  spp_prms$cC[,3] = c(0.1,0.0,0.5)
 
-	out1[[w]]$out[tl,]
+# #Predators: 
+spp_prms$rP =  matrix(0.4, nPsp, 1) #matrix(rnorm(nPsp,0.5,0), nPsp, 1) #intrisic growth
+spp_prms$eFp = matrix(1,nPsp,nCsp) # just make the efficiency for everything 1 for now
+spp_prms$muP = matrix(0.2, nPsp, 1)#matrix(rnorm(nPsp,0.6,0), nPsp, 1)  #mortality rates
+#Consumption rates: 
+#Generate a hierarchy where each species predominantly feeds on particular resource. 
+dspp = ((nPsp - nCsp))
+if(dspp<0){dspp = 0 }
+#hier1= seq(1/nCsp, (1-1/nCsp), length = nCsp)
+hier1 = c(matrix(0.1,nCsp,1)) #1
+#hier1 = c(matrix(0.5,nCsp,1)) #2
+spp_prms$cP = hier1
+for( n in 1:nPsp) {
+	spp_prms$cP = cbind(spp_prms$cP, shifter(hier1,n))
+}
+spp_prms$cP = matrix(spp_prms$cP[1:nCsp,1:nPsp],nCsp,nPsp)
+# spp_prms$cP[,1] = c(0.5,0.4)
+# spp_prms$cP[,2] = c(0.5,0.4)
+
+ # spp_prms$cP[,1] = c(0.5,0.1,0.1)
+ # spp_prms$cP[,2] = c(0.1,0.6,0.1)
+ # spp_prms$cP[,3] = c(0.1,0.1,0.5)
+
+#=============================================================================
+# Inner loop. Run the food web model, calculate information theoretic 
+# quantities. 
+#=============================================================================
+#=============================================================================
+# This function gives: 
+# out 		The time series for of population growth for each species in the web
+#			This can be set to just give the final 2 time steps of the web with
+#			"final = TRUE"
+# spp_prms	The parameters of all species in the food web
+#=============================================================================
+# tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
+# 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
+#Random resource fluctuations:
+tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
+	tend, delta1, res_R = res_R,final = FALSE ))}, error = function(e){}) 
+
+out1[[w]]$out[tl,]
+
+
+#=============================================================================
+# Perturbation set 1: Remove each species and track the dynamics
+#=============================================================================
+for (s in 1:nspp){
+
+	out_temp =NULL
+	out_temp2 =NULL
+	inv_spp = s
+	winit =  out1[[1]]$out[tl,2:(nspp+1)]
+	winit[inv_spp] = 0
+
+	#Equilibrate new community
+	tryCatch( {out_temp = (food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
+	tend, delta1, winit = winit, res_R = res_R,final = FALSE ))}, error = function(e){}) 
+
+	#Invade
+	ti = which(out_temp$out[ ,nRsp+3] == max(out_temp$out[,nRsp+3] ) )
+	winit =  out_temp$out[ti,2:(nspp+1)]
+	winit[inv_spp] = 1
+
+	#Invade new community
+	tryCatch( {out_temp2 = (food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
+	tend, delta1, winit = winit, res_R = res_R,final = FALSE ))}, error = function(e){}) 
+
+	#Competition from competitor
+	#plot(out_temp2$out[1500:2000,(s+1)])
+	#ts1=log(out_temp2$out[1500:2000,(s+1)])
+	
+	#"Competition" from predator
+	plot(out_temp2$out[1800:2100,(s+1)])
+	ts1=log(out_temp2$out[1800:2100,(s+1)])
+	
+	ts2=1:length(ts1)
+	summary(lm(ts1~ts2))
+
+
 	#=============================================================================
 	# Information theoretic assessment of the foodweb.
 	#=============================================================================
@@ -193,7 +247,7 @@ for (w in 1:nwebs){
 	nt2 = tl
 
 	di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-		k=k,with_blocks=TRUE))
+		k=k,with_blocks=FALSE))
 
 	## This code takes the population time-series counts output by the ODEs and 
 	## calculates the average Transfer Entropy from each species to every other 
@@ -250,7 +304,7 @@ for (w in 1:nwebs){
 
 }
 
-save(file = "scen_fweb2.var", out1, rweb1, di_web,te_web,si_web, 
+save(file = "scen_fwebmod3Rand_test2.var", out1, rweb1, di_web,te_web,si_web, 
 	rweb1_eq, di_web_eq,te_web_eq,si_web_eq, 
 	rweb1_tr, di_web_tr,te_web_tr,si_web_tr)
 
@@ -277,19 +331,19 @@ tlg = tl
 
 par(mfrow=c(3,1))
 #Resource species in RED
-plot(out[1:tlg,"1"],t="l",col="red",ylim = c(0,max(out[tl,2:(nRsp+1)],na.rm=T)))
+plot(out[1:tlg,"1"],t="l",col="red",ylim = c(0,max(out[,2:(nRsp+1)],na.rm=T)))
 for( n in 1:(nRsp) ) {
 lines(out[1:tlg,paste(n)],t="l",col="red")
 }
 
 #Consumer species in BLUE 
-plot(out[1:tlg,paste(nRsp+1)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
+plot(out[1:tlg,paste(nRsp+1)],t="l",col="blue",ylim = c(0,max(out[,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
 lines(out[1:tlg,paste(n)],t="l",col="blue")
 }
 
 #Predator species in BLACK
-plot(out[1:tlg,paste(nRsp+nCsp+1)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
+plot(out[1:tlg,paste(nRsp+nCsp+1)],t="l",ylim = c(0,max(out[,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
 lines(out[1:tlg,paste(n)],t="l")
 }
@@ -298,8 +352,8 @@ lines(out[1:tlg,paste(n)],t="l")
 #=============================================================================
 for(w in 1:nwebs) {
 
-fig.name = paste("food_web",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
-fig.name2 = paste("food_web",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
+fig.name = paste("food_web_test3",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name2 = paste("food_web_test3",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
 
 nRsp = out1[[w]]$spp_prms$nRsp
 nCsp = out1[[w]]$spp_prms$nCsp
@@ -327,7 +381,7 @@ pop_gr = graph_from_adjacency_matrix(pop_web1, mode="directed", weighted=T)
 pop_visn = toVisNetworkData(pop_gr)
 pop_visn$nodes$value = pop_visn$nodes$id
 #Copy column "weight" to new column "value" in list "edges"
-pop_visn$edges$value = pop_visn$edges$weight
+#pop_visn$edges$value = pop_visn$edges$weight
 #Color code the nodes by trophic level 
 spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
 	matrix("black",nPsp,1) )
@@ -385,7 +439,7 @@ write.xlsx(var_load, file=file.name, sheetName="sheet4",append=TRUE,row.names=FA
 
 for(w in 1:nwebs) {
 
-fig.name = paste("average_dynamics_sweb",w,".pdf",sep="")
+fig.name = paste("average_dynamics_sweb_test3",w,".pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
@@ -606,7 +660,7 @@ for(w in 1:nwebs) {
 #fig.name = paste("average_dynamics_sweb_eq",w,".png",sep="")
 #png(file=fig.name, height=5, width=5, units = "in",res=300)
 
-fig.name = paste("te_graph",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name = paste("te_graph_test3",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 ###This shows the network, but only highlights the largest link between each
 ###node
@@ -649,7 +703,7 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 ######################################################
 for(w in 1:nwebs) {
 
-fig.name = paste("ai_te_graph",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name = paste("ai_te_graph_test2",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 edges_tmp = data.frame(from = c(1:length(spp_use)), to =(1:length(spp_use)),weight =(1:length(spp_use))  )
 edges_tmp$value = di_web[[1]]$ai_means[spp_use]
@@ -749,7 +803,7 @@ visNetwork(si_visn$nodes, si_visn$edges) %>%
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_AIS_sweb1_sub.pdf",sep="")
+fig.name = paste("dynamic_info_AIS_sweb1test2_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -765,10 +819,10 @@ layout(mat = layout.matrix,
 
 ###Common figure properties
 
-t1 = 5840
+t1 = 1
 nlevel = 64 #For viridis color scheme
 #nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = 5940
+nt_use = tl -100
 rs1 = 450 #lower bound for Resource population plot 
 
 par(oma = c(3,2,3,3) )
@@ -878,7 +932,7 @@ dev.off()
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_TE_sweb1_sub.pdf",sep="")
+fig.name = paste("dynamic_info_TE_sweb1test2_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -894,10 +948,10 @@ layout(mat = layout.matrix,
 
 ###Common figure properties
 nlevel = 64 #For viridis color 
-t1 = 5840
+t1 = 1
 nlevel = 64 #For viridis color scheme
 #nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = 5940
+nt_use = tl-100
 rs1 = 450 #lower bound for Resource population plot 
 
 par(oma = c(3,2,3,3) )
@@ -986,7 +1040,7 @@ dev.off()
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_SI_sweb1_sub.pdf",sep="")
+fig.name = paste("dynamic_info_SI_sweb1test2_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -1002,10 +1056,10 @@ layout(mat = layout.matrix,
 
 ###Common figure properties
 nlevel = 64 #For viridis color 
-t1 = 5840
+t1 = 1
 nlevel = 64 #For viridis color scheme
 #nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = 5940
+nt_use = tl-100
 rs1 = 450 #lower bound for Resource population plot 
 
 par(oma = c(3,2,3,3) )

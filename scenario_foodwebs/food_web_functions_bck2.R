@@ -59,9 +59,16 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 	nPsp=spp_list[3] #Predator species
 	nspp = nRsp+nCsp+nPsp #Total number of species
 
+	R = matrix(0, tl, nRsp)
+	C = matrix(0, tl, nCsp)
+	P = matrix(0, tl, nPsp)
+
 	###Generic initial conditions: 
 	if (is.null(winit) ) {winit = c(matrix(1,nspp,1)) }
 
+	R[1,] = winit[1:nRsp]
+	C[1,] = winit[(nRsp+1):(nCsp+nRsp)]
+	P[1,] = winit[(nCsp+nRsp+1):nspp]
 
 	###Parameters of the model:
 	if ( length(spp_prms) == 0) {
@@ -108,18 +115,15 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 
 
 	if ( length(res_R)>0){
-		a = list( matrix(0,nRsp,1))
+		a = matrix(0, tl,nRsp)
 		for( i in 1:nRsp){
 			#Make the a variable -- see the documentation for forcings for an example
 			amp = res_R[1] #1
 			xint = res_R[2] #0
-			a[[i]] = approxfun( x = times, y = amp*exp(rnorm(times) )+xint, method = "linear", rule = 2) 
-			a_t = amp*exp(rnorm(times) )+xint
-			#a = approxfun( x = times, y = amp*rnorm(times)+xint, method = "linear", rule = 2) 
-			#a_t = amp*rnorm(times)+xint
-			print( paste("Var in a(t) = ", var(a_t),sep="")) 
-			a_m = mean(a_t)
-			vara = var(a_t)
+			a[,i] = amp*exp(rnorm(tl) )+xint
+			print( paste("Var in a(t) = ", var(a[,i]),sep="")) 
+			a_m = mean(a)
+			vara = var(a)
 		}
 
 	}
@@ -132,162 +136,131 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 
 	if ( length(res_R)>0){
 		print(res_R)
+		for (t in 1:(tl-1)){
+
 		#Pass all of these parameters as a list
-		parms = list(nspp=nspp, nRsp = nRsp, nCsp = nCsp, nPsp =nPsp,
-			rR = spp_prms$rR, Ki =spp_prms$Ki,
-			rC = spp_prms$rC, eFc = spp_prms$eFc, muC = spp_prms$muC, cC = spp_prms$cC,
-			rP = spp_prms$rP, eFp = spp_prms$eFp, muP = spp_prms$muP, cP = spp_prms$cP,
-			a = a
-		 )
 
 
-		food_web = function(times,sp,parms){
-				nspp = parms$nspp 
-			     R = matrix(sp[1:nRsp], nRsp, 1)
-			     C = matrix(sp[(nRsp+1):(nRsp+nCsp)], nCsp, 1)
-			     P = matrix(sp[(nRsp+nCsp+1):nspp], nPsp, 1)
-
-
-				###Resource dynamics: Logistic growth, reduced by consumption
-				dR = R
-				for( i in 1:nRsp){
-					#Logistic - LV consumption
-					#dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
-					
-					#Logistic - Saturating consumption
-					dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-						(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
-						)
-
-					#Logistic - Saturating consumption
-					# dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-					# 	(t(cC[i,])%*%C)/(rC[i]+(t(cC[i,])%*%C) )  
-					# 	)
-
-				}
-
-				###Consumer dynamics
-				dC = C 
-				for( i in 1:nCsp){
-					#LV consumption
-					#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
-					
-					#Saturating grazing response.
-					dC[i] = C[i] * ( rC[i] * (
-						( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
-						( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
-						muC[i] )
-
-					# dC[i] = C[i] * ( rC[i] * (
-					# 	( (eFc[i]*cC[,i])%*%R)/( rC[i] + ((eFc[i]*cC[,i])%*%R)  ) ) -
-					# 	( (t(cP[i,])%*%P)/(rP[i]+(t(cP[i,])%*%P) ) )- 
-					# 	muC[i] )
-
-				}
-
-				###Predator dynamics: LV consumption
-				dP = P 
-				for( i in 1:nPsp){
-					#LV prey consumption
-					#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
-
-					# #Saturating consumption
-					dP[i] = P[i] * ( rP[i] *
-						( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
-						muP[i] )
-					
-					#Saturating consumption
-					# dP[i] = P[i] * ( rP[i] *
-					# 	( (eFp[i]*cP[,i])%*%C )/( rP[i] + ((eFp[i]*cP[,i])%*%C) )  - 
-					# 	muP[i] )
-
-
-				}
+			###Resource dynamics: Logistic growth, reduced by consumption
 			for( i in 1:nRsp){
-				a[[i]] = a[[i]](times) 
-				#a = (rR[1]+a(times))
+				#Logistic - LV consumption
+				#R[i,t+1] = a[i,t] + R[t,i]+R[t,i]*( (spp_prms$rR[i]) * (1 - R[i]/spp_prms$Ki[i]) - 
+				#(t(spp_prms$cC[i,])%*%C[t,]))
+				
+				# #Logistic - Saturating consumption
+				# R[i,t+1] = a[i,t] + R[t,i]+R[i,t]*( (spp_prms$rR[i]) * (1 - R[i]/spp_prms$Ki[i]) - 
+				# 	(t(spp_prms$cC[i,])%*%C[t,])^2/(spp_prms$rC[i]^2+(t(spp_prms$cC[i,])%*%C[t,])^2 )  
+				# 	)
+
+				#Logistic - Saturating consumption
+				R[t+1,i] = R[t,i]+ R[t,i]*( (a[t,i] +spp_prms$rR[i]) * (1 - R[t,i]/spp_prms$Ki[i]) - 
+					(t(spp_prms$cC[i,])%*%C[t,])/(spp_prms$rC[i]+(t(spp_prms$cC[i,])%*%C[t,]) )  
+					)
+
 			}
 
-			return(list(c(dR,dC,dP)))
+			###Consumer dynamics
+			for( i in 1:nCsp){
+				#LV consumption
+				#C[t+1,i]= C[t,i]+C[t,i] * ( spp_prms$rC[i] *(spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,] -
+				#(t(spp_prms$cP[i,])%*%P[t,])- spp_prms$muC[i] )
+				
+				#Saturating grazing response.
+				# C[t+1,i] = C[t,i]+C[t,i]* ( spp_prms$rC[i] * (
+				# 	( (spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,])^2/( spp_prms$rC[i]^2 + ((spp_prms$eFc[i]*cspp_prms$C[,i])%*%R[t,])^2  ) ) -
+				# 	( (t(spp_prms$cP[i,])%*%P[t,])^2/(spp_prms$rP[i]^2+(t(spp_prms$cP[i,])%*%P[t,])^2 ) )- 
+				# 	spp_prms$muC[i] )
 
-			}  
+				C[t+1,i] = C[t,i]+C[t,i] * ( spp_prms$rC[i] * (
+					( (spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,])/( spp_prms$rC[i] + ((spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,])  ) ) -
+					( (t(spp_prms$cP[i,])%*%P[t,])/(spp_prms$rP[i]+(t(spp_prms$cP[i,])%*%P[t,]) ) )- 
+					spp_prms$muC[i] )
+
+			}
+
+			###Predator dynamics: LV consumption
+			for( i in 1:nPsp){
+				#LV prey consumption
+				#P[t+1,i] =P[t,i] + P[t,i] * ( spp_prms$rP[i] *(spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,i] - 
+				#spp_prms$muP[i] )
+
+				# #Saturating consumption
+				# P[t+1,i] = P[t,i]+P[t,i] * ( spp_prms$rP[i] *
+				# 	( (spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,i] )^2/( spp_prms$rP[i]^2 + ((spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,i])^2 )  - 
+				# 	spp_prms$muP[i] )
+				
+				#Saturating consumption
+				P[t+1,i] = P[t,i]+P[t,i] * ( spp_prms$rP[i] *
+					( (spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,] )/( spp_prms$rP[i] + 
+						((spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,]) )  - spp_prms$muP[i] )
+
+
+			}
+
+		}
+		 
 	} else {
 
+		for (t in 1:(tl-1)){
 			#Pass all of these parameters as a list
-			parms = list(nspp=nspp, nRsp = nRsp, nCsp = nCsp, nPsp =nPsp,
-				rR = spp_prms$rR, Ki =spp_prms$Ki,
-				rC = spp_prms$rC, eFc = spp_prms$eFc, muC = spp_prms$muC, cC = spp_prms$cC,
-				rP = spp_prms$rP, eFp = spp_prms$eFp, muP = spp_prms$muP, cP = spp_prms$cP
-			 )
+			###Resource dynamics: Logistic growth, reduced by consumption
+			for( i in 1:nRsp){
+				#Logistic - LV consumption
+				#R[i,t+1] = R[t,i]+ R[i,t]*( (spp_prms$rR[i]) * (1 - R[i]/spp_prms$Ki[i]) - 
+				#(t(spp_prms$cC[i,])%*%C[t,]))
+				
+				# #Logistic - Saturating consumption
+				# R[i,t+1] = R[t,i]+ R[i,t]*( (spp_prms$rR[i]) * (1 - R[i]/spp_prms$Ki[i]) - 
+				# 	(t(spp_prms$cC[i,])%*%C[t,])^2/(spp_prms$rC[i]^2+(t(spp_prms$cC[i,])%*%C[t,])^2 )  
+				# 	)
 
-
-			food_web = function(times,sp,parms){
-				nspp = parms$nspp 
-			     R = matrix(sp[1:nRsp], nRsp, 1)
-			     C = matrix(sp[(nRsp+1):(nRsp+nCsp)], nCsp, 1)
-			     P = matrix(sp[(nRsp+nCsp+1):nspp], nPsp, 1)
-
-
-				###Resource dynamics: Logistic growth, reduced by consumption
-				dR = R
-				for( i in 1:nRsp){
-					#Logistic - LV consumption
-					#dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
-					
-					# #Logistic - Saturating consumption
-					dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-						(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
-						)
-
-					#Logistic - Saturating consumption
-					# dR[i] = R[i]*( (parms$rR[i]) * (1 - R[i]/parms$Ki[i]) - 
-					# 	(t(parms$cC[i,])%*%C)/(parms$rC[i]+(t(parms$cC[i,])%*%C) )  
-					# 	)
-
-				}
-
-				###Consumer dynamics
-				dC = C 
-				for( i in 1:nCsp){
-					#LV consumption
-					#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
-					
-					#Saturating grazing response.
-					dC[i] = C[i] * ( rC[i] * (
-						( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
-						( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
-						muC[i] )
-
-					# dC[i] = C[i] * ( parms$rC[i] * (
-					# 	( (parms$eFc[i]*parms$cC[,i])%*%R)/( parms$rC[i] + ((parms$eFc[i]*parms$cC[,i])%*%R)  ) ) -
-					# 	( (t(parms$cP[i,])%*%P)/(parms$rP[i]+(t(parms$cP[i,])%*%P) ) )- 
-					# 	parms$muC[i] )
-
-				}
-
-				###Predator dynamics: LV consumption
-				dP = P 
-				for( i in 1:nPsp){
-					#LV prey consumption
-					#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
-
-					# #Saturating consumption
-					dP[i] = P[i] * ( rP[i] *
-						( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
-						muP[i] )
-					
-					#Saturating consumption
-					# dP[i] = P[i] * ( parms$rP[i] *
-					# 	( (parms$eFp[i]*parms$cP[,i])%*%C )/( parms$rP[i] + ((parms$eFp[i]*parms$cP[,i])%*%C) )  - 
-					# 	parms$muP[i] )
-
-
-				}
-
-
-			return(list(c(dR,dC,dP)))
+				#Logistic - Saturating cR[t,i]+onsumption
+				R[t+1,i] = R[t,i]+ R[t,i]*((spp_prms$rR[i]) * (1 - R[t,i]/spp_prms$Ki[i]) - 
+					(t(spp_prms$cC[i,])%*%C[t,])/(spp_prms$rC[i]+(t(spp_prms$cC[i,])%*%C[t,]) )  
+					)
 
 			}
+
+			###Consumer dynamics
+			for( i in 1:nCsp){
+				#LV consumption
+				#C[t+1,i]= C[t,i]+C[t,i] * ( spp_prms$rC[i] *(spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,] -
+				#(t(spp_prms$cP[i,])%*%P[t,])- spp_prms$muC[i] )
+				
+				#Saturating grazing response.
+				# C[t+1,i] = C[t,i]+C[t,i]* ( spp_prms$rC[i] * (
+				# 	( (spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,])^2/( spp_prms$rC[i]^2 + ((spp_prms$eFc[i]*cspp_prms$C[,i])%*%R[t,])^2  ) ) -
+				# 	( (t(spp_prms$cP[i,])%*%P[t,])^2/(spp_prms$rP[i]^2+(t(spp_prms$cP[i,])%*%P[t,])^2 ) )- 
+				# 	spp_prms$muC[i] )
+
+				C[t+1,i] = C[t,i]+C[t,i] * ( spp_prms$rC[i] * (
+					( (spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,])/( spp_prms$rC[i] + ((spp_prms$eFc[i]*spp_prms$cC[,i])%*%R[t,])  ) ) -
+					( (t(spp_prms$cP[i,])%*%P[t,])/(spp_prms$rP[i]+(t(spp_prms$cP[i,])%*%P[t,]) ) )- 
+					spp_prms$muC[i] )
+
+			}
+
+			###Predator dynamics: LV consumption
+			for( i in 1:nPsp){
+				#LV prey consumption
+				#P[t+1,i] =P[t,i] + P[t,i] * ( spp_prms$rP[i] *(spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,] - 
+				#spp_prms$muP[i] )
+
+				# #Saturating consumption
+				# P[t+1,i] = P[t,i]+P[t,i] * ( spp_prms$rP[i] *
+				# 	( (spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,] )^2/( spp_prms$rP[i]^2 + ((spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,])^2 )  - 
+				# 	spp_prms$muP[i] )
+				
+				#Saturating consumption
+				P[t+1,i] = P[t,i]+P[t,i] * ( spp_prms$rP[i] *
+					( (spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,] )/( spp_prms$rP[i] + 
+						((spp_prms$eFp[i]*spp_prms$cP[,i])%*%C[t,]) )  - spp_prms$muP[i] )
+
+
+			}
+
+		}
+
 	}
 
 
@@ -295,7 +268,7 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 	# Run the population models.
 	#=============================================================================
 	out=NULL
-	out_temp = ode(y=winit,times=times,func=food_web,parms=parms)
+	out_temp = cbind(times,R,C,P)
 	#Zero out very small values: 
 	out_temp[out_temp<1e-3] = 0
 

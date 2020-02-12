@@ -154,15 +154,15 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 					#Logistic - LV consumption
 					#dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
-					#Logistic - Saturating consumption
-					dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-						(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
-						)
+					# #Logistic - Saturating consumption
+					# dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
+					# 	(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
+					# 	)
 
 					#Logistic - Saturating consumption
-					# dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-					# 	(t(cC[i,])%*%C)/(rC[i]+(t(cC[i,])%*%C) )  
-					# 	)
+					dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
+						(t(cC[i,])%*%C)/(rC[i]+(t(cC[i,])%*%C) )  
+						)
 
 				}
 
@@ -173,15 +173,15 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 					#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
 					
 					#Saturating grazing response.
-					dC[i] = C[i] * ( rC[i] * (
-						( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
-						( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
-						muC[i] )
-
 					# dC[i] = C[i] * ( rC[i] * (
-					# 	( (eFc[i]*cC[,i])%*%R)/( rC[i] + ((eFc[i]*cC[,i])%*%R)  ) ) -
-					# 	( (t(cP[i,])%*%P)/(rP[i]+(t(cP[i,])%*%P) ) )- 
+					# 	( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
+					# 	( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
 					# 	muC[i] )
+
+					dC[i] = C[i] * ( rC[i] * (
+						( (eFc[i]*cC[,i])%*%R)/( rC[i] + ((eFc[i]*cC[,i])%*%R)  ) ) -
+						( (t(cP[i,])%*%P)/(rP[i]+(t(cP[i,])%*%P) ) )- 
+						muC[i] )
 
 				}
 
@@ -192,14 +192,14 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 					#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
 
 					# #Saturating consumption
-					dP[i] = P[i] * ( rP[i] *
-						( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
-						muP[i] )
+					# dP[i] = P[i] * ( rP[i] *
+					# 	( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
+					# 	muP[i] )
 					
 					#Saturating consumption
-					# dP[i] = P[i] * ( rP[i] *
-					# 	( (eFp[i]*cP[,i])%*%C )/( rP[i] + ((eFp[i]*cP[,i])%*%C) )  - 
-					# 	muP[i] )
+					dP[i] = P[i] * ( rP[i] *
+						( (eFp[i]*cP[,i])%*%C )/( rP[i] + ((eFp[i]*cP[,i])%*%C) )  - 
+						muP[i] )
 
 
 				}
@@ -235,14 +235,14 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 					#dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
 					# #Logistic - Saturating consumption
-					dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-						(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
-						)
+					# dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
+					# 	(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
+					# 	)
 
 					#Logistic - Saturating consumption
-					# dR[i] = R[i]*( (parms$rR[i]) * (1 - R[i]/parms$Ki[i]) - 
-					# 	(t(parms$cC[i,])%*%C)/(parms$rC[i]+(t(parms$cC[i,])%*%C) )  
-					# 	)
+					dR[i] = parms$a[[i]](times)+R[i]*( (parms$rR[i]) * (1 - R[i]/parms$Ki[i]) - 
+						(t(parms$cC[i,])%*%C)/(parms$rC[i]+(t(parms$cC[i,])%*%C) )  
+						)
 
 				}
 
@@ -253,15 +253,15 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 					#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
 					
 					#Saturating grazing response.
-					dC[i] = C[i] * ( rC[i] * (
-						( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
-						( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
-						muC[i] )
+					# dC[i] = C[i] * ( rC[i] * (
+					# 	( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
+					# 	( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
+					# 	muC[i] )
 
-					# dC[i] = C[i] * ( parms$rC[i] * (
-					# 	( (parms$eFc[i]*parms$cC[,i])%*%R)/( parms$rC[i] + ((parms$eFc[i]*parms$cC[,i])%*%R)  ) ) -
-					# 	( (t(parms$cP[i,])%*%P)/(parms$rP[i]+(t(parms$cP[i,])%*%P) ) )- 
-					# 	parms$muC[i] )
+					dC[i] = C[i] * ( parms$rC[i] * (
+						( (parms$eFc[i]*parms$cC[,i])%*%R)/( parms$rC[i] + ((parms$eFc[i]*parms$cC[,i])%*%R)  ) ) -
+						( (t(parms$cP[i,])%*%P)/(parms$rP[i]+(t(parms$cP[i,])%*%P) ) )- 
+						parms$muC[i] )
 
 				}
 
@@ -272,17 +272,22 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 					#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
 
 					# #Saturating consumption
-					dP[i] = P[i] * ( rP[i] *
-						( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
-						muP[i] )
+					# dP[i] = P[i] * ( rP[i] *
+					# 	( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
+					# 	muP[i] )
 					
 					#Saturating consumption
-					# dP[i] = P[i] * ( parms$rP[i] *
-					# 	( (parms$eFp[i]*parms$cP[,i])%*%C )/( parms$rP[i] + ((parms$eFp[i]*parms$cP[,i])%*%C) )  - 
-					# 	parms$muP[i] )
+					dP[i] = P[i] * ( parms$rP[i] *
+						( (parms$eFp[i]*parms$cP[,i])%*%C )/( parms$rP[i] + ((parms$eFp[i]*parms$cP[,i])%*%C) )  - 
+						parms$muP[i] )
 
 
 				}
+
+			for( i in 1:nRsp){
+				parms$a[[i]] = parms$a[[i]](times) 
+				#a = (rR[1]+a(times))
+			}
 
 
 			return(list(c(dR,dC,dP)))
