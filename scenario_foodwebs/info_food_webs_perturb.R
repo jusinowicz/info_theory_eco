@@ -30,7 +30,7 @@ source("./info_theory_functions.R")
 #=============================================================================
 
 #Length and time steps of each model run
-tend = 400
+tend = 200
 delta1 = 0.01
 tl=tend/delta1
 
@@ -67,8 +67,8 @@ te_web_tr = te_web #Transient dynamics
 si_web_tr = si_web
 
 #Random resources:
- c = 1
- amp = 1000
+ c = 0
+ amp = 1/exp(1)
  res_R = c(amp,c)
 
 #or 
@@ -96,8 +96,8 @@ nspp = nRsp+nCsp+nPsp
 #Randomly generate the species parameters for the model as well: 
 spp_prms = NULL
 #Resource: Nearly identical resource dynamics: 
-spp_prms$rR = matrix(rnorm(nRsp,15,0), nRsp, 1) #intrinsic growth
-spp_prms$Ki = matrix(rnorm(nRsp,15,0), nRsp, 1) #carrying capacity
+spp_prms$rR = matrix(rnorm(nRsp,1.5,0), nRsp, 1) #intrinsic growth
+spp_prms$Ki = matrix(rnorm(nRsp,1.5,0), nRsp, 1) #carrying capacity
 
 #Consumers: 
 spp_prms$rC = matrix(0.6, nCsp, 1) #matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
@@ -160,6 +160,8 @@ spp_prms$cP = matrix(spp_prms$cP[1:nCsp,1:nPsp],nCsp,nPsp)
 # tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
 # 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
 #Random resource fluctuations:
+#winit = runif(nspp,min=1,max=6)
+#winit = c(1.007368, 1.007368, 1.005849, 1.005849, 0.9988030, 0.9988030)
 tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
 	tend, delta1, res_R = res_R,final = FALSE ))}, error = function(e){}) 
 
@@ -182,9 +184,10 @@ for (s in 1:nspp){
 	tend, delta1, winit = winit, res_R = res_R,final = FALSE ))}, error = function(e){}) 
 
 	#Invade
-	ti = which(out_temp$out[ ,nRsp+3] == max(out_temp$out[,nRsp+3] ) )
+	#ti = which(out_temp$out[ ,nRsp+3] == max(out_temp$out[,nRsp+3] ) )
+	ti = tl
 	winit =  out_temp$out[ti,2:(nspp+1)]
-	winit[inv_spp] = 1
+	winit[inv_spp] = .1
 
 	#Invade new community
 	tryCatch( {out_temp2 = (food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
@@ -195,9 +198,8 @@ for (s in 1:nspp){
 	#ts1=log(out_temp2$out[1500:2000,(s+1)])
 	
 	#"Competition" from predator
-	plot(out_temp2$out[1800:2100,(s+1)])
-	ts1=log(out_temp2$out[1800:2100,(s+1)])
-	
+	plot(out_temp2$out[50:300,(s+1)])
+	ts1=log(out_temp2$out[50:300,(s+1)])
 	ts2=1:length(ts1)
 	summary(lm(ts1~ts2))
 
@@ -304,7 +306,7 @@ for (s in 1:nspp){
 
 }
 
-save(file = "scen_fwebmod3Rand_test2.var", out1, rweb1, di_web,te_web,si_web, 
+save(file = "scen_fwebmod5Rand.var", out1, rweb1, di_web,te_web,si_web, 
 	rweb1_eq, di_web_eq,te_web_eq,si_web_eq, 
 	rweb1_tr, di_web_tr,te_web_tr,si_web_tr)
 
@@ -331,15 +333,15 @@ tlg = tl
 
 par(mfrow=c(3,1))
 #Resource species in RED
-plot(out[1:tlg,"1"],t="l",col="red",ylim = c(0,max(out[,2:(nRsp+1)],na.rm=T)))
-for( n in 1:(nRsp) ) {
-lines(out[1:tlg,paste(n)],t="l",col="red")
+plot(out[1:tlg,2],t="l",col="red",ylim = c(0,max(out[,2:(nRsp+1)],na.rm=T)))
+for( n in 2:(nRsp+1) ) {
+lines(out[1:tlg,n],t="l",col="red")
 }
 
 #Consumer species in BLUE 
-plot(out[1:tlg,paste(nRsp+1)],t="l",col="blue",ylim = c(0,max(out[,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
-for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[1:tlg,paste(n)],t="l",col="blue")
+plot(out[1:tlg,nRsp+2],t="l",col="blue",ylim = c(0,max(out[,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
+for( n in (nRsp+2):(nRsp+nCsp+1)  ) {
+lines(out[1:tlg,n],t="l",col="blue")
 }
 
 #Predator species in BLACK
@@ -352,8 +354,8 @@ lines(out[1:tlg,paste(n)],t="l")
 #=============================================================================
 for(w in 1:nwebs) {
 
-fig.name = paste("food_web_test3",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
-fig.name2 = paste("food_web_test3",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
+fig.name = paste("food_web_test4",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name2 = paste("food_web_test4",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
 
 nRsp = out1[[w]]$spp_prms$nRsp
 nCsp = out1[[w]]$spp_prms$nCsp
@@ -439,7 +441,7 @@ write.xlsx(var_load, file=file.name, sheetName="sheet4",append=TRUE,row.names=FA
 
 for(w in 1:nwebs) {
 
-fig.name = paste("average_dynamics_sweb_test3",w,".pdf",sep="")
+fig.name = paste("average_dynamics_sweb_test4",w,".pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
@@ -660,7 +662,7 @@ for(w in 1:nwebs) {
 #fig.name = paste("average_dynamics_sweb_eq",w,".png",sep="")
 #png(file=fig.name, height=5, width=5, units = "in",res=300)
 
-fig.name = paste("te_graph_test3",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name = paste("te_graph_test5",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 ###This shows the network, but only highlights the largest link between each
 ###node
@@ -703,7 +705,7 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 ######################################################
 for(w in 1:nwebs) {
 
-fig.name = paste("ai_te_graph_test2",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name = paste("ai_te_graph_test4",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 edges_tmp = data.frame(from = c(1:length(spp_use)), to =(1:length(spp_use)),weight =(1:length(spp_use))  )
 edges_tmp$value = di_web[[1]]$ai_means[spp_use]
@@ -803,7 +805,7 @@ visNetwork(si_visn$nodes, si_visn$edges) %>%
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_AIS_sweb1test2_sub.pdf",sep="")
+fig.name = paste("dynamic_info_AIS_sweb1test4_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -932,7 +934,7 @@ dev.off()
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_TE_sweb1test2_sub.pdf",sep="")
+fig.name = paste("dynamic_info_TE_sweb1test4_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -1040,7 +1042,7 @@ dev.off()
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_SI_sweb1test2_sub.pdf",sep="")
+fig.name = paste("dynamic_info_SI_sweb1test4_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 

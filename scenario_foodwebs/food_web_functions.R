@@ -152,12 +152,12 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dR = R
 				for( i in 1:nRsp){
 					#Logistic - LV consumption
-					#dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+					dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
 					#Logistic - Saturating consumption
-					dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-						(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
-						)
+					# dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
+					# 	(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
+					# 	)
 
 					#Logistic - Saturating consumption
 					# dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
@@ -170,13 +170,13 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dC = C 
 				for( i in 1:nCsp){
 					#LV consumption
-					#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
+					dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
 					
 					#Saturating grazing response.
-					dC[i] = C[i] * ( rC[i] * (
-						( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
-						( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
-						muC[i] )
+					# dC[i] = C[i] * ( rC[i] * (
+					# 	( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
+					# 	( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
+					# 	muC[i] )
 
 					# dC[i] = C[i] * ( rC[i] * (
 					# 	( (eFc[i]*cC[,i])%*%R)/( rC[i] + ((eFc[i]*cC[,i])%*%R)  ) ) -
@@ -189,12 +189,12 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dP = P 
 				for( i in 1:nPsp){
 					#LV prey consumption
-					#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
+					dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
 
 					# #Saturating consumption
-					dP[i] = P[i] * ( rP[i] *
-						( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
-						muP[i] )
+					# dP[i] = P[i] * ( rP[i] *
+					# 	( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
+					# 	muP[i] )
 					
 					#Saturating consumption
 					# dP[i] = P[i] * ( rP[i] *
@@ -232,12 +232,12 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dR = R
 				for( i in 1:nRsp){
 					#Logistic - LV consumption
-					#dR[i] = a(times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+					dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
 					# #Logistic - Saturating consumption
-					dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
-						(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
-						)
+					# dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
+					# 	(t(cC[i,])%*%C)^2/(rC[i]^2+(t(cC[i,])%*%C)^2 )  
+					# 	)
 
 					#Logistic - Saturating consumption
 					# dR[i] = R[i]*( (parms$rR[i]) * (1 - R[i]/parms$Ki[i]) - 
@@ -250,13 +250,13 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dC = C 
 				for( i in 1:nCsp){
 					#LV consumption
-					#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
+					dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
 					
 					#Saturating grazing response.
-					dC[i] = C[i] * ( rC[i] * (
-						( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
-						( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
-						muC[i] )
+					# dC[i] = C[i] * ( rC[i] * (
+					# 	( (eFc[i]*cC[,i])%*%R)^2/( rC[i]^2 + ((eFc[i]*cC[,i])%*%R)^2  ) ) -
+					# 	( (t(cP[i,])%*%P)^2/(rP[i]^2+(t(cP[i,])%*%P)^2 ) )- 
+					# 	muC[i] )
 
 					# dC[i] = C[i] * ( parms$rC[i] * (
 					# 	( (parms$eFc[i]*parms$cC[,i])%*%R)/( parms$rC[i] + ((parms$eFc[i]*parms$cC[,i])%*%R)  ) ) -
@@ -269,12 +269,12 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dP = P 
 				for( i in 1:nPsp){
 					#LV prey consumption
-					#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
+					dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
 
 					# #Saturating consumption
-					dP[i] = P[i] * ( rP[i] *
-						( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
-						muP[i] )
+					# dP[i] = P[i] * ( rP[i] *
+					# 	( (eFp[i]*cP[,i])%*%C )^2/( rP[i]^2 + ((eFp[i]*cP[,i])%*%C)^2 )  - 
+					# 	muP[i] )
 					
 					#Saturating consumption
 					# dP[i] = P[i] * ( parms$rP[i] *
