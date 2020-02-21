@@ -247,8 +247,8 @@ for (s in 1:nspp){
 	#=============================================================================
 	nt1 = 1
 	nt2 = tl
-
-	di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+	f1 = 100 #scaling factor
+	di_web[w] = list(get_info_dynamics(pop_ts = floor(f1*out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
 		k=k,with_blocks=FALSE))
 
 	## This code takes the population time-series counts output by the ODEs and 
@@ -259,7 +259,7 @@ for (s in 1:nspp){
 	# This function gives:
 	# te_web		Average transfer entropy per species as a pairwise matrix
 	#=============================================================================
-	te_web[w] = list( get_te_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+	te_web[w] = list( get_te_web( pop_ts = floor(f1*out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
 		k=k) )
 
 	## This code takes the population time-series counts output by the ODEs and 
@@ -270,7 +270,7 @@ for (s in 1:nspp){
 	# This function gives:
 	# si_web		Average separable information per species as a pairwise matrix
 	#=============================================================================
-	si_web[w] = list( get_si_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+	si_web[w] = list( get_si_web( pop_ts = floor(f1*out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
 		k=k) )
 
 
@@ -306,7 +306,7 @@ for (s in 1:nspp){
 
 }
 
-save(file = "scen_fwebmod5Rand.var", out1, rweb1, di_web,te_web,si_web, 
+save(file = "scen_fwebmod6Rand.var", out1, rweb1, di_web,te_web,si_web, 
 	rweb1_eq, di_web_eq,te_web_eq,si_web_eq, 
 	rweb1_tr, di_web_tr,te_web_tr,si_web_tr)
 
@@ -354,8 +354,8 @@ lines(out[1:tlg,paste(n)],t="l")
 #=============================================================================
 for(w in 1:nwebs) {
 
-fig.name = paste("food_web_test4",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
-fig.name2 = paste("food_web_test4",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
+fig.name = paste("food_web_test5",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name2 = paste("food_web_test5",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".pdf", sep="")
 
 nRsp = out1[[w]]$spp_prms$nRsp
 nCsp = out1[[w]]$spp_prms$nCsp
@@ -441,7 +441,7 @@ write.xlsx(var_load, file=file.name, sheetName="sheet4",append=TRUE,row.names=FA
 
 for(w in 1:nwebs) {
 
-fig.name = paste("average_dynamics_sweb_test4",w,".pdf",sep="")
+fig.name = paste("average_dynamics_sweb_test6",w,".pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
@@ -662,7 +662,7 @@ for(w in 1:nwebs) {
 #fig.name = paste("average_dynamics_sweb_eq",w,".png",sep="")
 #png(file=fig.name, height=5, width=5, units = "in",res=300)
 
-fig.name = paste("te_graph_test5",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name = paste("te_graph_test6",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 ###This shows the network, but only highlights the largest link between each
 ###node
@@ -705,7 +705,7 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 ######################################################
 for(w in 1:nwebs) {
 
-fig.name = paste("ai_te_graph_test4",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
+fig.name = paste("ai_te_graph_test6",w,"_R",nRsp,"_C",nCsp,"_P",nPsp,".html", sep="")
 
 edges_tmp = data.frame(from = c(1:length(spp_use)), to =(1:length(spp_use)),weight =(1:length(spp_use))  )
 edges_tmp$value = di_web[[1]]$ai_means[spp_use]
@@ -796,6 +796,61 @@ visNetwork(si_visn$nodes, si_visn$edges) %>%
 #=============================================================================
 # Make combined plots of population and dynamic information metrics with time 
 #=============================================================================
+#=============================================================================
+# Plot the population dynamics
+#=============================================================================
+#Make a combined eq/invasion plot from other runs if needed: 
+#
+#
+
+tiA=19000
+tiB=1
+teA=19990
+teB=500
+
+outA = out1[[2]]$out[tiA:teA,]
+outB = out1[[3]]$out[tiB:teB,]
+
+diA = di_web[[2]]$ai_local[tiA:teA,]
+diB = di_web[[3]]$ai_local[tiB:teB,]
+ 
+trA = di_web[[2]]$te_local[tiA:teA,]
+trB = di_web[[3]]$te_local[tiB:teB,]
+
+out1[[7]] = NULL
+di_web[[7]] = NULL
+out1[[7]]= list(out=rbind(outA,outB),spp_prms=NULL)
+di_web[[7]] = list(ai_local=rbind(diA,diB), te_local = rbind(trA,trB) )
+#=============================================================================
+
+
+out = out1[[w]]$out
+nspp = out1[[w]]$spp_prms$nspp
+nRsp = out1[[w]]$spp_prms$nRsp
+nCsp = out1[[w]]$spp_prms$nCsp
+nPsp = out1[[w]]$spp_prms$nPsp
+#tlg = tend/delta1
+#tlg = tl
+tlg = dim(out)[1]
+
+par(mfrow=c(3,1))
+#Resource species in RED
+plot(out[1:tlg,2],t="l",col="red",ylim = c(0,max(out[,2:(nRsp+1)],na.rm=T)))
+for( n in 2:(nRsp+1) ) {
+lines(out[1:tlg,n],t="l",col="red")
+}
+
+#Consumer species in BLUE 
+plot(out[1:tlg,nRsp+2],t="l",col="blue",ylim = c(0,max(out[,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
+for( n in (nRsp+2):(nRsp+nCsp+1)  ) {
+lines(out[1:tlg,n],t="l",col="blue")
+}
+
+#Predator species in BLACK
+plot(out[1:tlg,paste(nRsp+nCsp+1)],t="l",ylim = c(0,max(out[,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
+for( n in ((nRsp+nCsp+1):(nspp) ) ) {
+lines(out[1:tlg,paste(n)],t="l")
+}
 
 #===========================================#
 #plot1: Info storage (Excess Entropy or AIS)
@@ -805,7 +860,7 @@ visNetwork(si_visn$nodes, si_visn$edges) %>%
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_AIS_sweb1test4_sub.pdf",sep="")
+fig.name = paste("dynamic_info_AIS_sweb1test64_sub4.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -821,10 +876,12 @@ layout(mat = layout.matrix,
 
 ###Common figure properties
 
-t1 = 1
+t1=1
+#t1 = 14100
 nlevel = 64 #For viridis color scheme
 #nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = tl -100
+#nt_use = tl -100
+nt_use = 10000
 rs1 = 450 #lower bound for Resource population plot 
 
 par(oma = c(3,2,3,3) )
@@ -834,7 +891,7 @@ par(oma = c(3,2,3,3) )
 ###Predator species
 par( mar = c(0.5,4,0,4) )
 
-plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
+plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)+1), 
 	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
 lines(out[t1:nt_use,paste(n)],t="l")
@@ -855,7 +912,7 @@ image( t1:nt_use, 1:nPsp, di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], 
 ###Consumer species
 par( mar = c(0.5,4,0,4) )
 #Consumer species in BLUE
-plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
+plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)+1)
 	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
 lines(out[t1:nt_use,paste(n)],t="l",col="blue")
@@ -875,7 +932,7 @@ image( t1:nt_use, 1:nCsp, di_web[[w]]$ai_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], 
 ###Resource Species
 par( mar = c(0.5,4,0,4) )
 #Resource species in RED
-plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(rs1,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
+plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(0,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)+1), ylab="Population", xlab="", 
   xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
 for( n in 1:(nRsp) ) {
 lines(out[t1:nt_use,paste(n)],t="l",col="red")
@@ -934,7 +991,7 @@ dev.off()
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_TE_sweb1test4_sub.pdf",sep="")
+fig.name = paste("dynamic_info_TE_sweb1test64_sub1.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -950,10 +1007,12 @@ layout(mat = layout.matrix,
 
 ###Common figure properties
 nlevel = 64 #For viridis color 
-t1 = 1
+t1=1
+#t1 = 14100
 nlevel = 64 #For viridis color scheme
 #nt_use = dim(di_web[[w]]$ai_local)[1]
 nt_use = tl-100
+#nt_use = 10000
 rs1 = 450 #lower bound for Resource population plot 
 
 par(oma = c(3,2,3,3) )
@@ -963,7 +1022,7 @@ par(oma = c(3,2,3,3) )
 ###Predator species
 par( mar = c(0.5,4,0,4) )
 
-plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
+plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)+1), 
 	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
 lines(out[t1:nt_use,paste(n)],t="l")
@@ -978,7 +1037,7 @@ image( t1:nt_use, 1:nPsp, di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], 
 ###Consumer species
 par( mar = c(0.5,4,0,4) )
 #Consumer species in BLUE
-plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
+plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)+1)
 	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
 lines(out[t1:nt_use,paste(n)],t="l",col="blue")
@@ -992,11 +1051,13 @@ image( t1:nt_use, 1:nCsp, di_web[[w]]$te_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], 
 ###Resource Species
 par( mar = c(0.5,4,0,4) )
 #Resource species in RED
-plot(out[1:tl,"1"],t="l",col="red",ylim = c(rs1,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
+
+plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(0,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)+1), ylab="Population", xlab="", 
   xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
 for( n in 1:(nRsp) ) {
 lines(out[t1:nt_use,paste(n)],t="l",col="red")
 }
+
 
 #local transfer entropy
 par( mar = c(2,4,0,4) )
@@ -1042,7 +1103,7 @@ dev.off()
 # pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 #When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_SI_sweb1test4_sub.pdf",sep="")
+fig.name = paste("dynamic_info_SI_sweb1test54_sub.pdf",sep="")
 pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
 
 
@@ -1071,7 +1132,7 @@ par(oma = c(3,2,3,3) )
 ###Predator species
 par( mar = c(0.5,4,0,4) )
 
-plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
+plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)+1), 
 	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ((nRsp+nCsp+1):(nspp) ) ) {
 lines(out[t1:nt_use,paste(n)],t="l")
@@ -1086,7 +1147,7 @@ image( t1:nt_use, 1:nPsp, di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], 
 ###Consumer species
 par( mar = c(0.5,4,0,4) )
 #Consumer species in BLUE
-plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
+plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)+1)
 	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
 for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
 lines(out[t1:nt_use,paste(n)],t="l",col="blue")
@@ -1100,7 +1161,7 @@ image( t1:nt_use, 1:nCsp, di_web[[w]]$si_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], 
 ###Resource Species
 par( mar = c(0.5,4,0,4) )
 #Resource species in RED
-plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(rs1,max(out[tl,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
+plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(0,max(out[tl,2:(nRsp+1)],na.rm=T)+1), ylab="Population", xlab="", 
   xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
 for( n in 1:(nRsp) ) {
 lines(out[t1:nt_use,paste(n)],t="l",col="red")
