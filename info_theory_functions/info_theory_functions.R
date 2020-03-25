@@ -12,6 +12,36 @@
 # blocks of symbols based on these counts which are treated as strings.  
 #=============================================================================
 
+#=============================================================================
+# Basic information theoretic functions
+#=============================================================================
+#=============================================================================
+# shannon_D
+# The Shannon entropy with natural log base.
+# 
+# freq 			A frequency distribution that is standardized to 1
+#=============================================================================
+
+shannon_D = function ( freq = freq) {
+
+	sD =  - sum ( freq*log(freq),na.rm=T )
+	return(sD)
+
+}
+ 
+#=============================================================================
+# shannon_D2
+# The Shannon entropy with log base 2.
+# 
+# freq 	 A frequency distribution that is standardized to 1
+#=============================================================================
+
+shannon_D2 = function ( freq = freq) {
+
+	sD =  - sum ( freq*log2(freq),na.rm=T )
+	return(sD)
+
+}
 
 #=============================================================================
 # Time-series information theoretic functions
@@ -154,13 +184,43 @@ get_1kY = function (series1, k=2, focal=1, width_A) {
 }
 
 #=============================================================================
-# Dynamic information quantities! 
+# Dynamic information quantities! export LANG=en_US.UTF-8
 #=============================================================================
 #=============================================================================
-# get_MI()
-# Mutual Information
-#
+# get_MMI()
+# Multiple Mutual Information
 #=============================================================================
+
+get_MMI = function (series1) {
+
+	MMI1 = NULL #Attach all of the output to this variable
+
+	nseries = dim(series1)[2] #Assuming each entry is its own time series
+	ngens = dim(series1)[1] #Time series length
+	
+	blocks_k = matrix(0.0, ngens, nseries) # marg of X(k)
+
+	#Need some additional pre-formatting to make this work: 
+	#Find number of digits in largest integer: 
+	width_A = nchar(trunc(max(series1)))
+	k=1 # This should always be 1 for the classic MMI 
+
+	######################
+	# p( X(k) )
+	######################
+	for (f in 1:nseries) { 
+		blocks_k[,f] = get_k(series1[,f],k,width_A )
+	}
+	marg_k =  lapply( (apply(blocks_k,2,table)),  prop.table)
+
+	######################
+	# p( X(k),P(k) )
+	######################
+	joint_kp = c( prop.table(table( as.data.frame(series1) )))
+
+	MMI1 =sum(unlist ( lapply(X_probs,shannon_D2) )) - shannon_D2(X_joint)
+	return(MMI1)
+}
 
 
 #=============================================================================
@@ -189,7 +249,7 @@ get_EE = function ( series1, k=2, s=k, focal = 1, with_blocks=FALSE,
 
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
-	width_A = nchar(trunc(max(d1_use)))
+	width_A = nchar(trunc(max(series1)))
 
 	######################
 	# p( X(k) )
@@ -279,7 +339,7 @@ get_ais = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE,
 
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
-	width_A = nchar(trunc(max(d1_use)))
+	width_A = nchar(trunc(max(series1)))
 
 	######################
 	# p( X(k)+1 )
@@ -388,7 +448,7 @@ get_TE = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE,
 
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
-	width_A = nchar(trunc(max(d1_use)))
+	width_A = nchar(trunc(max(series1)))
 
 	#There are four total probabilities that are calculated here. 
 	#These include three different joint probability distributions 

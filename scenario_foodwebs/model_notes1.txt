@@ -1,1 +1,29 @@
 #Notes 
+Making the MMI more generic. 
+Building from the earlier example, what happens if the underlying time series each have a different basis? 
+
+Finally, in this example, we compute the multivariate mutual information between 4 time series (each of length 8) for all partitionings of the system (except the very first since that only yields a single time series). That is, each partition is treated as a seperate variable and the mutual information is computed between the partitioned variables.
+
+xs         <- matrix(0, nrow = 8, ncol = 4)
+xs[, 1]    <- c(0, 2, 1, 0, 2, 0, 0, 1)
+xs[, 2]    <- c(1, 0, 0, 3, 3, 0, 1, 0)
+xs[, 3]    <- c(0, 0, 0, 1, 1, 1, 0, 0)
+xs[, 4]    <- c(1, 0, 3, 0, 2, 1, 1, 0)
+all_parts  <- partitioning(4)
+mmi        <- rep(0, dim(all_parts)[2] - 1)
+
+for (i in 2:dim(all_parts)[2]) {
+  x          <- black_box_parts(xs, all_parts[, i])
+  mmi[i - 1] <- mutual_info(x$box)
+}
+round(mmi, 3)
+
+The calculation of the mmi between the 4 time series is equivalent to: 
+
+sum (H ( each series )) - H(X1,X2,X3,X4)
+
+In R: 
+
+X_probs = lapply( (apply(xs,2,table)),  prop.table) #Prob of 0 and 1 in each vector
+X_joint = c( prop.table(table( as.data.frame(xs) ))) #Joint probabilities across all 4 vectors
+mmi4 =sum(unlist ( lapply(X_probs,shannon_D2) )) - shannon_D2(X_joint)
