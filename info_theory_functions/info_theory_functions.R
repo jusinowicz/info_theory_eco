@@ -184,6 +184,80 @@ get_1kY = function (series1, k=2, focal=1, width_A) {
 }
 
 #=============================================================================
+# get_ensemble_k()
+# Count blocks for block marginal probabilities in an entire ensemble of
+# multiple series. 
+# 
+# series1			The full time series on which to do the calculations, as a
+#					matrix or data frame. 
+# k 				The size of the block history to be used. 
+# width_A			The largest width (i.e. maximum number of digits) of any
+#					word.  
+#=============================================================================
+
+get_ensemble_k = function (series1,k,width_A){
+
+
+	totk = dim(as.matrix(series1))[1] - k+1
+	ngens = dim(as.matrix(series1))[1]
+	nseries = dim(as.matrix(series1))[2] 
+	blocks_k = matrix(0.0, totk, 1)
+
+	#Run this through get_k to encode symbols 
+	blocks_k_temp = matrix(0.0, ngens, nseries)
+	for (f in 1:nseries) { 
+		blocks_k_temp[,f] = get_k(series1[,f],1,width_A )
+	}
+
+	#Now use blocks_k_temp to make a new series from the whole ensemble:
+	kseries = apply(blocks_k_temp,1, paste,collapse="")
+
+	#Pass the new ensemble to get_k: 
+	width_A  = 0 #No new formatting should be required now 
+	blocks_k = get_k(kseries, k , width_A)
+
+	return(blocks_k)
+}
+
+#=============================================================================
+# get_kpf()
+# Count the joint historical and future blocks in an entire ensemble of
+# multiple series. 
+# series1			The full time series on which to do the calculations, as a
+#					matrix or data frame. 
+# k 				The size of the block history to be used.
+# s 				The size of the block future to be used (defaults to k)
+# width_A			The largest width (i.e. maximum number of digits) of any
+#					word.  
+#=============================================================================
+
+get_ensemble_kpf = function (series1, k=2, s=k, width_A) {
+	
+	k2 = k+s
+	totk = dim(as.matrix(series1))[1] - k2+1
+	ngens = dim(as.matrix(series1))[1]
+	nseries = dim(as.matrix(series1))[2] 
+	blocks_kpf = matrix(0.0, totk, 1) #joint of X(k)+1, X(k), Y(l)
+
+
+	#Run this through get_k to encode symbols 
+	blocks_k_temp = matrix(0.0, ngens, nseries)
+	for (f in 1:nseries) { 
+		blocks_k_temp[,f] = get_k(series1[,f],1,width_A )
+	}
+
+	#Now use blocks_k_temp to make a new series from the whole ensemble:
+	kseries = apply(blocks_k_temp,1, paste,collapse="")
+
+	#Pass the new ensemble to get_kpf: 
+	width_A  = 0 #No new formatting should be required now 
+	blocks_kpf = get_kpf(kseries, k , s, width_A)
+
+	return(blocks_kpf)
+
+}
+
+#=============================================================================
 # Dynamic information quantities! export LANG=en_US.UTF-8
 #=============================================================================
 #=============================================================================
@@ -235,9 +309,12 @@ get_MMI = function (series1) {
 #					the lists of blocks.
 # blocks_only=F 	When set to TRUE, the function will ONLY return the 
 #					lists of blocks. 
+# ensemble = F 		When set to TRUE, the function will calculate the ensemble 
+#					or multi- version of the EE. This meanse that all time 
+#					series will be grouped and treated as a single time series.  
 #=============================================================================
 get_EE = function ( series1, k=2, s=k, focal = 1, with_blocks=FALSE, 
-	blocks_only=FALSE){
+	blocks_only=FALSE, ensemble = FALSE){
 	
 	EE1 = NULL #Attach both the average and the local version to this
 
@@ -250,6 +327,28 @@ get_EE = function ( series1, k=2, s=k, focal = 1, with_blocks=FALSE,
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
 	width_A = nchar(trunc(max(series1)))
+
+	#If the ensemble version is chose, then reconstruct the time
+	#time series by grouping all states across each time point
+	#sampled (i.e. concatenate by rows).
+	if( ensemble == TRUE) {  
+
+		ngens = dim(as.matrix(series1))[1]
+		nseries = dim(as.matrix(series1))[2] 
+		
+		#Run this through get_k to encode symbols 
+		blocks_k_temp = matrix(0.0, ngens, nseries)
+		for (f in 1:nseries) { 
+			blocks_k_temp[,f] = get_k(series1[,f],1,width_A )
+		}
+
+		#Now use blocks_k_temp to make a new series from the whole ensemble:
+		kseries = apply(blocks_k_temp,1, paste,collapse="")
+
+		series1 = as.matrix(kseries) #Make series 1 the new time series
+		width_A  = 0 #No new formatting should be required now 		
+
+	}
 
 	######################
 	# p( X(k) )
@@ -324,9 +423,12 @@ get_EE = function ( series1, k=2, s=k, focal = 1, with_blocks=FALSE,
 #					the lists of blocks.
 # blocks_only=F 	When set to TRUE, the function will ONLY return the 
 #					lists of blocks. 
+# ensemble = F 		When set to TRUE, the function will calculate the ensemble 
+#					or multi- version of the EE. This meanse that all time 
+#					series will be grouped and treated as a single time series.  
 #=============================================================================
 get_ais = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE, 
-	blocks_only=FALSE){
+	blocks_only=FALSE,ensemble =FALSE){
 	
 	AIS1 = NULL #Attach both the average and the local version to this
 
@@ -340,6 +442,28 @@ get_ais = function ( series1, k=2, s=1, focal = 1, with_blocks=FALSE,
 	#Need some additional pre-formatting to make this work: 
 	#Find number of digits in largest integer: 
 	width_A = nchar(trunc(max(series1)))
+
+	#If the ensemble version is chose, then reconstruct the time
+	#time series by grouping all states across each time point
+	#sampled (i.e. concatenate by rows).
+	if( ensemble == TRUE) {  
+
+		ngens = dim(as.matrix(series1))[1]
+		nseries = dim(as.matrix(series1))[2] 
+		
+		#Run this through get_k to encode symbols 
+		blocks_k_temp = matrix(0.0, ngens, nseries)
+		for (f in 1:nseries) { 
+			blocks_k_temp[,f] = get_k(series1[,f],1,width_A )
+		}
+
+		#Now use blocks_k_temp to make a new series from the whole ensemble:
+		kseries = apply(blocks_k_temp,1, paste,collapse="")
+
+		series1 = as.matrix(kseries) #Make series 1 the new time series
+		width_A  = 0 #No new formatting should be required now 		
+
+	}
 
 	######################
 	# p( X(k)+1 )
