@@ -247,7 +247,7 @@ for (s in 1:nspp){
 	#=============================================================================
 	nt1 = 1
 	nt2 = tl
-	f1 = 100 #scaling factor
+	f1 = 10 #scaling factor
 	di_web[w] = list(get_info_dynamics(pop_ts = floor(f1*out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
 		k=k,with_blocks=FALSE))
 
@@ -278,7 +278,7 @@ for (s in 1:nspp){
 	# This section performs the same information theoretic calculations as above, 
 	# but in a region of dynamics corresponding to (ideally) equilibrium conditions. 
 	#=============================================================================
-	nt1e = tl/2
+	nt1e = tl*3/4
 	nt2e = tl
 	rweb1_eq[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[nt1e:tl,2:(nspp+1)],
 	spp_prms = out1[[w]]$spp_prms) )

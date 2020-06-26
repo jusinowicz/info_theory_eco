@@ -118,7 +118,8 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 			#a = approxfun( x = times, y = amp*rnorm(times)+xint, method = "linear", rule = 2) 
 			#a_t = amp*rnorm(times)+xint
 			print( paste("Mean of a(t) = ", mean(a_t),sep="")) 
-			print( paste("Var of a(t) = ", var(a_t),sep="")) 			a_m = mean(a_t)
+			print( paste("Var of a(t) = ", var(a_t),sep="")) 			
+			a_m = mean(a_t)
 			vara = var(a_t)
 		}
 

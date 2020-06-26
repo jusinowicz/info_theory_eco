@@ -18,8 +18,8 @@
 #=============================================================================
 library(deSolve)
 library(fields)
-source("./info_theory_functions/food_web_functions.R")
-source("./info_theory_functions/info_theory_functions.R")
+source("../info_theory_functions/food_web_functions.R")
+source("../info_theory_functions/info_theory_functions.R")
 
 
 #=============================================================================
@@ -34,21 +34,23 @@ tl=tend/delta1
 
 #The maximum block depth for dynamic info metrics (larger is more accurate, but
 #slower and could cause crashing if too large)
-k= 10 
+k= 5 
 
 #Number of food webs to generate
-nwebs = 1
+nwebs = 20
+
 #Output of each web
-out1 = list(matrix(0,nwebs,1))
+out1 = vector("list",nwebs)
 #Converting the web to Rutledge's compartment model and calculating the information
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
-rweb1 = list(matrix(0,nwebs,1))
+rweb1 = vector("list",nwebs)
 #Dynamic information metrics calculated from the (discretized) time series 
-di_web = list(matrix(0,nwebs,1))
+di_web = vector("list",nwebs)
 #Track the average transfer entropy and separable information between each pair of 
 #species as a way to build a network of information flow through the network. 
-te_web = list(matrix(0,nwebs,1))
-si_web = list(matrix(0,nwebs,1)) 
+te_web = vector("list",nwebs)
+si_web = vector("list",nwebs)
+
 #Random resources:
 c = 0.1
 amp = 1
@@ -114,7 +116,20 @@ for (w in 1:nwebs){
 	# 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
 	#Random resource fluctuations:
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-		tend, delta1, res_R = res_R,final = FALSE ))}, error = function(e){}) 
+		tend, delta1, res_R = res_R) )
+
+		print( paste( "nRsp", sum(out1[[w]]$out[tl,1:nRsp]>1) ) )
+		print( paste( "nCsp", sum(out1[[w]]$out[tl,(nRsp+1):nCsp]>1) ) )
+		print( paste( "nPsp", sum(out1[[w]]$out[tl,(nCsp+1):nPsp]>1) ) )		
+
+		# plot(out1[[w]]$out[,1], t="l", ylim = c(0, max(out1[[w]]$out[tl,],na.rm=T) ) )
+		# for(n in 2:nRsp){ lines(out1[[w]]$out[,n], col ="red") }
+		# for(n in (nRsp+1):(nCsp) ){ lines(out1[[w]]$out[,n], col ="blue") }
+		# for(n in (nCsp+1):(nPsp) ){ lines(out1[[w]]$out[,n]) }
+
+
+	}, error = function(e){}) 
+
 
 	
 	#=============================================================================
@@ -139,8 +154,8 @@ for (w in 1:nwebs){
 	# ce 		Conditional entropy		
 	#=============================================================================
 	
-	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
-		spp_prms = out1[[w]]$spp_prms) )
+	# rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
+	# 	spp_prms = out1[[w]]$spp_prms) )
 
 	#=============================================================================
 	# Information processing networks
