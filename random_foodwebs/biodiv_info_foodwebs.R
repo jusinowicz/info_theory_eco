@@ -18,6 +18,9 @@
 #=============================================================================
 library(deSolve)
 library(fields)
+library(tidyverse)
+library(lubridate)
+library(mgcv)
 source("../info_theory_functions/food_web_functions.R")
 source("../info_theory_functions/info_theory_functions.R")
 
@@ -37,7 +40,7 @@ tl=tend/delta1
 k= 5 
 
 #Number of food webs to generate
-nwebs = 20
+nwebs = 50
 
 #Output of each web
 out1 = vector("list",nwebs)
@@ -50,6 +53,8 @@ di_web = vector("list",nwebs)
 #species as a way to build a network of information flow through the network. 
 te_web = vector("list",nwebs)
 si_web = vector("list",nwebs)
+aiE_web = vector("list",nwebs)
+MMI_web = vector("list",nwebs)
 
 #Random resources:
 c = 0.1
@@ -60,9 +65,9 @@ for (w in 1:nwebs){
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*3)
-	nCsp = ceiling(runif(1)*2)
-	nPsp = ceiling(runif(1)*1)
+	nRsp = ceiling(runif(1)*5)
+	nCsp = ceiling(runif(1)*4)
+	nPsp = ceiling(runif(1)*3)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
@@ -118,18 +123,14 @@ for (w in 1:nwebs){
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
 		tend, delta1, res_R = res_R) )
 
-		print( paste( "nRsp", sum(out1[[w]]$out[tl,1:nRsp]>1) ) )
-		print( paste( "nCsp", sum(out1[[w]]$out[tl,(nRsp+1):nCsp]>1) ) )
-		print( paste( "nPsp", sum(out1[[w]]$out[tl,(nCsp+1):nPsp]>1) ) )		
+		# print( paste( "nRsp", sum(out1[[w]]$out[tl,1:nRsp]>1) ) )
+		# print( paste( "nCsp", sum(out1[[w]]$out[tl,(nRsp+1):nCsp]>1) ) )
+		# print( paste( "nPsp", sum(out1[[w]]$out[tl,(nCsp+1):nPsp]>1) ) )		
 
 		# plot(out1[[w]]$out[,1], t="l", ylim = c(0, max(out1[[w]]$out[tl,],na.rm=T) ) )
 		# for(n in 2:nRsp){ lines(out1[[w]]$out[,n], col ="red") }
 		# for(n in (nRsp+1):(nCsp) ){ lines(out1[[w]]$out[,n], col ="blue") }
 		# for(n in (nCsp+1):(nPsp) ){ lines(out1[[w]]$out[,n]) }
-
-
-	}, error = function(e){}) 
-
 
 	
 	#=============================================================================
@@ -154,8 +155,8 @@ for (w in 1:nwebs){
 	# ce 		Conditional entropy		
 	#=============================================================================
 	
-	# rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
-	# 	spp_prms = out1[[w]]$spp_prms) )
+	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
+		spp_prms = out1[[w]]$spp_prms) )
 
 	#=============================================================================
 	# Information processing networks
@@ -175,705 +176,199 @@ for (w in 1:nwebs){
 	#=============================================================================
 	nt1 = 1
 	nt2 = tl
-	di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-		k=k,with_blocks=TRUE))
+	# di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+	# 	k=k,with_blocks=FALSE))
 
-	## This code takes the population time-series counts output by the ODEs and 
-	## calculates the average Transfer Entropy from each species to every other 
-	## species. The goal is to get an overview of the major information pathways 
-	## in the web.   
+	# ## This code takes the population time-series counts output by the ODEs and 
+	# ## calculates the average Transfer Entropy from each species to every other 
+	# ## species. The goal is to get an overview of the major information pathways 
+	# ## in the web.   
+	# #=============================================================================
+	# # This function gives:
+	# # te_web		Average transfer entropy per species as a pairwise matrix
+	# #=============================================================================
+	# te_web[w] = list( get_te_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+	# 	k=k) )
+
+	# ## This code takes the population time-series counts output by the ODEs and 
+	# ## calculates the average Separable Information from each species to every other 
+	# ## species. The goal is to get an overview of the major information pathways 
+	# ## in the web.   
+	# #=============================================================================
+	# # This function gives:
+	# # si_web		Average separable information per species as a pairwise matrix
+	# #=============================================================================
+	# si_web[w] = list( get_si_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+	# 	k=k) )
+
 	#=============================================================================
 	# This function gives:
-	# te_web		Average transfer entropy per species as a pairwise matrix
+	# aiE_web    The AI of the entire ensemble, treated as a single time series. 
 	#=============================================================================
-	te_web[w] = list( get_te_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-		k=k) )
+	aiE_web[w] = list( get_ais (  series1 = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+		k=k, ensemble = TRUE)    )
 
-	## This code takes the population time-series counts output by the ODEs and 
-	## calculates the average Separable Information from each species to every other 
-	## species. The goal is to get an overview of the major information pathways 
-	## in the web.   
 	#=============================================================================
 	# This function gives:
-	# si_web		Average separable information per species as a pairwise matrix
+	# MMI_web    The MMI of the entire ensemble, treated as a single time series. 
 	#=============================================================================
-	si_web[w] = list( get_si_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-		k=k) )
+	MMI_web[w] = list( get_ais (  series1 = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
+		k=k, ensemble = TRUE)    )
+
+	}, error = function(e){}) 
+
 }
 
-save(file = "rand_fwebmod6C.var", out1,  di_web,te_web,si_web)
+#save(file = "rand_fwebmod6F.var", out1,  di_web,te_web,si_web)
+save(file = "rand_fwebmod7D.var", out1, rweb1,aiE_web,MMI_web)
+
 
 #=============================================================================
-# Examine a particular food web more closely: 
+# Load saved foodwebs and look at relationships between function and various 
+# measures of complexity. 
 #=============================================================================
-library(viridis)
-library(fields)
-library(igraph)
-library(visNetwork)
+#This requires user input!
+variable.list=list("out1", "di_web", "te_web","si_web")
 
-w=1
-#=============================================================================
-#Export parameters into csv tables for easier reading. 
-#  !!! Make sure to set the name of the excel file below!!!!
-#=============================================================================
-library(xlsx)
 
-var_load = out1[[w]]$spp_prms[5] #These start at variable 5 and go to 14
-write.xlsx(var_load, file="spp_prms_rweb1.xlsx", sheetName="sheet1", row.names=FALSE)
-for (n in 6:14){
-	var_load = out1[[w]]$spp_prms[n]
-	sheet = paste("sheet",n-4, sep='')
+file.name.list=c(
+  "rand_fwebmod7A.var", 
+  "rand_fwebmod7B.var",  
+  "rand_fwebmod7C.var",
+  "rand_fwebmod7D.var",
+  "rand_fwebmod7E.var",
+  "rand_fwebmod7F.var"
+  )
 
-	write.xlsx(var_load, file="spp_prms_rweb1.xlsx", sheetName=sheet, append=TRUE,row.names=FALSE)
+
+#Combine the variables from each scenario file into one variable
+var.length=length(variable.list)
+nscen = length(file.name.list)
+out1_all=NULL
+rweb1_all = NULL
+aiE_web_all = NULL
+MMI_web_all = NULL
+
+for (g in 1:nscen){
+	load(file.name.list[[g]])
+	nwebs = length( aiE_web[(!sapply(aiE_web,is.null) ) ])
+	rweb1_all=c(rweb1_all, rweb1[(!sapply(rweb1,is.null) ) ])
+	aiE_web_all=c(aiE_web_all, aiE_web[(!sapply(aiE_web,is.null) ) ])
+	MMI_web_all=c(MMI_web_all, MMI_web[(!sapply(MMI_web,is.null) ) ])
+	out1_all=c(out1_all, out1[1:nwebs])
+
 }
 
-#=============================================================================
-#Export the average information theoretic quantities into tables.  
-#  !!! Make sure to set the name of the excel file below!!!!
-#=============================================================================
-library(xlsx)
+#Take variables out of the lists to plot: 
+ncells=length(aiE_web_all)
+rDIT = data.frame(matrix(0, nrow=ncells, ncol =8) ) 
+ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rMI", "MI", "AI" )
+colnames(rDIT) = ncnames
 
-var_load = di_web[[w]]$ee_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet1", row.names=FALSE)
-var_load = di_web[[w]]$ai_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet2",append=TRUE,row.names=FALSE)
-var_load = di_web[[w]]$te_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet3",append=TRUE,row.names=FALSE)
-var_load = di_web[[w]]$si_means #These start at variable 5 and go to 14
-write.xlsx(var_load, file="avg_dit_rweb1.xlsx", sheetName="sheet4",append=TRUE,row.names=FALSE)
+for (n in 1:ncells){
+	rDIT$fwno[n] = n 
+	rDIT$nspp[n] = out1_all[[n]]$spp_prms$nspp #Number of species
 
-#=============================================================================
-# Plot each of the average information theoretic metrics as a bar graph
-#=============================================================================
-fig.name = paste("average_dynamics_rweb1.pdf",sep="")
-pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
+	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
+	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ]) #Biomass at last time
 
-layout.matrix=matrix(c(1:4), nrow = 2, ncol = 2)
-layout(mat = layout.matrix,
-       heights = c(5,5), # Heights of the rows
-       widths = c(5,5)) # Widths of columns
+	tbck = tlast*3/4 #Use a subset that excludes transient stage for variance
+	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast-tbck):tlast, 2:(rDIT$nspp[n]+1) ]) )
 
-#layout.show(4)
+	#Shannon Diversity
+	pi = out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ] / rDIT$Biomass[n]
+	pi[pi <= 0 ] = NA
+	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
-barplot(di_web[[w]]$ee_means,cex.lab =1.3, beside = TRUE,ylab="Bits of information", xlab = "")
-abline(v =out1[[w]]$spp_prms$nRsp+1,col="red")
-mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1,col="blue" )
-mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
+	#Rutledge MI 
+	rDIT$rMI[n] = rweb1_all[[n]]$mI_mean2
 
-barplot(di_web[[w]]$ai_means,cex.lab =1.3, beside = TRUE,ylab="Bits of information", xlab = "Species #")
-abline(v =out1[[w]]$spp_prms$nRsp+1,col="red" )
-mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1,col="blue" )
-mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-mtext("Average Information Storage", side = 3, line =4)
+	#Multiple Mutual Information
+	rDIT$MI[n] = MMI_web_all[[n]]$mean
 
+	#Ensemble active information
+	rDIT$AI[n] = aiE_web_all[[n]]$mean
 
-barplot(di_web[[w]]$te_means,cex.lab =1.3, beside = TRUE,ylab="", xlab = "")
-abline(v =out1[[w]]$spp_prms$nRsp+1,col="red" )
-mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1,col="blue"  )
-mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-mtext("Average Information Transfer", side = 3, line = 2)
-
-
-barplot(di_web[[w]]$si_means,cex.lab =1.3, beside = TRUE,ylab="", xlab = "Species #")
-abline(v =out1[[w]]$spp_prms$nRsp+1,col="red"  )
-mtext("Resour", side=1, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(v =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp +1 ,col="blue" )
-mtext("Consum", side=1, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Pred", side=1, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-mtext("Average Information Modification", side = 3, line = 2)
-
-dev.off()
-
-
-#=============================================================================
-# Plot the population dynamics
-#=============================================================================
-out = out1[[w]]$out
-nspp = out1[[w]]$spp_prms$nspp
-nRsp = out1[[w]]$spp_prms$nRsp
-nCsp = out1[[w]]$spp_prms$nCsp
-nPsp = out1[[w]]$spp_prms$nPsp
-tl = tend/delta1
-par(mfrow=c(3,1))
-#Resource species in RED
-plot(out[,"1"],t="l",col="red",ylim = c(0,max(out[tl,2:(nRsp+1)],na.rm=T)))
-for( n in 1:(nRsp) ) {
-lines(out[,paste(n)],t="l",col="red")
 }
 
-#Consumer species in BLUE 
-plot(out[,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[tl,(nRsp+2):(nRsp+nCsp+1)],na.rm=T)))
-for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[,paste(n)],t="l",col="blue")
-}
-
-#Predator species in BLACK
-plot(out[,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)))
-for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[3900:4000,paste(n)],t="l")
-}
-
-#=============================================================================
-# Plot the dynamic information metrics with time 
-#=============================================================================
-#Local excess entropy
-nt_use = dim(di_web[[w]]$ee_local)[1]
-image.plot( 1:nt_use, 1:nspp, di_web[[w]]$ee_local, ylab="Species number", xlab="Time" )
-abline(h =out1[[w]]$spp_prms$nRsp )
-mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
-mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-
-#Local active information storage
-nt_use = dim(di_web[[w]]$ai_local)[1]
-image.plot( 1:nt_use, 1:nspp, di_web[[w]]$ai_local, ylab="Species number", xlab="Time" )
-abline(h =out1[[w]]$spp_prms$nRsp )
-mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
-mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-
-#Local transfer entropy
-nt_use = dim(di_web[[w]]$te_local)[1]
-image.plot( 1:nt_use, 1:nspp, di_web[[w]]$te_local, ylab="Species number", xlab="Time" )
-abline(h =out1[[w]]$spp_prms$nRsp )
-mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
-mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-
-#Local separable information
-nt_use = dim(di_web[[w]]$si_local)[1]
-image.plot( 1:nt_use, 1:nspp, di_web[[w]]$si_local, ylab="Species number", xlab="Time" )
-abline(h =out1[[w]]$spp_prms$nRsp )
-mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
-mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-
-
-#=============================================================================
-# Network plots of information storage.
-#	The local exess entropy or active information could be used to show the 
-#	dominant cycles involved in information storage...
-#=============================================================================
-
-
-#=============================================================================
-# Network plots of information transfer.
-# 	This uses the average Transfer Entropy between each species pair to create
-#	a directed network of information transfers. 
-#=============================================================================
-
-###This shows the network, but only highlights the largest link between each
-###node
-#Pair down the graph by removing species that have essentially gone extinct
-#from the system. 
-spp_use = (1:nspp)[out1[[w]]$out[10000,2:nspp]>1e-5]
-te_web1 = te_web[[w]][spp_use,spp_use]
-#Make an igraph object
-te_gr = graph_from_adjacency_matrix(te_web1, mode="directed", weighted=T)
-#Convert to VisNetwork list
-te_visn = toVisNetworkData(te_gr)
-te_visn$nodes$value = te_visn$nodes$id
-#Copy column "weight" to new column "value" in list "edges"
-te_visn$edges$value = te_visn$edges$weight
-#Further prune links that are smaller than the 95% interval
-m1 = mean(c(log(te_visn$edges$value)))
-sd1 = sqrt(var(c(log(te_visn$edges$value))))
-te_visn$edges =te_visn$edges[log(te_visn$edges$value) > (m1-sd1), ]
-
-#Color code the nodes by trophic level 
-spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
-	matrix("black",nPsp,1) )
-spp_colors = spp_colors [spp_use]
-te_visn$nodes$color = spp_colors
-
-
-#Plot this as an HTML object 
-#Add arrows to show direction
-#Add an option that when a node is clicked on only the "from" arrows are shown
-visNetwork(te_visn$nodes, te_visn$edges) %>%
-	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
-		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
-		  	visIgraphLayout(layout = "layout_in_circle") %>%
-		  		#visSave(file="te_graph1p.html", selfcontained = FALSE, background = "white")
-  				visExport( type = "pdf", name = "te_web_biggest_1")
-
-
-######################################################
-# Add information storage (AIS or EE) as a self-loop!#
-######################################################
-edges_tmp = data.frame(from = c(1:length(spp_use)), to =(1:length(spp_use)),weight =(1:length(spp_use))  )
-edges_tmp$value = di_web[[1]]$ai_means[spp_use]
-te_visn$edges=rbind(te_visn$edges,edges_tmp)
-
-visNetwork(te_visn$nodes, te_visn$edges) %>%
-	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
-		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
-		  	visIgraphLayout(layout = "layout_in_circle") %>%
-		  		visSave(file="ai_te_graph1.html", selfcontained = FALSE, background = "white")
-  				#visExport( type = "pdf", name = "te_web_biggest_1")
-
-
-
-######################################
-#Because transfer can be asymmetrical, make 2 different graphs showing direction
-#of flows. 
-te_gr1 = graph_from_adjacency_matrix( (te_web[[w]]*lower.tri(te_web[[w]])), mode="directed", weighted=T)
-te_gr2 = graph_from_adjacency_matrix( (te_web[[w]]*upper.tri(te_web[[w]])), mode="directed", weighted=T)
-
-#Convert to VisNetwork list
-te_visn1 = toVisNetworkData(te_gr1)
-te_visn2 = toVisNetworkData(te_gr2)
-#Copy column "weight" to new column "value" in list "edges"
-te_visn1$edges$value = te_visn1$edges$weight
-te_visn2$edges$value = te_visn2$edges$weight
-#Color code the nodes by trophic level 
-te_visn1$nodes$color = c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
-	matrix("black",nPsp,1) )
-te_visn2$nodes$color = c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
-	matrix("black",nPsp,1) )
-#te_visn1$nodes$color = c( matrix(c("red","blue","black"),9,1) )
-#te_visn2$nodes$color = c( matrix(c("red","blue","black"),9,1) )
-
-#Plot this as an HTML object 
-#Add arrows to show direction: 
-te_visn1$edges$arrows = c(matrix("to",dim(te_visn1$edges)[1]))
-te_visn2$edges$arrows = c(matrix("to",dim(te_visn2$edges)[1]))
-
-visNetwork(te_visn1$nodes, te_visn1$edges) %>%
-  visIgraphLayout(layout = "layout_in_circle") %>%
-  	visExport( type = "pdf", name = "te_web_clock_1")
-
-visNetwork(te_visn2$nodes, te_visn2$edges) %>%
-  visIgraphLayout(layout = "layout_in_circle") %>%
-  	visExport( type = "pdf", name = "te_web_clock_1")
-
-
-#=============================================================================
-# Network plots of information modification.
-# 	This uses the average Separable Information between each species pair to create
-#	a directed network of information transfers. 
-#=============================================================================
-###This shows the network, but only highlights the largest link between each
-###node
-#Pair down the graph by removing species that have essentially gone extinct
-#from the system. 
-spp_use = (1:nspp)[out1[[w]]$out[10000,2:nspp]>1e-5]
-si_web1 = si_web[[w]][spp_use,spp_use]
-#Make an igraph object
-si_gr = graph_from_adjacency_matrix(si_web1, mode="directed", weighted=T)
-#Convert to VisNetwork list
-si_visn = toVisNetworkData(si_gr)
-si_visn$nodes$value = si_visn$nodes$id
-#Copy column "weight" to new column "value" in list "edges"
-si_visn$edges$value = si_visn$edges$weight
-#Color code the nodes by trophic level 
-spp_colors= c( matrix("red",nRsp,1),matrix("blue",nCsp,1),
-	matrix("black",nPsp,1) )
-spp_colors = spp_colors [spp_use]
-si_visn$nodes$color = spp_colors
-
-#Plot this as an HTML object 
-#Add arrows to show direction
-#Add an option that when a node is clicked on only the "from" arrows are shown
-visNetwork(si_visn$nodes, si_visn$edges) %>%
-	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
-		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
-		  	visIgraphLayout(layout = "layout_in_circle") %>%
-		  		visSave(file="si_graph1.html", selfcontained = FALSE, background = "white")
-  				#visExport( type = "pdf", name = "si_web_biggest_1")
-
-
-#=============================================================================
-# Make combined plots of population and dynamic information metrics with time 
-#=============================================================================
-
-#===========================================#
-#plot1: Info storage (Excess Entropy or AIS)
-#===========================================#
-
-# fig.name = paste("dynamic_info_AIS_rweb1.pdf",sep="")
-# pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
-
-#When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_AIS_rweb1_sub.pdf",sep="")
-pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
-
-
-layout.matrix=matrix(c(1:12), nrow = 6, ncol = 2)
-layout(mat = layout.matrix,
-       heights = c(1.5, 3.5,1.5, 3.5, 1.5, 3.5,
-       1.5, 3.5,1.5, 3.5, 1.5, 3.5), # Heights of the rows
-       widths = c(12,1)) # Widths of columns
-
-#layout.show(12)
-
-#par(mfrow=c(2,1),mai= c( 0.0, 0.2, 0.0, 0.2), omi=c(0.5,0.75,0.5,0.75)) #,mai= c( 1, 0, 0.2, 0), omi=c(2,0.75,2,0.75))
-
-###Common figure properties
-
-t1 = 5840
-nlevel = 64 #For viridis color scheme
-#nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = 5940
-rs1 = 450 #lower bound for Resource population plot 
-
-par(oma = c(3,2,3,3) )
-
-#===========================================#
-#===========================================#
-###Predator species
-par( mar = c(0.5,4,0,4) )
-
-plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
-	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
-for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[t1:nt_use,paste(n)],t="l")
-}
-mtext("Local Information Storage", side = 3, line = 0, outer = TRUE)
-
-#Local excess entropy
-#par( mar = c(2,4,0,4) )
-# nt_use = dim(di_web[[w]]$ee_local)[1]
-#image( 1:nt_use, 1:nCsp, di_web[[w]]$ee_local[,(nRsp+nCsp+1):(nspp)], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel) )
-
-#Local active information storage
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nPsp, di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3)
-
-###Consumer species
-par( mar = c(0.5,4,0,4) )
-#Consumer species in BLUE
-plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
-	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
-for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[t1:nt_use,paste(n)],t="l",col="blue")
-}
-
-#Local excess entropy
-#par( mar = c(2,4,0,4) )
-# nt_use = dim(di_web[[w]]$ee_local)[1]
-#image( 1:nt_use, 1:nCsp, di_web[[w]]$ee_local[,(nRsp+1):(nRsp+nCsp)], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel) )
-
-#Local active information storage
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nCsp, di_web[[w]]$ai_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),,cex.main=1.3,cex.lab=1.3 )
-
-###Resource Species
-par( mar = c(0.5,4,0,4) )
-#Resource species in RED
-plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(rs1,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
-  xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
-for( n in 1:(nRsp) ) {
-lines(out[t1:nt_use,paste(n)],t="l",col="red")
-}
-
-#Local excess entropy
-#par( mar = c(2,4,0,4) )
-# nt_use = dim(di_web[[w]]$ee_local)[1]
-#image( 1:nt_use, 1:nRsp, di_web[[w]]$ee_local[,1:nRsp], ylab="Species number", 
-#	xlab="Time",col=viridis(nlevel) )
-
-#Local active information storage
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nRsp, di_web[[w]]$ai_local[t1:nt_use,1:nRsp], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3 )
-
-###Plot color bars for image plots: 
-
-#Color bar 1
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-#Color bar 2
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-
-#Color bar 3
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$ai_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-
-
-dev.off()
-
-#===========================================#
-#plot2: Information transmission (TE)
-#===========================================#
-
-# fig.name = paste("dynamic_info_TE_rweb1.pdf",sep="")
-# pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
-
-#When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_TE_rweb1_sub.pdf",sep="")
-pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
-
-
-layout.matrix=matrix(c(1:12), nrow = 6, ncol = 2)
-layout(mat = layout.matrix,
-       heights = c(1.5, 3.5,1.5, 3.5, 1.5, 3.5,
-       1.5, 3.5,1.5, 3.5, 1.5, 3.5), # Heights of the rows
-       widths = c(12,1)) # Widths of columns
-
-#layout.show(12)
-
-#par(mfrow=c(2,1),mai= c( 0.0, 0.2, 0.0, 0.2), omi=c(0.5,0.75,0.5,0.75)) #,mai= c( 1, 0, 0.2, 0), omi=c(2,0.75,2,0.75))
-
-###Common figure properties
-nlevel = 64 #For viridis color 
-t1 = 5840
-nlevel = 64 #For viridis color scheme
-#nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = 5940
-rs1 = 450 #lower bound for Resource population plot 
-
-par(oma = c(3,2,3,3) )
-
-#===========================================#
-#===========================================#
-###Predator species
-par( mar = c(0.5,4,0,4) )
-
-plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[t1:nt_use,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
-	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
-for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[t1:nt_use,paste(n)],t="l")
-}
-mtext("Local Transfer Entropy", side = 3, line = 0, outer = TRUE)
-
-#Local Transfer Entropy 
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nPsp, di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3)
-
-###Consumer species
-par( mar = c(0.5,4,0,4) )
-#Consumer species in BLUE
-plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
-	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
-for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[t1:nt_use,paste(n)],t="l",col="blue")
-}
-
-#Local transfer entropy
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nCsp, di_web[[w]]$te_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),,cex.main=1.3,cex.lab=1.3 )
-
-###Resource Species
-par( mar = c(0.5,4,0,4) )
-#Resource species in RED
-plot(out[1:tl,"1"],t="l",col="red",ylim = c(rs1,max(out[t1:nt_use,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
-  xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
-for( n in 1:(nRsp) ) {
-lines(out[t1:nt_use,paste(n)],t="l",col="red")
-}
-
-#local transfer entropy
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nRsp, di_web[[w]]$te_local[t1:nt_use,1:nRsp], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3 )
-
-###Plot color bars for image plots: 
-
-#Color bar 1
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-#Color bar 2
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-
-#Color bar 3
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$te_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-dev.off()
-
-#===========================================#
-#plot3: Information modification (SI)
-#===========================================#
-# fig.name = paste("dynamic_info_SI_rweb1.pdf",sep="")
-# pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
-
-#When the figure is only over a subset of the time to show transient dynamics: 
-fig.name = paste("dynamic_info_SI_rweb1_sub.pdf",sep="")
-pdf(file=fig.name, height=8, width=8, onefile=TRUE, family='Helvetica', pointsize=16)
-
-
-layout.matrix=matrix(c(1:12), nrow = 6, ncol = 2)
-layout(mat = layout.matrix,
-       heights = c(1.5, 3.5,1.5, 3.5, 1.5, 3.5,
-       1.5, 3.5,1.5, 3.5, 1.5, 3.5), # Heights of the rows
-       widths = c(12,1)) # Widths of columns
-
-#layout.show(12)
-
-#par(mfrow=c(2,1),mai= c( 0.0, 0.2, 0.0, 0.2), omi=c(0.5,0.75,0.5,0.75)) #,mai= c( 1, 0, 0.2, 0), omi=c(2,0.75,2,0.75))
-
-###Common figure properties
-nlevel = 64 #For viridis color 
-t1 = 5840
-nlevel = 64 #For viridis color scheme
-#nt_use = dim(di_web[[w]]$ai_local)[1]
-nt_use = 5940
-rs1 = 450 #lower bound for Resource population plot 
-
-par(oma = c(3,2,3,3) )
-
-#===========================================#
-#===========================================#
-###Predator species
-par( mar = c(0.5,4,0,4) )
-
-plot(out[t1:nt_use,paste(nRsp+nCsp+2)],t="l",ylim = c(0,max(out[tl,(nRsp+nCsp+2):(nspp+1)],na.rm=T)), 
-	ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
-for( n in ((nRsp+nCsp+1):(nspp) ) ) {
-lines(out[t1:nt_use,paste(n)],t="l")
-}
-mtext("Local Seprable Information", side = 3, line = 0, outer = TRUE)
-
-#Local seprable informatio
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nPsp, di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3)
-
-###Consumer species
-par( mar = c(0.5,4,0,4) )
-#Consumer species in BLUE
-plot(out[t1:nt_use,paste(nRsp+2)],t="l",col="blue",ylim = c(0,max(out[t1:nt_use,(nRsp+2):(nRsp+nCsp+1)],na.rm=T))
-	, ylab="Population", xlab="", xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2)
-for( n in ( (nRsp+1):(nRsp+nCsp) ) ) {
-lines(out[t1:nt_use,paste(n)],t="l",col="blue")
-}
-
-#Local separable information
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nCsp, di_web[[w]]$si_local[t1:nt_use,(nRsp+1):(nRsp+nCsp)], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),,cex.main=1.3,cex.lab=1.3 )
-
-###Resource Species
-par( mar = c(0.5,4,0,4) )
-#Resource species in RED
-plot(out[t1:nt_use,"1"],t="l",col="red",ylim = c(rs1,max(out[tl,2:(nRsp+1)],na.rm=T)), ylab="Population", xlab="", 
-  xaxs="i", xaxt="n",yaxs="i",cex.main=1.2,cex.lab=1.2, )
-for( n in 1:(nRsp) ) {
-lines(out[t1:nt_use,paste(n)],t="l",col="red")
-}
-
-#Local separable information
-par( mar = c(2,4,0,4) )
-image( t1:nt_use, 1:nRsp, di_web[[w]]$si_local[t1:nt_use,1:nRsp], ylab="Species #", 
-	xlab="Time",col=viridis(nlevel),cex.main=1.3,cex.lab=1.3 )
-
-###Plot color bars for image plots: 
-
-#Color bar 1
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-#Color bar 2
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-
-#Color bar 3
-par( mar = c(0.5,0.5,0.5,0.5) )
-frame()
-par( mar = c(3,0,0,2) )
-var_dist =  di_web[[w]]$si_local[t1:nt_use,(nRsp+nCsp+1):(nspp)]
-image(1,(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	t(seq(min(var_dist),max(var_dist),max(var_dist)/nlevel)), 
-	ylab="",xaxt='n',col=viridis(nlevel))
-
-dev.off()
-
-#===============================================================================
-#===============================================================================
-#===============================================================================
-
-
-###Or plot a subset of the data: 
-nt1 = 5000
-nt2 = tl-50
-image.plot( nt1:nt2, 1:nspp, di_web[[w]]$ee_local[nt1:nt2,], ylab="Species number", xlab="Time" )
-
-#Local active information storage
-image.plot( nt1:nt2, 1:nspp, di_web[[w]]$ai_local[nt1:nt2,], ylab="Species number", xlab="Time" )
-
-#Local transfer entropy
-image.plot( nt1:nt2, 1:nspp, di_web[[w]]$te_local[nt1:nt2,], ylab="Species number", xlab="Time" )
-
-#Local separable information
-image.plot( nt1:nt2, 1:nspp, di_web[[w]]$si_local[nt1:nt2,], ylab="Species number", xlab="Time" )
-abline(h =out1[[w]]$spp_prms$nRsp )
-mtext("Resources", side=2, at = c( out1[[w]]$spp_prms$nRsp/2 ) )
-abline(h =out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp  )
-mtext("Consumers", side=2, at = c( (out1[[w]]$spp_prms$nCsp+out1[[w]]$spp_prms$nRsp )-(out1[[w]]$spp_prms$nCsp)/2 ) )
-mtext("Predators", side=2, at = c( nspp-(out1[[w]]$spp_prms$nPsp)/2 ) )
-
-
-
-
-
-out1[[w]]$out[10000,]>1e-5
-
-#Generate quantities for the maximum entropy distribution, i.e. uniform: 
-pop_me = runif(nspp)
-me_freq = pop_me/matrix(sum(pop_me),length(pop_me),1)
+lm_nspp = lm(rDIT$Biomass~rDIT$nspp)
+lm_H=lm(rDIT$Biomass~rDIT$shannon)
+lm_rMI=lm(rDIT$Biomass~rDIT$rMI)
+lm_MI=lm(rDIT$Biomass~rDIT$MI)
+lm_AI=lm(rDIT$Biomass~rDIT$AI)
+
+#Plots 
+ggplot (rDIT, aes(x = nspp, y = Biomass,color = "1" ) ) + geom_point () + 
+	geom_point (aes(x = shannon, y =Biomass,color = "2")) +
+	geom_point( aes (x = rMI, y=Biomass,color = "3" ) ) +
+	geom_point( aes (x = MI, y=Biomass,color = "4" ) ) +
+	geom_point( aes (x = AI, y=Biomass,color = "5" ) ) +
+	#scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
+
+
+#Files to load
+# file.name.list=c(
+#   "rand_fwebmod6A.var", 
+#   "rand_fwebmod6B.var",  
+#   "rand_fwebmod6C.var",
+#   "rand_fwebmod6D.var",
+#   "rand_fwebmod6E.var",
+#   "rand_fwebmod6F.var"
+#   )
+
+
+
+# #Combine the variables from each scenario file into one variable
+# var.length=length(variable.list)
+# nscen = length(file.name.list)
+# out1_all=NULL
+# di_web_all = NULL
+# te_web_all = NULL
+# si_web_all = NULL
+
+# for (g in 1:nscen){
+# 	load(file.name.list[[g]])
+# 	nwebs = length( di_web[(!sapply(di_web,is.null) ) ])
+# 	di_web_all=c(di_web_all, di_web[(!sapply(di_web,is.null) ) ])
+# 	te_web_all=c(te_web_all, te_web[(!sapply(te_web,is.null) ) ])
+# 	si_web_all=c(si_web_all, si_web[(!sapply(si_web,is.null) ) ])
+# 	out1_all=c(out1_all, out1[1:nwebs])
+
+# }
+
+# #Take variables out of the lists to plot: 
+# ncells=length(si_web_all)
+# rDIT = data.frame(matrix(0, nrow=ncells, ncol =7) ) 
+# ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "MI", "AI" )
+# colnames(rDIT) = ncnames
+
+# for (n in 1:ncells){
+# 	rDIT$fwno[n] = n 
+# 	rDIT$nspp[n] = out1_all[[n]]$spp_prms$nspp #Number of species
+
+# 	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
+# 	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ]) #Biomass at last time
+
+# 	tbck = tlast*3/4 #Use a subset that excludes transient stage for variance
+# 	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast-tbck):tlast, 2:(rDIT$nspp[n]+1) ]) )
+
+# 	#Shannon Diversity
+# 	pi = out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ] / rDIT$Biomass[n]
+# 	pi[pi <= 0 ] = NA
+# 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
+
+# 	#Sum of Active Information
+# 	aip = (pi*di_web_all[[n]]$ai_means)
+# 	rDIT$AI[n] = sum(aip, na.rm=T)
+# }
+
+# lm_nspp = lm(rDIT$Biomass~rDIT$nspp)
+# lm_H=lm(rDIT$Biomass~rDIT$shannon)
+# lm_AI=lm(rDIT$Biomass~rDIT$AI)
+
+# #Plots 
+# ggplot (rDIT, aes(x = nspp, y = Biomass,color = "1" ) ) + geom_point () + 
+# 	geom_point (aes(x = shannon, y =Biomass,color = "2"))+
+# 	geom_point( aes (x = AI, y=Biomass,color = "3" ) )+
+# 	scale_color_discrete(name ="", labels = c("# Species", "SDI","AI" ) )
 
