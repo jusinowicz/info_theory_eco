@@ -65,9 +65,9 @@ for (w in 1:nwebs){
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*5)
-	nCsp = ceiling(runif(1)*4)
-	nPsp = ceiling(runif(1)*3)
+	nRsp = ceiling(runif(1)*15)
+	nCsp = ceiling(runif(1)*10)
+	nPsp = ceiling(runif(1)*7)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
@@ -220,7 +220,7 @@ for (w in 1:nwebs){
 }
 
 #save(file = "rand_fwebmod6F.var", out1,  di_web,te_web,si_web)
-save(file = "rand_fwebmod7D.var", out1, rweb1,aiE_web,MMI_web)
+save(file = "rand_fwebmod7E.var", out1, rweb1,aiE_web,MMI_web)
 
 
 #=============================================================================
