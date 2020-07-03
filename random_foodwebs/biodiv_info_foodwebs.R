@@ -57,17 +57,21 @@ aiE_web = vector("list",nwebs)
 MMI_web = vector("list",nwebs)
 
 #Random resources:
-c = 0.1
-amp = 1
-res_R = c(amp,c)
+c1 = 1 
+amp1 = 0.25 #100000 #1/exp(1) 
+
+#Random consumers
+c2 = 1
+amp2 = 0.1
+res_R = c(amp1,c1,amp2,c2)
 
 for (w in 1:nwebs){ 
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*15)
-	nCsp = ceiling(runif(1)*10)
-	nPsp = ceiling(runif(1)*7)
+	nRsp = ceiling(runif(1)*6)
+	nCsp = ceiling(runif(1)*4)
+	nPsp = ceiling(runif(1)*2)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
@@ -174,7 +178,7 @@ for (w in 1:nwebs){
 	# AI_local		Local active information per species
 	# TE_local		Local transfer entropy per species
 	#=============================================================================
-	nt1 = 1
+	nt1 = 2/3*tl
 	nt2 = tl
 	# di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
 	# 	k=k,with_blocks=FALSE))
@@ -220,24 +224,27 @@ for (w in 1:nwebs){
 }
 
 #save(file = "rand_fwebmod6F.var", out1,  di_web,te_web,si_web)
-save(file = "rand_fwebmod7E.var", out1, rweb1,aiE_web,MMI_web)
+#save(file = "rand_fwebmod7G.var", out1, rweb1,aiE_web,MMI_web) #These are deterministic
+save(file = "rand_fwebmod8A.var", out1, rweb1,aiE_web,MMI_web) #These are stochastic
 
 
 #=============================================================================
 # Load saved foodwebs and look at relationships between function and various 
 # measures of complexity. 
 #=============================================================================
+#load("/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/rand_fwebmod7G.var")
 #This requires user input!
 variable.list=list("out1", "di_web", "te_web","si_web")
 
 
 file.name.list=c(
-  "rand_fwebmod7A.var", 
-  "rand_fwebmod7B.var",  
-  "rand_fwebmod7C.var",
-  "rand_fwebmod7D.var",
-  "rand_fwebmod7E.var",
-  "rand_fwebmod7F.var"
+ # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7A.var", 
+ # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7B.var",  
+ # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7C.var",
+ # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7D.var",
+  "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7E.var",
+  "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7F.var",
+  "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7G.var"
   )
 
 
@@ -251,32 +258,35 @@ MMI_web_all = NULL
 
 for (g in 1:nscen){
 	load(file.name.list[[g]])
-	nwebs = length( aiE_web[(!sapply(aiE_web,is.null) ) ])
-	rweb1_all=c(rweb1_all, rweb1[(!sapply(rweb1,is.null) ) ])
-	aiE_web_all=c(aiE_web_all, aiE_web[(!sapply(aiE_web,is.null) ) ])
-	MMI_web_all=c(MMI_web_all, MMI_web[(!sapply(MMI_web,is.null) ) ])
-	out1_all=c(out1_all, out1[1:nwebs])
+	nwebs = (!sapply(aiE_web,is.null) )
+	rweb1_all=c(rweb1_all, rweb1[nwebs ])
+	aiE_web_all=c(aiE_web_all, aiE_web[nwebs])
+	MMI_web_all=c(MMI_web_all, MMI_web[nwebs ])
+	out1_all=c(out1_all, out1[nwebs])
 
 }
 
 #Take variables out of the lists to plot: 
 ncells=length(aiE_web_all)
-rDIT = data.frame(matrix(0, nrow=ncells, ncol =8) ) 
-ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rMI", "MI", "AI" )
+rDIT = data.frame(matrix(0, nrow=ncells, ncol =10) ) 
+ncnames = c("fwno","Biomass", "var_Biomass", "Snspp", "Fnspp", "shannon", "rMI", "MI", 
+	"AI","eq_state" )
 colnames(rDIT) = ncnames
 
 for (n in 1:ncells){
-	rDIT$fwno[n] = n 
-	rDIT$nspp[n] = out1_all[[n]]$spp_prms$nspp #Number of species
-
 	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
-	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ]) #Biomass at last time
 
-	tbck = tlast*3/4 #Use a subset that excludes transient stage for variance
-	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast-tbck):tlast, 2:(rDIT$nspp[n]+1) ]) )
+	rDIT$fwno[n] = n 
+	rDIT$Snspp[n] = out1_all[[n]]$spp_prms$nspp #Starting number of species
+	rDIT$Fnspp[n] = sum(out1_all[[n]]$out[tlast,] > 0) #Final number of species
+
+	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast, 2:(rDIT$Snspp[n]+1) ]) #Biomass at last time
+
+	tbck = 1 #tlast*3/4 #Use a subset that excludes transient stage for variance
+	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast-tbck):tlast, 2:(rDIT$Snspp[n]+1) ]) )
 
 	#Shannon Diversity
-	pi = out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ] / rDIT$Biomass[n]
+	pi = out1_all[[n]]$out[tlast, 2:(rDIT$Snspp[n]+1) ] / rDIT$Biomass[n]
 	pi[pi <= 0 ] = NA
 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
@@ -289,22 +299,92 @@ for (n in 1:ncells){
 	#Ensemble active information
 	rDIT$AI[n] = aiE_web_all[[n]]$mean
 
+	#Determine whether this was a web in equilibrium (0) or not (1).
+	eqtf = factor(levels=c(0,1))
+	eq_test = test_eq( foodweb = out1_all[[n]], eqtest =tlast-50, t_type = "deriv")
+	if(sum(eq_test)>1) {rDIT$eq_state[n] = levels(eqtf)[2]} else { rDIT$eq_state[n] = levels(eqtf)[1]   }
+
+
 }
 
-lm_nspp = lm(rDIT$Biomass~rDIT$nspp)
+rDIT_eq = subset(rDIT, eq_state == 0)
+rDIT_non = subset(rDIT, eq_state == 0)
+
+
+lm_Snspp = lm(rDIT$Biomass~rDIT$Snspp)
+lm_Fnspp = lm(rDIT$Biomass~rDIT$Fnspp)
 lm_H=lm(rDIT$Biomass~rDIT$shannon)
 lm_rMI=lm(rDIT$Biomass~rDIT$rMI)
 lm_MI=lm(rDIT$Biomass~rDIT$MI)
 lm_AI=lm(rDIT$Biomass~rDIT$AI)
 
-#Plots 
-ggplot (rDIT, aes(x = nspp, y = Biomass,color = "1" ) ) + geom_point () + 
-	geom_point (aes(x = shannon, y =Biomass,color = "2")) +
-	geom_point( aes (x = rMI, y=Biomass,color = "3" ) ) +
-	geom_point( aes (x = MI, y=Biomass,color = "4" ) ) +
-	geom_point( aes (x = AI, y=Biomass,color = "5" ) ) +
-	#scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
+summary(lm_Snspp )
+summary(lm_Fnspp )
+summary(lm_H )
+summary(lm_rMI )
+summary(lm_MI )
+summary(lm_AI )
 
+lm_nspp2 = lm(rDIT$Biomass~rDIT$nspp+rDIT$shannon)
+lm_nspp3 = lm(rDIT$Biomass~rDIT$nspp+rDIT$rMI)
+lm_nspp4 = lm(rDIT$Biomass~rDIT$nspp+rDIT$MI)
+
+
+#Plots 
+ggplot ( ) + 
+	geom_point (data= rDIT, aes(x = Fnspp, y = Biomass,color = "1" )) + 
+	geom_point (data= rDIT,aes(x = shannon, y =Biomass,color = "2")) +
+	geom_point( data= rDIT,aes (x = rMI, y=Biomass,color = "3" ) ) +
+	geom_point( data= rDIT,aes (x = MI, y=Biomass,color = "4" ) ) +
+	geom_point( data= rDIT,aes (x = AI, y=Biomass,color = "5" ) ) +
+	#scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
+
+ggplot ( ) + 
+	geom_point (data= rDIT, aes(x = nspp, y = var_Biomass,color = "1" )) + 
+	geom_point (data= rDIT,aes(x = shannon, y =var_Biomass,color = "2")) +
+	geom_point( data= rDIT,aes (x = rMI, y=var_Biomass,color = "3" ) ) +
+	geom_point( data= rDIT,aes (x = MI, y=var_Biomass,color = "4" ) ) +
+	geom_point( data= rDIT,aes (x = AI, y=var_Biomass,color = "5" ) ) +
+	#scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
+
+
+lm_nsppv = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp)))
+lm_Hv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$shannon)))
+lm_rMIv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$rMI)))
+lm_MIv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$MI)))
+lm_AIv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$AI)))
+
+summary(lm_nsppv )
+summary(lm_Hv )
+summary(lm_rMIv )
+summary(lm_MIv )
+summary(lm_AIv )
+
+lm_nsppv2 = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp))+I(log(rDIT$shannon)))
+lm_nsppv3 = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp))+I(log(rDIT$rMI)))
+lm_nsppv4 = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp))+I(log(rDIT$MI)))
+
+AIC(lm_nsppv,lm_nsppv2,lm_nsppv3,lm_nsppv4 )
+
+
+#Check population plots: 
+n=89
+n2=61
+tlast = dim(out1_all[[n]]$out)[1] - 1
+nRsp = out1_all[[n]]$spp_prms$nRsp
+nCsp = out1_all[[n]]$spp_prms$nCsp
+nPsp = out1_all[[n]]$spp_prms$nPsp
+
+	plot(out1_all[[n]]$out[,1], t="l", ylim = c(0, max(out1_all[[n]]$out[tlast,],na.rm=T) ) )
+		for(w in 2:nRsp){ lines(out1_all[[n]]$out[,w], col ="red") }
+		for(w in (nRsp+2):(nRsp+nCsp+1) ){ lines(out1_all[[n]]$out[,w], col ="blue") }
+		for(w in (nRsp+nCsp+2):(nRsp+nCsp+nPsp+1) ){ lines(out1_all[[n]]$out[,w]) }
 
 #Files to load
 # file.name.list=c(

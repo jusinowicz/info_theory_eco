@@ -109,18 +109,52 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 
 	if ( length(res_R)>0){
 		a = list( matrix(0,nRsp,1))
+		b = list( matrix(0,nCsp,1))
+
 		for( i in 1:nRsp){
 			#Make the a variable -- see the documentation for forcings for an example
 			amp = res_R[1] #1
 			xint = res_R[2] #0
-			a[[i]] = approxfun( x = times, y = amp*exp(rnorm(times) )+xint, method = "linear", rule = 2) 
-			a_t = amp*exp(rnorm(times) )+xint
-			#a = approxfun( x = times, y = amp*rnorm(times)+xint, method = "linear", rule = 2) 
-			#a_t = amp*rnorm(times)+xint
+			
+			#1. Log normal
+			mu = xint
+			sd = amp
+			location = log(mu^2 / sqrt(sd^2 + mu^2))
+			shape = sqrt(log(1 + (sd^2 / mu^2)))
+			a[[i]] = approxfun( x = times, y = rlnorm(times, location,shape) , method = "linear", rule = 2) 
+			a_t =rlnorm(times, location,shape)
+			
+			# #2.Normal
+			# a[[i]] = approxfun( x = times, y = abs(amp*(rnorm(times) )+xint), method = "linear", rule = 2) 
+			# a_t = abs(amp*(rnorm(times) )+xint)
+
 			print( paste("Mean of a(t) = ", mean(a_t),sep="")) 
-			print( paste("Var of a(t) = ", var(a_t),sep="")) 			
+			print( paste("Var of a(t) = ", var(a_t),sep="")) 
 			a_m = mean(a_t)
 			vara = var(a_t)
+		}
+
+		for( i in 1:nCsp){
+			#Make the a variable -- see the documentation for forcings for an example
+			amp = res_R[3] #1
+			xint = res_R[4] #0
+			
+			#1. Log normal
+			mu = xint
+			sd = amp
+			location = log(mu^2 / sqrt(sd^2 + mu^2))
+			shape = sqrt(log(1 + (sd^2 / mu^2)))
+			b[[i]] = approxfun( x = times, y = rlnorm(times, location,shape) , method = "linear", rule = 2) 
+			b_t =rlnorm(times, location,shape)
+			
+			#2.Normal
+			# b[[i]] = approxfun( x = times, y = abs(amp*(rnorm(times) )+xint), method = "linear", rule = 2) 
+			# b_t = abs(amp*(rnorm(times) )+xint)
+
+			print( paste("Mean of b(t) = ", mean(b_t),sep="")) 
+			print( paste("Var of b(t) = ", var(b_t),sep="")) 
+			b_m = mean(b_t)
+			varb = var(b_t)
 		}
 
 	}
@@ -153,7 +187,8 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dR = R
 				for( i in 1:nRsp){
 					#Logistic - LV consumption
-					dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+					dR[i] = R[i]*( (rR[i]) * (a[[i]](times)  - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+					#dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
 					#Logistic - Saturating consumption
 					# dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - 
@@ -171,7 +206,8 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dC = C 
 				for( i in 1:nCsp){
 					#LV consumption
-					dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
+					dC[i] = C[i] * ( rC[i] *(b[[i]](times)*eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
+					#dC[i] = C[i] * ( rC[i] *(b[[i]](times)*eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
 					
 					#Saturating grazing response.
 					# dC[i] = C[i] * ( rC[i] * (
@@ -314,6 +350,64 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 	return(out)
 
 }
+
+#=============================================================================
+# test_eq
+# Try to guess whether the system has reached an equilibrium. This just tests
+# whether the slope (first derivative) differs significantly from zero, where
+# a non-zero slope signifies a non-equilibrium state. It returns a matrix 
+# where each entry corresponds to a species in the supplied foodweb with a 
+# "1" if that species is not in equilibrium, "0" if it is. 
+#
+# foodweb 			A variable returned by the function food_web_dynamics
+# eq_test			Set how far from the end to test the time series
+# t_type			There are two test types: "lm_fit" fits a linear model and
+#					tests the slope. "deriv" performs a t-test on the first
+#					derivative (or its average). 
+#=============================================================================
+
+test_eq = function ( foodweb = NULL, eqtest = NULL,t_type = "deriv") {
+
+	tlast = tlast = dim(foodweb$out)[1] #Time series length
+
+	nRsp = foodweb$spp_prms$nRsp #Numbers of species
+	nCsp = foodweb$spp_prms$nCsp
+	nPsp = foodweb$spp_prms$nPsp
+	nspp = nRsp+nCsp+nPsp
+
+	eq_tf = matrix(1,(nspp+1),1) #Store whether eq (0) or not (1)
+	eq_tf [1] = 0 
+	for (w in 2:(nspp+1) ){ 
+
+		tm1 = foodweb$out[(eqtest:tlast),1] #Time
+		pop1 = foodweb$out[(eqtest:tlast),w] #Population time series
+
+		if(t_type == "lm_fit") { 
+			sp_lm = lm( pop1~tm1)
+			test1 = summary(sp_lm)$coefficients[2,4] 
+			test_ce = sp_lm$coefficients[2]
+			#This happens if a species is extinct
+			if(is.na(test1) ){
+				test1 = 1 
+			} 
+
+			if( test1 > 0.05 ) { eq_tf[w] = 0 }
+		}
+
+		if(t_type == "deriv") { 
+			
+			test1= t.test(diff(pop1))$p.value 
+			if(is.na(test1) ){
+				test1 = 1 
+			} 
+			if( test1 > 0.05 ) { eq_tf[w] = 0 }
+		}
+	
+	}
+
+	return(eq_tf)
+
+}	
 
 
 
