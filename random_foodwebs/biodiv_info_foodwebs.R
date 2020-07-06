@@ -69,9 +69,9 @@ for (w in 1:nwebs){
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*6)
-	nCsp = ceiling(runif(1)*4)
-	nPsp = ceiling(runif(1)*2)
+	nRsp = ceiling(runif(1)*12)
+	nCsp = ceiling(runif(1)*8)
+	nPsp = ceiling(runif(1)*4)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
@@ -178,7 +178,8 @@ for (w in 1:nwebs){
 	# AI_local		Local active information per species
 	# TE_local		Local transfer entropy per species
 	#=============================================================================
-	nt1 = 2/3*tl
+	#nt1 = 2/3*tl
+	nt1 = tl - 100
 	nt2 = tl
 	# di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
 	# 	k=k,with_blocks=FALSE))
@@ -225,7 +226,7 @@ for (w in 1:nwebs){
 
 #save(file = "rand_fwebmod6F.var", out1,  di_web,te_web,si_web)
 #save(file = "rand_fwebmod7G.var", out1, rweb1,aiE_web,MMI_web) #These are deterministic
-save(file = "rand_fwebmod8A.var", out1, rweb1,aiE_web,MMI_web) #These are stochastic
+save(file = "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod8A.var", out1, rweb1,aiE_web,MMI_web) #These are stochastic
 
 
 #=============================================================================
@@ -266,32 +267,61 @@ for (g in 1:nscen){
 
 }
 
+#Re-run the loaded variables over a different range if need be: 
+ncells=length(aiE_web_all)
+for (n in 1:ncells){
+	k=1
+	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
+	nRsp = out1_all[[n]]$spp_prms$nRsp
+	nCsp = out1_all[[n]]$spp_prms$nCsp
+	nPsp = out1_all[[n]]$spp_prms$nPsp
+	nspp = nRsp+nCsp+nPsp
+	
+	nt1 = tlast - 100
+	nt2 = tlast
+
+	rweb1_all[n] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1_all[[n]]$out[nt1:nt2,2:(nspp+1)],
+		spp_prms = out1_all[[n]]$spp_prms) )
+
+	#=============================================================================
+	aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
+		k=k, ensemble = TRUE)    )
+
+	#=============================================================================
+	MMI_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
+		k=k, ensemble = TRUE)    )
+}
+
 #Take variables out of the lists to plot: 
 ncells=length(aiE_web_all)
-rDIT = data.frame(matrix(0, nrow=ncells, ncol =10) ) 
-ncnames = c("fwno","Biomass", "var_Biomass", "Snspp", "Fnspp", "shannon", "rMI", "MI", 
+rDIT = data.frame(matrix(0, nrow=ncells, ncol =12) ) 
+ncnames = c("fwno","Biomass", "var_Biomass", "Snspp", "Fnspp", "shannon", "rS","rCE","rMI", "MI", 
 	"AI","eq_state" )
 colnames(rDIT) = ncnames
 
 for (n in 1:ncells){
-	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
+	tlast1 = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
+	tlast2 = dim(aiE_web_all[[n]]$local)[1] - 1 #Length of time series
+
 
 	rDIT$fwno[n] = n 
 	rDIT$Snspp[n] = out1_all[[n]]$spp_prms$nspp #Starting number of species
-	rDIT$Fnspp[n] = sum(out1_all[[n]]$out[tlast,] > 0) #Final number of species
+	rDIT$Fnspp[n] = sum(out1_all[[n]]$out[tlast1,] > 0) #Final number of species
 
-	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast, 2:(rDIT$Snspp[n]+1) ]) #Biomass at last time
+	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast1, 2:(rDIT$Snspp[n]+1) ]) #Biomass at last time
 
 	tbck = 1 #tlast*3/4 #Use a subset that excludes transient stage for variance
-	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast-tbck):tlast, 2:(rDIT$Snspp[n]+1) ]) )
+	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast1-tbck):tlast, 2:(rDIT$Snspp[n]+1) ]) )
 
 	#Shannon Diversity
-	pi = out1_all[[n]]$out[tlast, 2:(rDIT$Snspp[n]+1) ] / rDIT$Biomass[n]
+	pi = out1_all[[n]]$out[tlast1, 2:(rDIT$Snspp[n]+1) ] / rDIT$Biomass[n]
 	pi[pi <= 0 ] = NA
 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
-	#Rutledge MI 
-	rDIT$rMI[n] = rweb1_all[[n]]$mI_mean2
+	#Rutledge Shannon Diversity, Conditional Entropy, and Mutual Information:  
+	rDIT$rS[n] = rweb1_all[[n]]$sD[tlast2]
+	rDIT$rCE[n] = rweb1_all[[n]]$ce2[tlast2]
+	rDIT$rMI[n] = rweb1_all[[n]]$mI_per[tlast2]
 
 	#Multiple Mutual Information
 	rDIT$MI[n] = MMI_web_all[[n]]$mean
@@ -310,37 +340,55 @@ for (n in 1:ncells){
 rDIT_eq = subset(rDIT, eq_state == 0)
 rDIT_non = subset(rDIT, eq_state == 0)
 
-
-lm_Snspp = lm(rDIT$Biomass~rDIT$Snspp)
-lm_Fnspp = lm(rDIT$Biomass~rDIT$Fnspp)
-lm_H=lm(rDIT$Biomass~rDIT$shannon)
-lm_rMI=lm(rDIT$Biomass~rDIT$rMI)
-lm_MI=lm(rDIT$Biomass~rDIT$MI)
-lm_AI=lm(rDIT$Biomass~rDIT$AI)
+lm_Snspp = lm(rDIT_eq$Biomass~rDIT_eq$Snspp)
+lm_Fnspp = lm(rDIT_eq$Biomass~rDIT_eq$Fnspp)
+lm_H=lm(rDIT_eq$Biomass~rDIT_eq$shannon)
+lm_rS=lm(I(log(rDIT_eq$Biomass+1))~I(log(rDIT_eq$rS+1) ))
+lm_rCE=lm(I(log(rDIT_eq$Biomass+1))~I(log(rDIT_eq$rCE+1) ))
+lm_rMI=lm(I(log(rDIT_eq$Biomass+1))~I(log(rDIT_eq$rMI+1) ))
+lm_MI=lm(rDIT_eq$Biomass~rDIT_eq$MI)
+lm_AI=lm(rDIT_eq$Biomass~rDIT_eq$AI)
 
 summary(lm_Snspp )
 summary(lm_Fnspp )
 summary(lm_H )
+summary(lm_rS )
+summary(lm_rCE )
 summary(lm_rMI )
 summary(lm_MI )
 summary(lm_AI )
 
-lm_nspp2 = lm(rDIT$Biomass~rDIT$nspp+rDIT$shannon)
-lm_nspp3 = lm(rDIT$Biomass~rDIT$nspp+rDIT$rMI)
-lm_nspp4 = lm(rDIT$Biomass~rDIT$nspp+rDIT$MI)
+lm_nspp2 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$shannon)
+lm_nspp3 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$rMI)
+lm_nspp4 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$MI)
 
 
 #Plots 
 ggplot ( ) + 
-	geom_point (data= rDIT, aes(x = Fnspp, y = Biomass,color = "1" )) + 
-	geom_point (data= rDIT,aes(x = shannon, y =Biomass,color = "2")) +
-	geom_point( data= rDIT,aes (x = rMI, y=Biomass,color = "3" ) ) +
-	geom_point( data= rDIT,aes (x = MI, y=Biomass,color = "4" ) ) +
-	geom_point( data= rDIT,aes (x = AI, y=Biomass,color = "5" ) ) +
-	#scale_y_log10()+ scale_x_log10() +
+	geom_point (data= rDIT_eq, aes(x = Fnspp, y = Biomass,color = "1" )) + 
+	geom_point (data= rDIT_eq,aes(x = shannon, y =Biomass,color = "2")) +
+	geom_point( data= rDIT_eq,aes (x = rMI, y=Biomass,color = "3" ) ) +
+	geom_point( data= rDIT_eq,aes (x = MI, y=Biomass,color = "4" ) ) +
+	geom_point( data= rDIT_eq,aes (x = AI, y=Biomass,color = "5" ) ) +
+	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
 	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
+
+#Plots 
+ggplot ( ) + 
+	geom_point (data= rDIT_eq, aes(x = Fnspp, y = Biomass,color = "1" )) + 
+	geom_point (data= rDIT_eq,aes(x = shannon, y =Biomass,color = "2")) +
+	geom_point (data= rDIT_eq,aes(x = rS, y =Biomass,color = "3")) +
+	geom_point (data= rDIT_eq,aes(x = rCE, y =Biomass,color = "4")) +
+	geom_point( data= rDIT_eq,aes (x = rMI, y=Biomass,color = "5" ) ) +
+	# geom_point( data= rDIT_eq,aes (x = MI, y=Biomass,color = "6" ) ) +
+	# geom_point( data= rDIT_eq,aes (x = AI, y=Biomass,color = "7" ) ) +
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rS","rCE", "rMI","MI","AI" ) )
+ggsave("./complexity_v_biomass_all.pdf", width = 8, height = 10)
 
 ggplot ( ) + 
 	geom_point (data= rDIT, aes(x = nspp, y = var_Biomass,color = "1" )) + 
@@ -376,6 +424,7 @@ AIC(lm_nsppv,lm_nsppv2,lm_nsppv3,lm_nsppv4 )
 #Check population plots: 
 n=89
 n2=61
+n3=88
 tlast = dim(out1_all[[n]]$out)[1] - 1
 nRsp = out1_all[[n]]$spp_prms$nRsp
 nCsp = out1_all[[n]]$spp_prms$nCsp
