@@ -23,6 +23,8 @@ library(lubridate)
 library(mgcv)
 source("../info_theory_functions/food_web_functions.R")
 source("../info_theory_functions/info_theory_functions.R")
+source("../info_theory_functions/database_functions.R")
+
 
 
 #=============================================================================
@@ -69,9 +71,9 @@ for (w in 1:nwebs){
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*12)
-	nCsp = ceiling(runif(1)*8)
-	nPsp = ceiling(runif(1)*4)
+	nRsp = ceiling(runif(1)*24)
+	nCsp = ceiling(runif(1)*16)
+	nPsp = ceiling(runif(1)*8)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 
@@ -226,7 +228,7 @@ for (w in 1:nwebs){
 
 #save(file = "rand_fwebmod6F.var", out1,  di_web,te_web,si_web)
 #save(file = "rand_fwebmod7G.var", out1, rweb1,aiE_web,MMI_web) #These are deterministic
-save(file = "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod8A.var", out1, rweb1,aiE_web,MMI_web) #These are stochastic
+save(file = "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod8C.var", out1, rweb1,aiE_web,MMI_web) #These are stochastic
 
 
 #=============================================================================
@@ -377,17 +379,19 @@ ggplot ( ) +
 
 #Plots 
 ggplot ( ) + 
-	geom_point (data= rDIT_eq, aes(x = Fnspp, y = Biomass,color = "1" )) + 
-	geom_point (data= rDIT_eq,aes(x = shannon, y =Biomass,color = "2")) +
-	geom_point (data= rDIT_eq,aes(x = rS, y =Biomass,color = "3")) +
-	geom_point (data= rDIT_eq,aes(x = rCE, y =Biomass,color = "4")) +
-	geom_point( data= rDIT_eq,aes (x = rMI, y=Biomass,color = "5" ) ) +
+	#geom_point (data= rDIT_eq, aes(y = Fnspp, x = Biomass,color = "1" )) + 
+	geom_point (data= rDIT_eq,aes(y = shannon, x =Biomass,color = "2")) +
+	geom_point (data= rDIT_eq,aes(y = rS, x =Biomass,color = "3")) +
+	geom_point (data= rDIT_eq,aes(y = rCE, x =Biomass,color = "4")) +
+	geom_point( data= rDIT_eq,aes (y = rMI, x=Biomass,color = "5" ) ) +
 	# geom_point( data= rDIT_eq,aes (x = MI, y=Biomass,color = "6" ) ) +
 	# geom_point( data= rDIT_eq,aes (x = AI, y=Biomass,color = "7" ) ) +
-	scale_y_log10()+ scale_x_log10() +
-	xlab("#Species, Bits")+
-	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rS","rCE", "rMI","MI","AI" ) )
+	#scale_y_log10()+ scale_x_log10() +
+	ylab("Complexity (Bits) ")+
+	xlab("Biomass")+
+	#scale_color_discrete(name ="", labels = c("# Species", "SDI", "rS","rCE", "rMI","MI","AI" ) )
+	scale_color_discrete(name ="", labels = c("ShannonDI", "rShannon","rConditional Entropy",
+	 "rMutual Information") )
 ggsave("./complexity_v_biomass_all.pdf", width = 8, height = 10)
 
 ggplot ( ) + 

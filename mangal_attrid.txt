@@ -1,0 +1,103 @@
+[{"id":3,"name":"number of pollinator","description":"Number of insects captured while pollination","unit":"individual captured","created_at":"2019-02-22T16:45:42.655Z","updated_at":"2019-02-22T16:45:42.655Z"},{"id":6,"name":"altitude of the site","description":"Altitude of the site","unit":"meters","created_at":"2019-02-22T17:21:38.517Z","updated_at":"2019-02-22T17:21:38.517Z"},
+
+{"id":11,"name":"number of visit by a pollinator","description":"Number of individual of a species observed/caught on a flower","unit":"number of individual","created_at":"2019-02-22T20:03:38.132Z","updated_at":"2019-02-22T20:03:38.132Z"},
+
+{"id":13,"name":"dietary matrix","description":"Proportions of the consumer diets made up by the prey.","unit":"%","created_at":"2019-02-24T15:32:39.172Z","updated_at":"2019-02-24T15:32:39.172Z"},{"id":15,"name":"number of bee visits to flowers","description":"number of bee visits to flowers","unit":"visits","created_at":"2019-02-25T15:57:57.168Z","updated_at":"2019-02-25T15:57:57.168Z"},{"id":16,"name":"fruit-frugivore interaction","description":"number of recorded fruit-frugivore interactions","unit":"recorded interaction","created_at":"2019-02-25T16:10:21.495Z","updated_at":"2019-02-25T16:10:21.495Z"},{"id":18,"name":"mean altitude","description":"mean altitude of plot studied","unit":"meters","created_at":"2019-02-25T21:13:27.536Z","updated_at":"2019-02-25T21:13:27.536Z"},{"id":19,"name":"abundance of fleas on mammals","description":"abundance of flea species on mammal species","unit":"abundance","created_at":"2019-02-26T19:15:26.514Z","updated_at":"2019-02-26T19:15:26.514Z"},
+
+{"id":27,"name":"annual rainfall","description":"The annual rainfall of the study area","unit":"mm","created_at":"2019-03-01T20:10:41.996Z","updated_at":"2019-03-01T20:10:41.996Z"},
+
+{"id":28,"name":"mean air temperature","description":"The mean air temperature of the study area","unit":"°c","created_at":"2019-03-01T20:10:44.401Z","updated_at":"2019-03-01T20:10:44.401Z"},
+
+{"id":29,"name":"lake's surface area","description":"The surface area of the lake","unit":"km²","created_at":"2019-03-01T20:10:46.083Z","updated_at":"2019-03-01T20:10:46.083Z"},
+
+{"id":30,"name":"maximum depth","description":"The maximum depth of the lake","unit":"m","created_at":"2019-03-01T20:10:47.554Z","updated_at":"2019-03-01T20:10:47.554Z"},
+
+{"id":31,"name":"mean depth","description":"The mean depth of the lake","unit":"m","created_at":"2019-03-01T20:10:48.604Z","updated_at":"2019-03-01T20:10:48.604Z"},
+
+{"id":37,"name":"number of visit by a pollinator taxon","description":"The mean visitation frequency per hour  of a pollinator taxon on a plant taxon","unit":"mean number of a pollinator taxon visiting a plant taxon per hour","created_at":"2019-03-21T20:22:48.635Z","updated_at":"2019-03-21T20:22:48.635Z"},
+
+{"id":41,"name":"body size","description":"Average body length","unit":"mm","created_at":"2019-03-28T20:27:51.716Z","updated_at":"2019-03-28T20:27:51.716Z"},
+
+{"id":44,"name":"body size","description":"Average body size","unit":"mm","created_at":"2019-04-10T15:34:23.432Z","updated_at":"2019-04-10T15:34:23.432Z"},
+
+{"id":45,"name":"body size","description":"Maximum body size","unit":"mm","created_at":"2019-04-10T15:34:27.164Z","updated_at":"2019-04-10T15:34:27.164Z"},
+
+{"id":46,"name":"body size","description":"Determined with photo","unit":"mm","created_at":"2019-04-10T15:34:34.852Z","updated_at":"2019-04-10T15:34:34.852Z"},
+
+{"id":47,"name":"body size","description":"Determined with single specimen measurement","unit":"mm","created_at":"2019-04-10T15:34:36.215Z","updated_at":"2019-04-10T15:34:36.215Z"},
+
+{"id":48,"name":"body size","description":"Method of measurement not given","unit":"mm","created_at":"2019-04-10T15:34:36.919Z","updated_at":"2019-04-10T15:34:36.919Z"},
+
+{"id":57,"name":"body mass","description":"Average body mass","unit":"g","created_at":"2019-04-10T15:34:45.714Z","updated_at":"2019-04-10T15:34:45.714Z"},
+
+{"id":58,"name":"body mass","description":"Maximum body mass","unit":"g","created_at":"2019-04-10T15:34:46.695Z","updated_at":"2019-04-10T15:34:46.695Z"},
+
+{"id":59,"name":"body mass","description":"Body mass based on same genus","unit":"g","created_at":"2019-04-10T15:34:47.433Z","updated_at":"2019-04-10T15:34:47.433Z"},
+
+{"id":60,"name":"body mass","description":"Method of measurement not given","unit":"g","created_at":"2019-04-10T15:34:48.195Z","updated_at":"2019-04-10T15:34:48.195Z"},
+
+{"id":61,"name":"life span","description":"Average life span of the species","unit":"years","created_at":"2019-04-10T15:34:49.173Z","updated_at":"2019-04-10T15:34:49.173Z"},
+
+{"id":25,"name":"presence/absence","description":"Presence or absence of interaction","unit":null,"created_at":"2019-03-01T16:03:38.993Z","updated_at":"2019-03-01T16:03:38.993Z"},
+
+{"id":26,"name":"diet composition","description":"Proportions of the consumer diets made up by the prey","unit":null,"created_at":"2019-03-01T18:51:54.214Z","updated_at":"2019-03-01T18:51:54.214Z"},
+
+{"id":32,"name":"present or absent in gut","description":"Present or absent in the gut content during analysis","unit":null,"created_at":"2019-03-04T16:22:00.126Z","updated_at":"2019-03-04T16:22:00.126Z"},
+
+{"id":33,"name":"number of individuals in gut","description":"Number of individuals in the gut content during analysis","unit":null,"created_at":"2019-03-04T17:11:22.765Z","updated_at":"2019-03-04T17:11:22.765Z"},
+
+{"id":36,"name":"pollinator recorded on a flower","description":"Presence or absence of interaction","unit":null,"created_at":"2019-03-21T17:44:21.016Z","updated_at":"2019-03-21T17:44:21.016Z"},
+
+{"id":38,"name":"bird-fruit interaction","description":"Presence-absence of interaction","unit":null,"created_at":"2019-03-22T13:57:43.414Z","updated_at":"2019-03-22T13:57:43.414Z"},{"id":39,"name":"presence of interaction","description":"Presence near the flowering plant or interacting with it","unit":null,"created_at":"2019-03-26T16:26:55.189Z","updated_at":"2019-03-26T16:26:55.189Z"},
+
+{"id":40,"name":"dietary matrix","description":"Proportions of the consumer diets made up by the prey.","unit":null,"created_at":"2019-03-27T09:20:44.990Z","updated_at":"2019-03-27T09:20:44.990Z"},
+
+{"id":42,"name":"habitat use","description":"Which type of habitat is used by the species (aquatic/terrestrial/both)","unit":null,"created_at":"2019-04-10T15:01:59.318Z","updated_at":"2019-04-10T15:01:59.318Z"},
+
+{"id":43,"name":"metabolism","description":"Which type of metabolism (Ectotherm or Endotherm)","unit":null,"created_at":"2019-04-10T15:03:10.836Z","updated_at":"2019-04-10T15:03:10.836Z"},{"id":20,"name":"presence/absence","description":"DESCRIPTION","unit":null,"created_at":"2019-02-26T19:15:51.398Z","updated_at":"2019-02-26T19:15:51.398Z"},
+
+{"id":22,"name":"dietary matrix","description":"Proportions of the consumer diets (sp_name_1) made up by the prey (sp_name_2)","unit":null,"created_at":"2019-02-26T21:18:51.323Z","updated_at":"2019-02-26T21:18:51.323Z"},
+
+{"id":1,"name":"presence/absence","description":"Presence or absence of a recorded interaction","unit":null,"created_at":"2019-02-21T21:17:01.496Z","updated_at":"2019-02-21T21:17:01.496Z"},{"id":4,"name":"number of galls","description":"Number of galls","unit":null,"created_at":"2019-02-22T17:21:34.699Z","updated_at":"2019-02-22T17:21:34.699Z"},
+
+{"id":5,"name":"number of parasited galls","description":"Number of parasited galls","unit":null,"created_at":"2019-02-22T17:21:37.424Z","updated_at":"2019-02-22T17:21:37.424Z"},
+
+{"id":7,"name":"endo/ecto","description":"Type of parasitism (Endoparasitisim or Ectoparasitism","unit":null,"created_at":"2019-02-22T17:21:39.525Z","updated_at":"2019-02-22T17:21:39.525Z"},
+
+{"id":8,"name":"koino/idio","description":"Is the parasite Koinobiont or Idiobiont","unit":null,"created_at":"2019-02-22T17:21:40.388Z","updated_at":"2019-02-22T17:21:40.388Z"},
+
+{"id":9,"name":"stage of the host","description":"Stage of the host at time of parasitism","unit":null,"created_at":"2019-02-22T17:21:41.673Z","updated_at":"2019-02-22T17:21:41.673Z"},
+
+{"id":10,"name":"gall type","description":"Type of gall done the parasite Salix","unit":null,"created_at":"2019-02-22T17:21:42.680Z","updated_at":"2019-02-22T17:21:42.680Z"},
+
+{"id":12,"name":"dietary matrix","description":"Proportions of the consumer diets made up by the prey.","unit":null,"created_at":"2019-02-23T17:04:25.350Z","updated_at":"2019-02-23T17:04:25.350Z"},
+
+{"id":14,"name":"frequency of interaction","description":"frequency of interaction between pairs of species","unit":null,"created_at":"2019-02-25T15:32:50.890Z","updated_at":"2019-02-25T15:32:50.890Z"},
+
+{"id":21,"name":"mean interaction frequency","description":"mean interaction frequency over the sampling season","unit":null,"created_at":"2019-02-26T20:47:36.723Z","updated_at":"2019-02-26T20:47:36.723Z"},
+
+{"id":23,"name":"present or absent in gut","description":"Present or absent in the gut content during analysis","unit":null,"created_at":"2019-02-28T14:08:35.227Z","updated_at":"2019-02-28T14:08:35.227Z"},
+
+{"id":24,"name":"diet composition","description":"Proportions of the consumer diets made up by the prey","unit":null,"created_at":"2019-02-28T15:29:05.616Z","updated_at":"2019-02-28T17:02:24.543Z"},
+
+{"id":49,"name":"ratio body length/width","description":"Measured with flagella","unit":null,"created_at":"2019-04-10T15:34:37.744Z","updated_at":"2019-04-10T15:34:37.744Z"},
+
+{"id":50,"name":"ratio body length/width","description":"Measured by stride","unit":null,"created_at":"2019-04-10T15:34:40.222Z","updated_at":"2019-04-10T15:34:40.222Z"},
+
+{"id":51,"name":"ratio body length/width","description":"Measured by the full wingspan","unit":null,"created_at":"2019-04-10T15:34:41.490Z","updated_at":"2019-04-10T15:34:41.490Z"},
+
+{"id":52,"name":"ratio body length/width","description":"Measured by the wings and legs","unit":null,"created_at":"2019-04-10T15:34:42.337Z","updated_at":"2019-04-10T15:34:42.337Z"},
+
+{"id":53,"name":"ratio body length/width","description":"Measured by pivot","unit":null,"created_at":"2019-04-10T15:34:43.066Z","updated_at":"2019-04-10T15:34:43.066Z"},
+
+{"id":54,"name":"ratio body length/width","description":"Measured with the back legs included","unit":null,"created_at":"2019-04-10T15:34:43.710Z","updated_at":"2019-04-10T15:34:43.710Z"},
+
+{"id":55,"name":"ratio body length/width","description":"Measured by the amplitude","unit":null,"created_at":"2019-04-10T15:34:44.247Z","updated_at":"2019-04-10T15:34:44.247Z"},
+
+{"id":56,"name":"ratio body length/width","description":"Method of measurement not given","unit":null,"created_at":"2019-04-10T15:34:44.781Z","updated_at":"2019-04-10T15:34:44.781Z"},
+
+{"id":62,"name":"lifestage dispersion","description":"Lifestage at which it disperses (Adult, Juvenile, Seed or Larvae, All)","unit":null,"created_at":"2019-04-10T15:34:49.806Z","updated_at":"2019-04-10T15:34:49.806Z"},
+
+{"id":63,"name":"dispersal medium","description":"aquatic, terrestrial, aerial, ocean, terrestrial-aquatic, animals, aquatic-aerial, river","unit":null,"created_at":"2019-04-10T15:34:50.490Z","updated_at":"2019-04-10T15:34:50.490Z"},
+
+{"id":64,"name":"dispersal type","description":"passive or active","unit":null,"created_at":"2019-04-10T15:34:51.862Z","updated_at":"2019-04-10T15:34:51.862Z"}]
