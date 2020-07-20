@@ -1,31 +1,22 @@
 #=============================================================================
-# R code to create to explore the Information Theoretic properties of 
-# simple food webs. This creates a simple food web with an underlying dynamic
-# model. 	  
-# 1. Food-web includes resource, herbivore, and predator: 
-#	 A. Resource is based on a consumer-resource model, with added predators 
-#		1. Competition between consumers and resources emerges from consumption
-#		2. Parameters at each level can be made a function of temperature. 
-#	 B. Resources can be stochastic due to environmental fluctuations. 
-#	 C. Relative non-linearity allows 2 consumers per Resource
-# 2. Generate a bunch of random food webs 
-# 3. Use information theory to track the resulting food-web structures. 
-# 4. This file has a lot of code for visualizing output of both the foodweb 
-#	 its information theoretic properties after the main loop. 
+# R code to explore the Information Theoretic properties of real food webs. 
+#	  
+# 1. Download foodwebs from databases including EcoBase and Mangal. 
+# 2. Use information theory to analyze the food-web complexity. 
+# 3. Compare the explanatory power of IT complexity to Shannon Diversity and 
+#    species number for biomass (ecosystem function)
 #=============================================================================
 #=============================================================================
 # load libraries
 #=============================================================================
-library(deSolve)
-library(fields)
 library(tidyverse)
 library(lubridate)
 library(mgcv)
+library(RCurl)
+library(XML)
 source("../info_theory_functions/food_web_functions.R")
 source("../info_theory_functions/info_theory_functions.R")
 source("../info_theory_functions/database_functions.R")
-
-
 
 #=============================================================================
 # Outer loop. Set the number of trials and determine how to generate 
@@ -33,7 +24,7 @@ source("../info_theory_functions/database_functions.R")
 #=============================================================================
 
 #Length and time steps of each model run
-tend = 2
+tend = 200
 delta1 = 0.01
 tl=tend/delta1
 
@@ -42,7 +33,7 @@ tl=tend/delta1
 k= 5 
 
 #Number of food webs to generate
-nwebs = 1
+nwebs = 50
 
 #Output of each web
 out1 = vector("list",nwebs)
@@ -71,9 +62,9 @@ for (w in 1:nwebs){
 	print(w)
 
 	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*4)
-	nCsp = ceiling(runif(1)*2)
-	nPsp = ceiling(runif(1)*1)
+	nRsp = ceiling(runif(1)*24)
+	nCsp = ceiling(runif(1)*16)
+	nPsp = ceiling(runif(1)*8)
 	nspp = nRsp+nCsp+nPsp
 
 	#Randomly generate the species parameters for the model as well: 

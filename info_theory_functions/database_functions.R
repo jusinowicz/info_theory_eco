@@ -19,7 +19,7 @@ library(plyr)
 #=============================================================================
 
 #EcoBase
-get_eb = function (biomass = TRUE, ecosyst = FALSE, ref = FALSE ) {
+get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FALSE, ref = FALSE ) {
 
   fwlist <- list()
     
@@ -85,6 +85,25 @@ get_eb = function (biomass = TRUE, ecosyst = FALSE, ref = FALSE ) {
            nodes_biomass <- as.data.frame(matrix(ncol=3, nrow=nnodes))
            names(nodes_biomass) <- c("id", "name", "biomass")
            }
+
+        if (pb == TRUE)
+           { 
+           nodes_pb <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+           names(nodes_pb) <- c("id", "name", "pb")
+           }
+
+        if (qb == TRUE)
+           { 
+           nodes_qb <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+           names(nodes_qb) <- c("id", "name", "qb")
+           }
+                 
+        if (ee == TRUE)
+           { 
+           nodes_ee <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+           names(nodes_ee) <- c("id", "name", "qb")
+           }
+        
         
         int_matrix <- as.data.frame(matrix(ncol=nnodes, nrow=nnodes))
         
@@ -93,6 +112,10 @@ get_eb = function (biomass = TRUE, ecosyst = FALSE, ref = FALSE ) {
           node1 <- m2[[j]]
           node_id <- as.numeric(node1$group_seq)  
           node1_biomass <- as.numeric(node1$biomass)  
+          node1_pb <- as.numeric(node1$pb)  
+          node1_qb <- as.numeric(node1$qb)  
+          node1_ee <- as.numeric(node1$ee)  
+
           node_name <- node_names[j]
           
           #biomass

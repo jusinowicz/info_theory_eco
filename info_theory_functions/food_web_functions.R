@@ -188,6 +188,7 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				for( i in 1:nRsp){
 					#Logistic - LV consumption
 					dR[i] = R[i]*( (rR[i]) * (a[[i]](times)  - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+
 					#dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
 					#Logistic - Saturating consumption
@@ -240,10 +241,10 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 
 
 				}
-			for( i in 1:nRsp){
-				a[[i]] = a[[i]](times) 
-				#a = (rR[1]+a(times))
-			}
+			# for( i in 1:nRsp){
+			# 	a[[i]] = a[[i]](times) 
+			# 	#a = (rR[1]+a(times))
+			# }
 
 			return(list(c(dR,dC,dP)))
 
@@ -613,6 +614,11 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 	rweb$fij = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
 	rweb$Qi = matrix(0,ncol1,(tuse))
 	rweb$fijQi = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
+	rweb$pb = matrix(0,ncol1,(tuse))
+	rweb$qb = matrix(0,ncol1,(tuse))
+	rweb$DC = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,(tuse))) 
+	rweb$ee = matrix(0,ncol1,(tuse))
+
 
 	#Information theoretic quantities 
 	rweb$sD = matrix(0,tuse, 1) #Shannon entropy
@@ -662,6 +668,57 @@ rutledge_web = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 		rweb$fijQi[ncol1,(1+(1+nRsp):(nRsp+nCsp)),n ] = t((t(C1r)*fmuC)[1,])
 		#Predator
 		rweb$fijQi[ncol1,(1+(1+nRsp+nCsp):nspp),n ] = (t(P1)*fmuP)[1,]
+
+		## Calculate the biomass flow between each element, following the ECOPATH mass-balance
+		## conceptualization. 
+		## Productions: 
+
+		#Per-capita production: P/B: 
+		#Resource production: 
+		rweb$pb[(1:nRsp),n] = (rR)/R1[,1]
+		#Consumer production: 
+		rweb$pb[((1+nRsp):(nRsp+nCsp)),n] = colSums(frC*R1*cC)/C1r[,1]
+		#Predator production: 
+		rweb$pb[((1+nRsp+nCsp):nspp),n] = colSums(frP*C1p*cP)/P1[,1]
+		rweb$pb[,n][!is.finite(rweb$pb[,n])] = 0
+
+		#Per-capita loss to consumption Q/B: 
+		#Resource production: 
+		rweb$qb[(1:nRsp),n] = rowSums(R1*cC)/R1[,1]
+		#Consumer production: 
+		rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = rowSums(C1p*cP)/C1r[,1]
+		rweb$qb[,n][!is.finite(rweb$qb[,n])] = 0
+
+		#Predation rates by species (the dietary matrix) DCij
+		#Consumer consumption: 
+		rweb$DC [((1+nRsp):(nRsp+nCsp)),(1:nRsp),n] =  (cC*R1) / 
+											matrix(colSums(cC*R1),nRsp,nCsp,byrow=T ) 		#Predator consumption: 
+		#Predator consumption: 
+		rweb$DC [((1+nRsp+nCsp):nspp),((1+nRsp):(nRsp+nCsp)),n] =  (cP*C1p) / 
+											matrix(colSums(cP*C1p),nCsp,nPsp,byrow=T ) 
+
+		#diag(rweb$fijQi[1:nRsp,1:nRsp,n]) = (rR)*R1[,1]
+		rweb$fijQi[(1+1:nRsp),(1),n] = (rR)*R1[,1]
+		rweb$fijQi[(1),(1),n] = sum((rR)*R1[,1] )
+		#Consumer production: 
+		rweb$fijQi[(1+(1+nRsp):(nRsp+nCsp)),(1+1:nRsp),n] = t((frC*R1*cC)*t(C1r) )
+		#Predator production: 
+		rweb$fijQi[(1+(1+nRsp+nCsp):nspp),(1+(1+nRsp):(nRsp+nCsp)),n] = t((frP*C1p*cP)*t(P1))
+
+		##Energetic loss: 
+		#Resource to consumer: 
+		rweb$fijQi[(1+(nspp+1):(nspp+nCsp)),(1+1:nRsp),n ] = t(( R1*cC)*t(C1r) ) - t((frC*R1*cC)*t(C1r) )
+		#Consumer to Predator: 
+		rweb$fijQi[(1+(nspp+nCsp+1):(nspp+nCsp+nPsp)),(1+(1+nRsp):(nRsp+nCsp)),n ] = t( (C1p*cP)*t(P1) - (frP*C1p*cP)*t(P1) )
+
+		##Mortality loss:
+		#Resource: 
+		rweb$fijQi[ncol1,(1+1:nRsp),n ] =(rR)*R1[,1]*(R1[,1]/Ki)
+		#Consumer:
+		rweb$fijQi[ncol1,(1+(1+nRsp):(nRsp+nCsp)),n ] = t((t(C1r)*fmuC)[1,])
+		#Predator
+		rweb$fijQi[ncol1,(1+(1+nRsp+nCsp):nspp),n ] = (t(P1)*fmuP)[1,]
+
 
 		#Now make Qi/Pi
 		rweb$Qi[,n] = rowSums( rweb$fijQi[,,n]) #*as.numeric(lower.tri(fijQi[,,n])) )
@@ -734,3 +791,92 @@ return (rweb)
 # pxpy=t(t(x1))%*%y1 #This is p(y)*p(x)
 # itmp=(a1*log2(a1/pxpy));itmp[is.na(itmp)]=0
 # mI = sum(rowSums(itmp)) #Mutual information
+
+
+#=============================================================================
+# rutledge_web2
+# This function takes real data in the form of a biomass balance matrix and 
+# the transition matrix, where the transition matrix is the diet matrix -- i.e.
+# the proportion of each species' diet that another species represent. 
+#
+# biomass				The biomass matrix 
+# troph_matrix			The trophic interactions in terms of prop. consumed
+# if_conditional		Switch to determine which mathematical approach to take
+#						See the notes below. FALSE by default. 
+#=============================================================================
+#=============================================================================
+# Sub-routines for rutledge_web:
+#=============================================================================
+# get_full_model
+# Includes external energetic input into resource biomass production
+#=============================================================================
+#=============================================================================
+# get_resource_model
+# 
+#=============================================================================
+
+rutledge_web2 = function (biomass = biomass, troph_matrix = troph_matrix,  
+						 if_conditional = FALSE) {
+
+	ngrps = dim(fwlist[[1]]$trophic_relations)[1] #Number of species or groups
+
+	ncol1 = ngrps
+	nrow1 = ncol1
+
+	rweb = NULL
+
+	###Generate the quantities that describe "energy" (biomass?) flow through
+	###food web.
+	rweb$fij = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,1)) 
+	rweb$Qi = matrix(0,ncol1,1)
+	rweb$fijQi = array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,1)) 
+
+	#Information theoretic quantities 
+	rweb$sD = matrix(0,1, 1) #Shannon entropy
+	rweb$mI_mean = matrix(0,1, 1) #Mutual Information
+	rweb$mI_per =array(c(matrix(0,ncol1,nrow1),matrix(0,ncol1,nrow1)), dim = c(ncol1,nrow1,1)) 
+	rweb$ce = matrix(0,1, 1) #Conditional Entropy
+	rweb$ce2 = matrix(0,1, 1) #Conditional Entropy, calculated 2nd way as a check
+	rweb$mI_mean2 = matrix(0,1, 1) #Mutual Information, calculated 2nd way as a check
+	
+	
+	if( if_conditional == TRUE){ 
+		
+		###1) This is more directly in tune with Rutledge's approach. 
+		#	This makes fij a conditional probability matrix.
+		rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(rweb$Qi[,n],ncol1,nrow1,byrow=T)
+		rweb$fij[,,n][is.na(rweb$fij[,,n])] = 0
+		rweb$fij[,,n][is.infinite(rweb$fij[,,n])] = 0
+		#Standardize Qi to be proportions: 
+		rweb$Qi[,n] = rweb$Qi[,n]/sum(rweb$Qi[,n])
+		#Information theoretic quantities 
+		rweb$sD[n] = shannon_D(freq = rweb$Qi[,n])
+		mI_temp = get_mI (freq =rweb$Qi[,n], fij=rweb$fij[,,n]  )
+		rweb$mI_mean[n] = mI_temp$mean
+		rweb$mI_per[,,n] = mI_temp$per
+		rweb$ce[n] = rweb$sD[n] - rweb$mI_mean[n]
+
+		
+	} else {
+		
+		###2) This is a more general info theory approach.
+		#	This makes fij a joint probability matrix. 
+		rweb$fij[,,n] = rweb$fijQi[,,n]/ matrix(sum(rweb$Qi[,n],na.rm=T),ncol1,nrow1,byrow=T)
+		rweb$fij[,,n][is.na(rweb$fij[,,n])] = 0
+		rweb$fij[,,n][is.infinite(rweb$fij[,,n])] = 0
+		#Standardize Qi to be proportions: 
+		rweb$Qi[,n] = rowSums( rweb$fij[,,n]) 
+		#Information theoretic quantities
+		rweb$sD[n] = shannon_D(freq = rweb$Qi[,n])
+		mI_temp = get_mI2 (fij=rweb$fij[,,n])
+		rweb$mI_mean[n] = mI_temp$mean
+		rweb$mI_per[,,n] = mI_temp$per
+		rweb$ce2[n] = get_ce(fij=t(rweb$fij[,,n]))
+		rweb$mI_mean2 = rweb$sD[n] - rweb$ce2[n]
+	
+	}
+	
+	
+return (rweb)
+}
+
