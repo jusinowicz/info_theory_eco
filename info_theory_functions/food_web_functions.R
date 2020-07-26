@@ -791,18 +791,18 @@ ode_to_mb = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 
 		#Per-capita production: P/B: 
 		#Resource production: 
-		rweb$pb[(1:nRsp),n] = (rR)#/R1[,1]
+		rweb$pb[(1:nRsp),n] = (rR)/R1[,1]
 		#Consumer production: 
-		rweb$pb[((1+nRsp):(nRsp+nCsp)),n] = colSums(frC*R1*cC)#/C1r[,1]
+		rweb$pb[((1+nRsp):(nRsp+nCsp)),n] = colSums(frC*R1*cC)/C1r[,1]
 		#Predator production: 
-		rweb$pb[((1+nRsp+nCsp):nspp),n] = colSums(frP*C1p*cP)#/P1[,1]
+		rweb$pb[((1+nRsp+nCsp):nspp),n] = colSums(frP*C1p*cP)/P1[,1]
 		rweb$pb[,n][!is.finite(rweb$pb[,n])] = 0
 
 		#Per-capita loss to consumption Q/B: 
 		#Resources to consumers: 
-		rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = colSums(t(C1r)*cC) #colSums(R1*cC) #/C1r[,1]
+		rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = colSums(t(C1r)*cC)/C1r[,1] #colSums(R1*cC) #/C1r[,1]
 		#Consumers to production: 
-		rweb$qb[((1+nRsp+nCsp):nspp),n] = colSums(t(P1)*cP) #colSums(C1p*cP) #/P1[,1]
+		rweb$qb[((1+nRsp+nCsp):nspp),n] = colSums(t(P1)*cP)/P1[,1] #colSums(C1p*cP) #/P1[,1]
 		rweb$qb[,n][!is.finite(rweb$qb[,n])] = 0
 	
 		# #Per-capita loss to consumption Q/B: 
@@ -817,9 +817,6 @@ ode_to_mb = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 		#Consumer consumption: 
 		rweb$DC [(1:nRsp),((1+nRsp):(nRsp+nCsp)),n] =  (cC*t(C1r)) / 
 											matrix(colSums(cC*t(C1r)),nRsp,nCsp,byrow=T ) 
-
-		rweb$DC [(1:nRsp),((1+nRsp):(nRsp+nCsp)),n] =  (cC*t(C1r)) / 
-											matrix(colSums(cC*t(C1r)),nRsp,nCsp,byrow=T ) 			#Predator consumption: 
 		#Predator consumption: 
 		rweb$DC [((1+nRsp):(nRsp+nCsp)),((1+nRsp+nCsp):nspp),n] =  (t(P1)*cP) / 
 											matrix(colSums(t(P1)*cP),nCsp,nPsp,byrow=T ) 
