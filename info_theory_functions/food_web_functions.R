@@ -187,7 +187,7 @@ food_web_dynamics = function (spp_list = c(1,1,1), spp_prms = NULL, tend = 1000,
 				dR = R
 				for( i in 1:nRsp){
 					#Logistic - LV consumption
-					dR[i] = R[i]*( (rR[i]) * (a[[i]](times)  - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+					dR[i] = R[i]*( (rR[i]) * (a[[i]](times)  - R[i]/Ki[i]) - (t(cC[i,])%*%C) )
 
 					#dR[i] = a[[i]](times) + R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
 					
@@ -715,6 +715,12 @@ return (rweb)
 # ode_to_mb 
 # Convert the ODE parameters and output to a mass-balanace equation. This is 
 # to make comparisons with the ECOPATH models. 
+#
+# pop_ts[n,]*rweb$pb[1:nspp,n] * rweb$ee[1:nspp,n]  - 
+# rowSums( 
+# t(matrix(pop_ts[n,]*rweb$qb[1:nspp,n], nspp,nspp) ) * rweb$DC[1:nspp,1:nspp, n] )
+# = 0
+# 
 # spp_list				Number of species at each trophic level
 # pop_ts				Population matrix with time as rows, each species as column
 # spp_prms				This should be a list with parameters defined for the 
@@ -743,7 +749,6 @@ ode_to_mb = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 	rR=(spp_prms$rR); Ki =spp_prms$Ki; rC = spp_prms$rC; eFc = spp_prms$eFc
 	muC = spp_prms$muC; cC = spp_prms$cC; rP = spp_prms$rP; eFp = spp_prms$eFp
 	muP = spp_prms$muP; cP = spp_prms$cP
-
 
 	rweb = NULL
 
@@ -780,57 +785,62 @@ ode_to_mb = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 		frP = t(matrix(rP,nPsp,nCsp))
 		fmuC = t(matrix(muC,nCsp,nRsp))
 		fmuP = t(matrix(muP,nPsp,nCsp))
-## Calculate the biomass flow between each element, following the ECOPATH mass-balance
-		## conceptualization. 
-		## Productions: 
+
+		## Calculate the biomass flow between each element, following the 
+		## ECOPATH mass-balance conceptualization. 
 
 		#Per-capita production: P/B: 
 		#Resource production: 
-		rweb$pb[(1:nRsp),n] = (rR)/R1[,1]
+		rweb$pb[(1:nRsp),n] = (rR)#/R1[,1]
 		#Consumer production: 
-		rweb$pb[((1+nRsp):(nRsp+nCsp)),n] = colSums(frC*R1*cC)/C1r[,1]
+		rweb$pb[((1+nRsp):(nRsp+nCsp)),n] = colSums(frC*R1*cC)#/C1r[,1]
 		#Predator production: 
-		rweb$pb[((1+nRsp+nCsp):nspp),n] = colSums(frP*C1p*cP)/P1[,1]
+		rweb$pb[((1+nRsp+nCsp):nspp),n] = colSums(frP*C1p*cP)#/P1[,1]
 		rweb$pb[,n][!is.finite(rweb$pb[,n])] = 0
 
 		#Per-capita loss to consumption Q/B: 
-		#Resource production: 
-		rweb$qb[(1:nRsp),n] = rowSums(R1*cC)/R1[,1]
-		#Consumer production: 
-		rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = rowSums(C1p*cP)/C1r[,1]
+		#Resources to consumers: 
+		rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = colSums(t(C1r)*cC) #colSums(R1*cC) #/C1r[,1]
+		#Consumers to production: 
+		rweb$qb[((1+nRsp+nCsp):nspp),n] = colSums(t(P1)*cP) #colSums(C1p*cP) #/P1[,1]
 		rweb$qb[,n][!is.finite(rweb$qb[,n])] = 0
+	
+		# #Per-capita loss to consumption Q/B: 
+		# #Resources to consumers: 
+		# rweb$qb[(1:nRsp),n] = colSums(R1*cC)/C1r[,1]
+		# #Consumers to production: 
+		# rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = colSums(C1p*cP)/P1[,1]
+		# rweb$qb[,n][!is.finite(rweb$qb[,n])] = 0
+
 
 		#Predation rates by species (the dietary matrix) DCij
 		#Consumer consumption: 
-		rweb$DC [((1+nRsp):(nRsp+nCsp)),(1:nRsp),n] =  (cC*R1) / 
-											matrix(colSums(cC*R1),nRsp,nCsp,byrow=T ) 		#Predator consumption: 
+		rweb$DC [(1:nRsp),((1+nRsp):(nRsp+nCsp)),n] =  (cC*t(C1r)) / 
+											matrix(colSums(cC*t(C1r)),nRsp,nCsp,byrow=T ) 
+
+		rweb$DC [(1:nRsp),((1+nRsp):(nRsp+nCsp)),n] =  (cC*t(C1r)) / 
+											matrix(colSums(cC*t(C1r)),nRsp,nCsp,byrow=T ) 			#Predator consumption: 
 		#Predator consumption: 
-		rweb$DC [((1+nRsp+nCsp):nspp),((1+nRsp):(nRsp+nCsp)),n] =  (cP*C1p) / 
-											matrix(colSums(cP*C1p),nCsp,nPsp,byrow=T ) 
+		rweb$DC [((1+nRsp):(nRsp+nCsp)),((1+nRsp+nCsp):nspp),n] =  (t(P1)*cP) / 
+											matrix(colSums(t(P1)*cP),nCsp,nPsp,byrow=T ) 
+		rweb$DC[,,n][!is.finite(rweb$DC[,,n])] = 0
 
-		#diag(rweb$fijQi[1:nRsp,1:nRsp,n]) = (rR)*R1[,1]
-		rweb$fijQi[(1+1:nRsp),(1),n] = (rR)*R1[,1]
-		rweb$fijQi[(1),(1),n] = sum((rR)*R1[,1] )
-		#Consumer production: 
-		rweb$fijQi[(1+(1+nRsp):(nRsp+nCsp)),(1+1:nRsp),n] = t((frC*R1*cC)*t(C1r) )
-		#Predator production: 
-		rweb$fijQi[(1+(1+nRsp+nCsp):nspp),(1+(1+nRsp):(nRsp+nCsp)),n] = t((frP*C1p*cP)*t(P1))
-
-		##Energetic loss: 
-		#Resource to consumer: 
-		rweb$fijQi[(1+(nspp+1):(nspp+nCsp)),(1+1:nRsp),n ] = t(( R1*cC)*t(C1r) ) - t((frC*R1*cC)*t(C1r) )
-		#Consumer to Predator: 
-		rweb$fijQi[(1+(nspp+nCsp+1):(nspp+nCsp+nPsp)),(1+(1+nRsp):(nRsp+nCsp)),n ] = t( (C1p*cP)*t(P1) - (frP*C1p*cP)*t(P1) )
-
-		##Mortality loss:
-		#Resource: 
-		rweb$fijQi[ncol1,(1+1:nRsp),n ] =(rR)*R1[,1]*(R1[,1]/Ki)
-		#Consumer:
-		rweb$fijQi[ncol1,(1+(1+nRsp):(nRsp+nCsp)),n ] = t((t(C1r)*fmuC)[1,])
+		#Ecotrophic efficiency, the proportion of biomass that is exported 
+		#or predated upon (1-EE is "other mortality" )	
+		#Resource
+		rweb$ee[(1:nRsp),n] = (1-R1[,1]/Ki) #/
+		#Consumer
+		rweb$ee[((1+nRsp):(nRsp+nCsp)),n] = (1-fmuC[1,]/colSums(frC*R1*cC)  )
 		#Predator
-		rweb$fijQi[ncol1,(1+(1+nRsp+nCsp):nspp),n ] = (t(P1)*fmuP)[1,]
+		rweb$ee[((1+nRsp+nCsp):nspp),n] = (1-fmuP[1,]/colSums(frP*C1p*cP) )
+				
+		#dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
+		#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
+		#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
 
 
+	}
+}
 #=============================================================================
 # rutledge_web2
 # This function takes real data in the form of a biomass balance matrix and 
