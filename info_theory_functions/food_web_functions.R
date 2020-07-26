@@ -805,14 +805,6 @@ ode_to_mb = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 		rweb$qb[((1+nRsp+nCsp):nspp),n] = colSums(t(P1)*cP)/P1[,1] #colSums(C1p*cP) #/P1[,1]
 		rweb$qb[,n][!is.finite(rweb$qb[,n])] = 0
 	
-		# #Per-capita loss to consumption Q/B: 
-		# #Resources to consumers: 
-		# rweb$qb[(1:nRsp),n] = colSums(R1*cC)/C1r[,1]
-		# #Consumers to production: 
-		# rweb$qb[((1+nRsp):(nRsp+nCsp)),n] = colSums(C1p*cP)/P1[,1]
-		# rweb$qb[,n][!is.finite(rweb$qb[,n])] = 0
-
-
 		#Predation rates by species (the dietary matrix) DCij
 		#Consumer consumption: 
 		rweb$DC [(1:nRsp),((1+nRsp):(nRsp+nCsp)),n] =  (cC*t(C1r)) / 
@@ -831,10 +823,6 @@ ode_to_mb = function (spp_list = spp_list, pop_ts=pop_ts, spp_prms=spp_prms,
 		#Predator
 		rweb$ee[((1+nRsp+nCsp):nspp),n] = (1-fmuP[1,]/colSums(frP*C1p*cP) )
 				
-		#dR[i] = R[i]*( (rR[i]) * (1 - R[i]/Ki[i]) - (t(cC[i,])%*%C))
-		#dC[i] = C[i] * ( rC[i] *(eFc[i]*cC[,i])%*%R -(t(cP[i,])%*%P)- muC[i] )
-		#dP[i] = P[i] * ( rP[i] *(eFp[i]*cP[,i])%*%C - muP[i] )
-
 
 	}
 }
