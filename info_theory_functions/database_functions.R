@@ -101,7 +101,7 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FA
         if (ee == TRUE)
            { 
            nodes_ee <- as.data.frame(matrix(ncol=3, nrow=nnodes))
-           names(nodes_ee) <- c("id", "name", "qb")
+           names(nodes_ee) <- c("id", "name", "ee")
            }
         
         
@@ -125,6 +125,28 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FA
           nodes_biomass[node_id, 2] <- node_name  
           nodes_biomass[node_id, 3] <- node1_biomass  
           }
+
+          if (pb == TRUE)
+          {  
+          nodes_pb[node_id, 1] <- node_id  
+          nodes_pb[node_id, 2] <- node_name  
+          nodes_pb[node_id, 3] <- node1_pb
+          }
+          
+          if (qb == TRUE)
+          {  
+          nodes_qb[node_id, 1] <- node_id  
+          nodes_qb[node_id, 2] <- node_name  
+          nodes_qb[node_id, 3] <- node1_qb 
+          }
+          
+          if (ee == TRUE)
+          {  
+          nodes_ee[node_id, 1] <- node_id  
+          nodes_ee[node_id, 2] <- node_name  
+          nodes_ee[node_id, 3] <- node1_ee 
+          }
+          
           
           #matrix
           colnames(int_matrix)[node_id] <- node_name
@@ -147,7 +169,8 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FA
         int_matrix[is.na(int_matrix)] <- 0#replacing NA with 0
         
         if(biomass == TRUE) {  
-          fwlist[[i]] <- list(biomass=nodes_biomass, trophic_relations=int_matrix) 
+          fwlist[[i]] <- list(biomass=nodes_biomass, pb = nodes_pb, qb = nodes_qb, ee = nodes_ee, 
+            trophic_relations=int_matrix) 
         } else  { fwlist[[i]] <- int_matrix
         
         }

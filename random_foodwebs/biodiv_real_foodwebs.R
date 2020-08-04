@@ -19,117 +19,41 @@ source("../info_theory_functions/info_theory_functions.R")
 source("../info_theory_functions/database_functions.R")
 
 #=============================================================================
-# Outer loop. Set the number of trials and determine how to generate 
-# combinations of species and parameters. 
+# EcoBase: Get all of the available full foodwebs
 #=============================================================================
-
-#Length and time steps of each model run
-tend = 200
-delta1 = 0.01
-tl=tend/delta1
+fwlist = get_eb() 
+nwebs = length (fwlist)
 
 #The maximum block depth for dynamic info metrics (larger is more accurate, but
 #slower and could cause crashing if too large)
 k= 5 
 
-#Number of food webs to generate
-nwebs = 50
-
-#Output of each web
-out1 = vector("list",nwebs)
 #Converting the web to Rutledge's compartment model and calculating the information
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
-rweb1 = vector("list",nwebs)
-#Dynamic information metrics calculated from the (discretized) time series 
-di_web = vector("list",nwebs)
-#Track the average transfer entropy and separable information between each pair of 
-#species as a way to build a network of information flow through the network. 
-te_web = vector("list",nwebs)
-si_web = vector("list",nwebs)
-aiE_web = vector("list",nwebs)
-MMI_web = vector("list",nwebs)
-
-#Random resources:
-c1 = 1 
-amp1 = 0.25 #100000 #1/exp(1) 
-
-#Random consumers
-c2 = 1
-amp2 = 0.1
-res_R = c(amp1,c1,amp2,c2)
+rweb_mb = vector("list",nwebs)
 
 for (w in 1:nwebs){ 
 	print(w)
 
-	#Assume 3 trophic levels unless otherwise specified.
-	nRsp = ceiling(runif(1)*24)
-	nCsp = ceiling(runif(1)*16)
-	nPsp = ceiling(runif(1)*8)
-	nspp = nRsp+nCsp+nPsp
+	#Reformat these to a vector with named entries
+	biomass = abs(fwlist[[w]]$biomass$biomass)
+	names(biomass) = fwlist[[w]]$biomass$name 
 
-	#Randomly generate the species parameters for the model as well: 
-	spp_prms = NULL
-	#Resource: Nearly identical resource dynamics: 
-	spp_prms$rR = matrix(rnorm(nRsp,300,10), nRsp, 1) #intrinsic growth
-	spp_prms$Ki = matrix(rnorm(nRsp,500,10), nRsp, 1) #carrying capacity
+	#Ratio of production P/B
+	pb = fwlist[[w]]$pb$pb
+	names(pb) = fwlist[[w]]$pb$name 
 
-	#Consumers: 
-	spp_prms$rC = matrix(rnorm(nCsp,.5,0.2), nCsp, 1) #intrisic growth
-	spp_prms$eFc = matrix(1,nCsp,nRsp) # just make the efficiency for everything 1 for now
-	spp_prms$muC = matrix(rnorm(nCsp,0.6,0.1), nCsp, 1) #mortality rates
-	#Consumption rates: 
-	#Generate a hierarchy where each species predominantly feeds on particular resource. 
-	dspp = abs((nCsp - nRsp))
-	hier1= seq(1/nRsp, (1-1/nRsp), length=nRsp)
-	spp_prms$cC = hier1 
-	for( n in 1:nCsp) {
-		spp_prms$cC = cbind(spp_prms$cC, shifter(hier1,n))
-	}
-	spp_prms$cC = matrix(spp_prms$cC[1:nRsp,1:nCsp ],nRsp,nCsp)
+	#Ratio of consumption Q/B
+	qb = fwlist[[w]]$qb$qb
+	names(qb) = fwlist[[w]]$qb$name 
 
-	#Predators: 
-	spp_prms$rP = matrix(rnorm(nPsp,0.5,0.2), nPsp, 1) #intrisic growth
-	spp_prms$eFp = matrix(1,nPsp,nCsp) # just make the efficiency for everything 1 for now
-	spp_prms$muP = matrix(rnorm(nPsp,0.6,0.1), nPsp, 1) #mortality rates
-	#Consumption rates: 
-	#Generate a hierarchy where each species predominantly feeds on particular resource. 
-	dspp = ((nPsp - nCsp))
-	if(dspp<0){dspp = 0 }
-	hier1= seq(1/nCsp, (1-1/nCsp), length = nCsp)
-	spp_prms$cP = hier1
-	for( n in 1:nPsp) {
-		spp_prms$cP = cbind(spp_prms$cP, shifter(hier1,n))
-	}
-	spp_prms$cP = matrix(spp_prms$cP[1:nCsp,1:nPsp],nCsp,nPsp)
+	#Ecotrophic efficiency EE
+	ee = fwlist[[w]]$ee$ee
+	names(ee) = fwlist[[w]]$ee$name 
 
+	#The dietary matrix
+	DC = fwlist[[w]]$trophic_relations
 
-	#=============================================================================
-	# Inner loop. Run the food web model, calculate information theoretic 
-	# quantities. 
-	#=============================================================================
-	#=============================================================================
-	# This function gives: 
-	# out 		The time series for of population growth for each species in the web
-	#			This can be set to just give the final 2 time steps of the web with
-	#			"final = TRUE"
-	# spp_prms	The parameters of all species in the food web
-	#=============================================================================
-	# tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-	# 	tend, delta1, res_R = NULL,final = FALSE ))}, error = function(e){}) 
-	#Random resource fluctuations:
-	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
-		tend, delta1, res_R = res_R) )
-
-		# print( paste( "nRsp", sum(out1[[w]]$out[tl,1:nRsp]>1) ) )
-		# print( paste( "nCsp", sum(out1[[w]]$out[tl,(nRsp+1):nCsp]>1) ) )
-		# print( paste( "nPsp", sum(out1[[w]]$out[tl,(nCsp+1):nPsp]>1) ) )		
-
-		# plot(out1[[w]]$out[,1], t="l", ylim = c(0, max(out1[[w]]$out[tl,],na.rm=T) ) )
-		# for(n in 2:nRsp){ lines(out1[[w]]$out[,n], col ="red") }
-		# for(n in (nRsp+1):(nCsp) ){ lines(out1[[w]]$out[,n], col ="blue") }
-		# for(n in (nCsp+1):(nPsp) ){ lines(out1[[w]]$out[,n]) }
-
-	
 	#=============================================================================
 	# Information theoretic assessment of the foodweb.
 	#=============================================================================
@@ -152,204 +76,63 @@ for (w in 1:nwebs){
 	# ce 		Conditional entropy		
 	#=============================================================================
 	
-	rweb1[w] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1[[w]]$out[,2:(nspp+1)],
-		spp_prms = out1[[w]]$spp_prms) )
+	rweb_mb[w] = list(rutledge_web_mb(biomass = biomass, pb = pb, qb = qb, DC = DC, ee = ee,  
+						 if_conditional = FALSE) )
 
-	#=============================================================================
-	# Information processing networks
-	#=============================================================================
-	## This code takes the population time-series counts output by the ODEs and 
-	## calculates Excess Entropy, Active Information Storage, and Transfer Entropy.
-	## Each quantity is calculated at both the average and local level.  
-	#=============================================================================
-	# This function gives:
-	# EE_mean		Average mutual information per species
-	# AI_mean		Average active information per species
-	# TE_mean		Average transfer entropy per species
-	# 
-	# EE_local		Local mutual information per species
-	# AI_local		Local active information per species
-	# TE_local		Local transfer entropy per species
-	#=============================================================================
-	#nt1 = 2/3*tl
-	nt1 = tl - 100
-	nt2 = tl
-	# di_web[w] = list(get_info_dynamics(pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-	# 	k=k,with_blocks=FALSE))
-
-	# ## This code takes the population time-series counts output by the ODEs and 
-	# ## calculates the average Transfer Entropy from each species to every other 
-	# ## species. The goal is to get an overview of the major information pathways 
-	# ## in the web.   
-	# #=============================================================================
-	# # This function gives:
-	# # te_web		Average transfer entropy per species as a pairwise matrix
-	# #=============================================================================
-	# te_web[w] = list( get_te_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-	# 	k=k) )
-
-	# ## This code takes the population time-series counts output by the ODEs and 
-	# ## calculates the average Separable Information from each species to every other 
-	# ## species. The goal is to get an overview of the major information pathways 
-	# ## in the web.   
-	# #=============================================================================
-	# # This function gives:
-	# # si_web		Average separable information per species as a pairwise matrix
-	# #=============================================================================
-	# si_web[w] = list( get_si_web( pop_ts = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-	# 	k=k) )
-
-	#=============================================================================
-	# This function gives:
-	# aiE_web    The AI of the entire ensemble, treated as a single time series. 
-	#=============================================================================
-	aiE_web[w] = list( get_ais (  series1 = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-		k=k, ensemble = TRUE)    )
-
-	#=============================================================================
-	# This function gives:
-	# MMI_web    The MMI of the entire ensemble, treated as a single time series. 
-	#=============================================================================
-	MMI_web[w] = list( get_ais (  series1 = floor(out1[[w]]$out[nt1:tl,2:(nspp+1)]), 
-		k=k, ensemble = TRUE)    )
-
-	}, error = function(e){}) 
-
+	
 }
 
 #save(file = "rand_fwebmod6F.var", out1,  di_web,te_web,si_web)
 #save(file = "rand_fwebmod7G.var", out1, rweb1,aiE_web,MMI_web) #These are deterministic
-save(file = "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod8C.var", out1, rweb1,aiE_web,MMI_web) #These are stochastic
+#save(file = "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod8C.var", rweb_mb) #These are stochastic
 
-
-#=============================================================================
-# Load saved foodwebs and look at relationships between function and various 
-# measures of complexity. 
-#=============================================================================
-#load("/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/rand_fwebmod7G.var")
-#This requires user input!
-variable.list=list("out1", "di_web", "te_web","si_web")
-
-
-file.name.list=c(
- # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7A.var", 
- # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7B.var",  
- # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7C.var",
- # "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7D.var",
-  "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7E.var",
-  "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7F.var",
-  "/Volumes/TOSHIBA\ EXT/backups/mac_2020/Documents/GitHub/info_theory_eco/random_foodwebs/rand_fwebmod7G.var"
-  )
-
-
-#Combine the variables from each scenario file into one variable
-var.length=length(variable.list)
-nscen = length(file.name.list)
-out1_all=NULL
-rweb1_all = NULL
-aiE_web_all = NULL
-MMI_web_all = NULL
-
-for (g in 1:nscen){
-	load(file.name.list[[g]])
-	nwebs = (!sapply(aiE_web,is.null) )
-	rweb1_all=c(rweb1_all, rweb1[nwebs ])
-	aiE_web_all=c(aiE_web_all, aiE_web[nwebs])
-	MMI_web_all=c(MMI_web_all, MMI_web[nwebs ])
-	out1_all=c(out1_all, out1[nwebs])
-
-}
-
-#Re-run the loaded variables over a different range if need be: 
-ncells=length(aiE_web_all)
-for (n in 1:ncells){
-	k=1
-	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
-	nRsp = out1_all[[n]]$spp_prms$nRsp
-	nCsp = out1_all[[n]]$spp_prms$nCsp
-	nPsp = out1_all[[n]]$spp_prms$nPsp
-	nspp = nRsp+nCsp+nPsp
-	
-	nt1 = tlast - 100
-	nt2 = tlast
-
-	rweb1_all[n] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1_all[[n]]$out[nt1:nt2,2:(nspp+1)],
-		spp_prms = out1_all[[n]]$spp_prms) )
-
-	#=============================================================================
-	aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
-		k=k, ensemble = TRUE)    )
-
-	#=============================================================================
-	MMI_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
-		k=k, ensemble = TRUE)    )
-}
 
 #Take variables out of the lists to plot: 
-ncells=length(aiE_web_all)
-rDIT = data.frame(matrix(0, nrow=ncells, ncol =12) ) 
-ncnames = c("fwno","Biomass", "var_Biomass", "Snspp", "Fnspp", "shannon", "rS","rCE","rMI", "MI", 
-	"AI","eq_state" )
+ncells=length(rweb_mb)
+rDIT = data.frame(matrix(0, nrow=ncells, ncol =9) ) 
+ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rS","rCE","rMI")
 colnames(rDIT) = ncnames
 
 for (n in 1:ncells){
-	tlast1 = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
-	tlast2 = dim(aiE_web_all[[n]]$local)[1] - 1 #Length of time series
-
-
 	rDIT$fwno[n] = n 
-	rDIT$Snspp[n] = out1_all[[n]]$spp_prms$nspp #Starting number of species
-	rDIT$Fnspp[n] = sum(out1_all[[n]]$out[tlast1,] > 0) #Final number of species
+	rDIT$nspp[n] = length(rweb_mb[[n]]$biomass) #Final number of species
 
-	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast1, 2:(rDIT$Snspp[n]+1) ]) #Biomass at last time
+	rDIT$Biomass[n] = sum(rweb_mb[[n]]$biomass) #Total biomass
 
-	tbck = 1 #tlast*3/4 #Use a subset that excludes transient stage for variance
-	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast1-tbck):tlast, 2:(rDIT$Snspp[n]+1) ]) )
+	rDIT$var_Biomass[n] = 0
 
 	#Shannon Diversity
-	pi = out1_all[[n]]$out[tlast1, 2:(rDIT$Snspp[n]+1) ] / rDIT$Biomass[n]
+	pi = rweb_mb[[n]]$biomass / rDIT$Biomass[n]
 	pi[pi <= 0 ] = NA
 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
 	#Rutledge Shannon Diversity, Conditional Entropy, and Mutual Information:  
-	rDIT$rS[n] = rweb1_all[[n]]$sD[tlast2]
-	rDIT$rCE[n] = rweb1_all[[n]]$ce2[tlast2]
-	rDIT$rMI[n] = rweb1_all[[n]]$mI_per[tlast2]
-
-	#Multiple Mutual Information
-	rDIT$MI[n] = MMI_web_all[[n]]$mean
-
-	#Ensemble active information
-	rDIT$AI[n] = aiE_web_all[[n]]$mean
-
-	#Determine whether this was a web in equilibrium (0) or not (1).
-	eqtf = factor(levels=c(0,1))
-	eq_test = test_eq( foodweb = out1_all[[n]], eqtest =tlast-50, t_type = "deriv")
-	if(sum(eq_test)>1) {rDIT$eq_state[n] = levels(eqtf)[2]} else { rDIT$eq_state[n] = levels(eqtf)[1]   }
-
+	rDIT$rS[n] = rweb_mb[[n]]$sD
+	rDIT$rCE[n] = rweb_mb[[n]]$ce2
+	rDIT$rMI[n] = rweb_mb[[n]]$mI_mean2
 
 }
 
-rDIT_eq = subset(rDIT, eq_state == 0)
-rDIT_non = subset(rDIT, eq_state == 0)
+rDIT_eq = subset(rDIT, rMI >0.01 )
 
-lm_Snspp = lm(rDIT_eq$Biomass~rDIT_eq$Snspp)
-lm_Fnspp = lm(rDIT_eq$Biomass~rDIT_eq$Fnspp)
+lm_nspp = lm(rDIT_eq$Biomass~rDIT_eq$nspp)
 lm_H=lm(rDIT_eq$Biomass~rDIT_eq$shannon)
-lm_rS=lm(I(log(rDIT_eq$Biomass+1))~I(log(rDIT_eq$rS+1) ))
-lm_rCE=lm(I(log(rDIT_eq$Biomass+1))~I(log(rDIT_eq$rCE+1) ))
-lm_rMI=lm(I(log(rDIT_eq$Biomass+1))~I(log(rDIT_eq$rMI+1) ))
-lm_MI=lm(rDIT_eq$Biomass~rDIT_eq$MI)
-lm_AI=lm(rDIT_eq$Biomass~rDIT_eq$AI)
+lm_rS=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) ))
+lm_rCE=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) ))
+lm_rMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rMI) ))
+lm_rCEMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) )+I(log(rDIT_eq$rMI) ) )
+lm_rSMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) )+I(log(rDIT_eq$rMI) ) )
 
-summary(lm_Snspp )
-summary(lm_Fnspp )
+
+
+summary(lm_nspp )
 summary(lm_H )
 summary(lm_rS )
 summary(lm_rCE )
 summary(lm_rMI )
-summary(lm_MI )
-summary(lm_AI )
+summary(lm_rCEMI )
+summary(lm_rSMI )
+
 
 lm_nspp2 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$shannon)
 lm_nspp3 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$rMI)
@@ -358,15 +141,15 @@ lm_nspp4 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$MI)
 
 #Plots 
 ggplot ( ) + 
-	geom_point (data= rDIT_eq, aes(x = Fnspp, y = Biomass,color = "1" )) + 
+	geom_point (data= rDIT_eq, aes(x = nspp, y = Biomass,color = "1" )) + 
 	geom_point (data= rDIT_eq,aes(x = shannon, y =Biomass,color = "2")) +
-	geom_point( data= rDIT_eq,aes (x = rMI, y=Biomass,color = "3" ) ) +
-	geom_point( data= rDIT_eq,aes (x = MI, y=Biomass,color = "4" ) ) +
-	geom_point( data= rDIT_eq,aes (x = AI, y=Biomass,color = "5" ) ) +
+	geom_point (data= rDIT_eq,aes(x = rS, y =Biomass,color = "3")) +
+	geom_point( data= rDIT_eq,aes (x = rMI, y=Biomass,color = "4" ) ) +
+	geom_point( data= rDIT_eq,aes (x = rCE, y=Biomass,color = "5" ) ) +
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rSD", "rMI","rCE") )
 
 #Plots 
 ggplot ( ) + 
