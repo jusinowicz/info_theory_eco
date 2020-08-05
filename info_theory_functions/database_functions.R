@@ -8,6 +8,7 @@
 library(RCurl)
 library(XML)
 library(plyr)
+library(rmangal)
 #=============================================================================
 #get_eb 
 #
@@ -217,3 +218,146 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FA
     
     return (fwlist)
 }#end of eb
+
+
+#MANGAL
+get_eb = function (type = c("herbivory","predation"), ecosyst = FALSE, ref = FALSE ) {
+
+  
+  message("####################### MANGAL DATABASE #######################\n\n")
+  
+  message("Fetching datasets from the Mangal website! \n\n Types 'predation' and 'herbivory' by default... \n but run mangal function 'avail_type' to check available types...\n\nThis operation might take a long time!")
+  
+  ntypes <- length(type)
+  
+  net_info <- list()
+  
+  for(i in 1:ntypes){
+    
+    message(paste0("\n\nFetching information from interactions of the type ","'",type[i], "'!"))
+    
+    fwlist1 <- search_interactions(type = type[i]) %>% get_collection()
+      
+    net_info <- rbind(net_info, fwlist1)
+
+    fwlist2 <- as.igraph(fwlist1)
+    
+    fwlist <- c(fwlist, fwlist2)
+    
+    #class(fwlist)
+    
+  }
+
+  #Only keep networks that have more than presence/absence data:
+  no_pa = NULL
+  nnets = length(net_info)
+  for(i in 1:nnets) {
+    pa_tmp = net_info[[i]]$interactions$attribute.name != "presence/absence"
+    no_pa = c(no_pa, sum(pa_tmp)) 
+  }
+
+  net_info = net_info[no_pa>0]
+  fwlist = fwlist[no_pa] 
+    
+  #Converting igraph objects to data frame
+  for(i in 1:length(fwlist)){
+    fw2 <- fwlist[[i]]
+    #convert each igraph to a data frame
+    fw3 <- as_data_frame(fw2, what = "both")
+    id_name <- fw3$vertices[,1:2]
+    
+    for(j in 1:nrow(id_name)){#clean the names
+      
+      node_name <- id_name$original_name[j]
+      
+      if (grepl(":", node_name, fixed=TRUE)) {
+        node_name <- tail(strsplit(node_name, ": "))[[1]]
+        id_name[j,2] <- node_name[2]
+      } else id_name[j,2] <- node_name
+      
+      
+    }#end clean names
+    
+    id_edges <- fw3$edges[,1:3]
+    int_matrix <- as.data.frame(matrix(ncol = nrow(id_name), nrow = nrow(id_name)))
+    colnames(int_matrix) <- id_name$original_name
+    rownames(int_matrix) <- id_name$original_name
+    
+    #Fill the matrix
+    for(a in 1:nrow(id_edges)){
+      edge1 <- as.numeric(id_edges[a,1:2])
+      name1 <- id_name[as.character(edge1[1]),][,2]
+      name2 <- id_name[as.character(edge1[2]),][,2]
+      int_matrix[name1,name2] <- 1
+    }
+    
+    int_matrix[is.na(int_matrix)] <- 0 #convert all NA to zero
+    
+    fwlist[[i]] <- int_matrix
+    
+  }#end of loop to convert to a data frame
+
+  if(ref==TRUE){
+    references <- as.data.frame(matrix(ncol = 4))
+    names(references) <- c("Dataset ID", "first_author", "year", "DOI" )
+    
+    message("Fetching references!")
+    
+    for(j in 1:length(net_info)){
+    dataset_id <- net_info[[j]]$dataset$dataset_id
+    first_author <- net_info[[j]]$reference$first_author
+    year_mng <- as.numeric(net_info[[j]]$reference$year)  
+    doi_mng <- net_info[[j]]$reference$doi
+    references[j,1] <- dataset_id
+    references[j,2] <- first_author
+    references[j,3] <- year_mng
+    references[j,4] <- doi_mng
+    
+    references <- references[order(references$`Dataset ID`),]
+    rownames(references) <- 1:nrow(references)
+    }
+    
+  }#End of mg refs
+    
+  if(spatial==TRUE){
+    spatial1 <- as.data.frame(matrix(ncol = 4)) 
+    names(spatial1) <- c("Dataset ID", "first_author", "lat", "long")
+    message("Fetching coordinates!")
+    
+    for(z in 1: length(net_info)){
+      dataset_id <- net_info[[z]]$dataset$dataset_id
+      lat_mng <- net_info[[z]]$network$geom_lat
+      long_mng <-  net_info[[z]]$network$geom_lon
+      first_author <- net_info[[z]]$reference$first_author
+      if(length(unlist(lat_mng))>1){
+        
+        spatial2 <- as.data.frame(matrix(ncol = 4)) 
+        names(spatial2) <- c("Dataset ID", "first_author", "long", "lat" )
+        
+        for(b in 1:length(unlist(lat_mng))){
+          spatial2[b,3] <- long_mng[[1]] [b]
+          spatial2[b,4] <- lat_mng [[1]] [b]
+          }
+        
+        spatial2[,1] <- dataset_id
+        spatial2[,2] <- first_author
+        
+        spatial1 <- rbind(spatial1, spatial2)
+        
+      }
+      spatial1[z,1] <- dataset_id
+      spatial1[z,2] <- first_author
+      if(length(unlist(lat_mng))==1) spatial1[z,3] <- lat_mng
+      if(length(unlist(lat_mng))==1) spatial1[z,4] <- long_mng
+    }
+      
+      spatial1 <- spatial1[order(spatial1$`Dataset ID`),]
+      rownames(spatial1) <- 1:nrow(spatial1)
+      
+  }#End of mg spatial
+    
+    if (exists("references") & exists("spatial1")) (if(nrow(references)!=nrow(spatial1)) message("WARNING: There are more than on FW in some datasets! References and Spatial data frames have different number of rows."))
+
+return (fwlist)
+    
+}#end of mangal
