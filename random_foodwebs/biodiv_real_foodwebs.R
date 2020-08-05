@@ -123,8 +123,6 @@ lm_rMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rMI) ))
 lm_rCEMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) )+I(log(rDIT_eq$rMI) ) )
 lm_rSMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) )+I(log(rDIT_eq$rMI) ) )
 
-
-
 summary(lm_nspp )
 summary(lm_H )
 summary(lm_rS )
