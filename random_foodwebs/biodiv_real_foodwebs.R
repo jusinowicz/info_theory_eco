@@ -113,17 +113,33 @@ for (n in 1:ncells){
 
 }
 
+
+#Fit models to see what predicts Biomass the best
 rDIT_eq = subset(rDIT, rMI >0.01 )
 
-lm_nspp = lm(rDIT_eq$Biomass~rDIT_eq$nspp)
-lm_H=lm(rDIT_eq$Biomass~rDIT_eq$shannon)
-lm_rS=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) ))
-lm_rCE=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) ))
-lm_rMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rMI) ))
-lm_rCEMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) )+I(log(rDIT_eq$rMI) ) )
-lm_rSMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) )+I(log(rDIT_eq$rMI) ) )
+#Log-log 
+l_rDIT_eq = log (rDIT_eq)
+lm_nspp = lm(l_rDIT_eq$Biomass~l_rDIT_eq$nspp)
+lm_nspp_log = lm(l_rDIT_eq$Biomass~l_rDIT_eq$nspp)
+lm_H=lm(l_rDIT_eq$Biomass~l_rDIT_eq$shannon)
+lm_rS=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS)
+lm_rCE=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rCE)
+lm_rMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rMI)
+lm_rCEMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rCE+l_rDIT_eq$rMI)
+lm_rSMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS+l_rDIT_eq$rMI)
+
+#Predict data from models to fit to figure
+
+pr_nspp_log = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log) ),
+	nspp = exp(l_rDIT_eq$nspp ) )
+pr_H = data.frame( Biomass = exp(predict( lm_H) ) ,	shannon =exp(l_rDIT_eq$shannon ) )
+pr_rS =data.frame( Biomass = exp(predict (lm_rS ) ), rS= exp(l_rDIT_eq$rS  ) )
+pr_rCE = data.frame( Biomass = exp(predict(lm_rCE) ), rCE = exp(l_rDIT_eq$rCE ) )
+pr_rMI = data.frame( Biomass = exp(predict(lm_rMI) ), rMI = exp(l_rDIT_eq$rMI ) )
+
 
 summary(lm_nspp )
+summary(lm_nspp_log )
 summary(lm_H )
 summary(lm_rS )
 summary(lm_rCE )
@@ -131,13 +147,9 @@ summary(lm_rMI )
 summary(lm_rCEMI )
 summary(lm_rSMI )
 
-
-lm_nspp2 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$shannon)
-lm_nspp3 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$rMI)
-lm_nspp4 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$MI)
-
-
 #Plots 
+
+#Plot of data on log scale: 
 ggplot ( ) + 
 	geom_point (data= rDIT_eq, aes(x = nspp, y = Biomass,color = "1" )) + 
 	geom_point (data= rDIT_eq,aes(x = shannon, y =Biomass,color = "2")) +
@@ -149,131 +161,117 @@ ggplot ( ) +
 	ylab("Biomass")+
 	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rSD", "rMI","rCE") )
 
-#Plots 
+#Plot of data with fitted lines: 
 ggplot ( ) + 
-	#geom_point (data= rDIT_eq, aes(y = Fnspp, x = Biomass,color = "1" )) + 
-	geom_point (data= rDIT_eq,aes(y = shannon, x =Biomass,color = "2")) +
-	geom_point (data= rDIT_eq,aes(y = rS, x =Biomass,color = "3")) +
-	geom_point (data= rDIT_eq,aes(y = rCE, x =Biomass,color = "4")) +
-	geom_point( data= rDIT_eq,aes (y = rMI, x=Biomass,color = "5" ) ) +
-	# geom_point( data= rDIT_eq,aes (x = MI, y=Biomass,color = "6" ) ) +
-	# geom_point( data= rDIT_eq,aes (x = AI, y=Biomass,color = "7" ) ) +
-	#scale_y_log10()+ scale_x_log10() +
-	ylab("Complexity (Bits) ")+
-	xlab("Biomass")+
-	#scale_color_discrete(name ="", labels = c("# Species", "SDI", "rS","rCE", "rMI","MI","AI" ) )
-	scale_color_discrete(name ="", labels = c("ShannonDI", "rShannon","rConditional Entropy",
-	 "rMutual Information") )
-ggsave("./complexity_v_biomass_all.pdf", width = 8, height = 10)
-
-ggplot ( ) + 
-	geom_point (data= rDIT, aes(x = nspp, y = var_Biomass,color = "1" )) + 
-	geom_point (data= rDIT,aes(x = shannon, y =var_Biomass,color = "2")) +
-	geom_point( data= rDIT,aes (x = rMI, y=var_Biomass,color = "3" ) ) +
-	geom_point( data= rDIT,aes (x = MI, y=var_Biomass,color = "4" ) ) +
-	geom_point( data= rDIT,aes (x = AI, y=var_Biomass,color = "5" ) ) +
-	#scale_y_log10()+ scale_x_log10() +
+	geom_point (data= rDIT_eq, aes(x = (nspp), y = (Biomass),color = "1" )) + 
+	geom_line ( data = pr_nspp_log, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
+	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (rS), y =(Biomass),color = "3")) +
+	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "3" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rMI), y=(Biomass),color = "4" ) ) +
+	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "4" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "5" ) ) +
+	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "5" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rMI","MI","AI" ) )
-
-
-lm_nsppv = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp)))
-lm_Hv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$shannon)))
-lm_rMIv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$rMI)))
-lm_MIv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$MI)))
-lm_AIv=lm(I(log(rDIT$var_Biomass))~I(log(rDIT$AI)))
-
-summary(lm_nsppv )
-summary(lm_Hv )
-summary(lm_rMIv )
-summary(lm_MIv )
-summary(lm_AIv )
-
-lm_nsppv2 = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp))+I(log(rDIT$shannon)))
-lm_nsppv3 = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp))+I(log(rDIT$rMI)))
-lm_nsppv4 = lm(I(log(rDIT$var_Biomass))~I(log(rDIT$nspp))+I(log(rDIT$MI)))
-
-AIC(lm_nsppv,lm_nsppv2,lm_nsppv3,lm_nsppv4 )
-
-
-#Check population plots: 
-n=89
-n2=61
-n3=88
-tlast = dim(out1_all[[n]]$out)[1] - 1
-nRsp = out1_all[[n]]$spp_prms$nRsp
-nCsp = out1_all[[n]]$spp_prms$nCsp
-nPsp = out1_all[[n]]$spp_prms$nPsp
-
-	plot(out1_all[[n]]$out[,1], t="l", ylim = c(0, max(out1_all[[n]]$out[tlast,],na.rm=T) ) )
-		for(w in 2:nRsp){ lines(out1_all[[n]]$out[,w], col ="red") }
-		for(w in (nRsp+2):(nRsp+nCsp+1) ){ lines(out1_all[[n]]$out[,w], col ="blue") }
-		for(w in (nRsp+nCsp+2):(nRsp+nCsp+nPsp+1) ){ lines(out1_all[[n]]$out[,w]) }
-
-#Files to load
-# file.name.list=c(
-#   "rand_fwebmod6A.var", 
-#   "rand_fwebmod6B.var",  
-#   "rand_fwebmod6C.var",
-#   "rand_fwebmod6D.var",
-#   "rand_fwebmod6E.var",
-#   "rand_fwebmod6F.var"
-#   )
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rSD", "rMI","rCE") )
 
 
 
-# #Combine the variables from each scenario file into one variable
-# var.length=length(variable.list)
-# nscen = length(file.name.list)
-# out1_all=NULL
-# di_web_all = NULL
-# te_web_all = NULL
-# si_web_all = NULL
 
-# for (g in 1:nscen){
-# 	load(file.name.list[[g]])
-# 	nwebs = length( di_web[(!sapply(di_web,is.null) ) ])
-# 	di_web_all=c(di_web_all, di_web[(!sapply(di_web,is.null) ) ])
-# 	te_web_all=c(te_web_all, te_web[(!sapply(te_web,is.null) ) ])
-# 	si_web_all=c(si_web_all, si_web[(!sapply(si_web,is.null) ) ])
-# 	out1_all=c(out1_all, out1[1:nwebs])
+#Log-y
+lm_nspp = lm(rDIT_eq$Biomass~rDIT_eq$nspp)
+lm_nspp_log = lm(I(log(rDIT_eq$Biomass))~rDIT_eq$nspp)
+lm_H=lm(I(log(rDIT_eq$Biomass))~rDIT_eq$shannon)
+lm_rS=lm(I(log(rDIT_eq$Biomass))~rDIT_eq$rS)
+lm_rCE=lm(I(log(rDIT_eq$Biomass))~rDIT_eq$rCE)
+lm_rMI=lm(I(log(rDIT_eq$Biomass))~rDIT_eq$rMI)
+lm_rCEMI=lm(I(log(rDIT_eq$Biomass))~rDIT_eq$rCE+rDIT_eq$rMI)
+lm_rSMI=lm(I(log(rDIT_eq$Biomass))~rDIT_eq$rS+rDIT_eq$rMI)
 
-# }
+summary(lm_nspp )
+summary(lm_nspp_log )
+summary(lm_H )
+summary(lm_rS )
+summary(lm_rCE )
+summary(lm_rMI )
+summary(lm_rCEMI )
+summary(lm_rSMI )
 
-# #Take variables out of the lists to plot: 
-# ncells=length(si_web_all)
-# rDIT = data.frame(matrix(0, nrow=ncells, ncol =7) ) 
-# ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "MI", "AI" )
-# colnames(rDIT) = ncnames
+#Predict data from models to fit to figure
+pr_nspp = data.frame( Biomass = coef(lm_nspp)[1] + coef(lm_nspp)[2]* (1:max(rDIT_eq$nspp) ),
+ nspp = 1:max(rDIT_eq$nspp) )
+pr_nspp_log = data.frame( Biomass = exp(coef(lm_nspp_log)[1]) * exp(coef(lm_nspp_log)[2]*(1:max(rDIT_eq$nspp)) ),
+ nspp = (1:max(rDIT_eq$nspp) ) )
+pr_H = data.frame( Biomass = exp(coef(lm_H)[1] ) * exp( coef(lm_H)[2]* seq(0.1,5,0.1) ) ,
+ shannon = seq(0.1,5,0.1) )
+pr_rS =data.frame( Biomass = exp(coef(lm_rS)[1] ) * exp( coef(lm_rS)[2]* seq(0.1,5,0.1) ) ,
+ rS= seq(0.1,5,0.1) )
+pr_rCE = data.frame( Biomass = exp(coef(lm_rCE)[1] ) * exp(coef(lm_rCE)[2]* seq(0.1,5,0.1) ),
+ rCE = seq(0.1,5,0.1) )
+pr_rMI = data.frame( Biomass = exp(coef(lm_rMI)[1] ) * exp( coef(lm_rMI)[2]* seq(0.1,5,0.1) ),
+ rMI= seq(0.1,5,0.1) )
+# pr_rCEMI
+# pr_rSMI
 
-# for (n in 1:ncells){
-# 	rDIT$fwno[n] = n 
-# 	rDIT$nspp[n] = out1_all[[n]]$spp_prms$nspp #Number of species
+#Plot of data with fitted lines: 
+ggplot ( ) + 
+	geom_point (data= rDIT_eq, aes(x = (nspp), y = (Biomass),color = "1" )) + 
+	geom_line ( data = pr_nspp_log, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
+	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (rS), y =(Biomass),color = "3")) +
+	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "3" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rMI), y=(Biomass),color = "4" ) ) +
+	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "4" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "5" ) ) +
+	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "5" ) ) + 
+	scale_y_log10()+ 
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rSD", "rMI","rCE") )
 
-# 	tlast = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
-# 	rDIT$Biomass[n] = sum(out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ]) #Biomass at last time
 
-# 	tbck = tlast*3/4 #Use a subset that excludes transient stage for variance
-# 	rDIT$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast-tbck):tlast, 2:(rDIT$nspp[n]+1) ]) )
 
-# 	#Shannon Diversity
-# 	pi = out1_all[[n]]$out[tlast, 2:(rDIT$nspp[n]+1) ] / rDIT$Biomass[n]
-# 	pi[pi <= 0 ] = NA
-# 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
-# 	#Sum of Active Information
-# 	aip = (pi*di_web_all[[n]]$ai_means)
-# 	rDIT$AI[n] = sum(aip, na.rm=T)
-# }
 
-# lm_nspp = lm(rDIT$Biomass~rDIT$nspp)
-# lm_H=lm(rDIT$Biomass~rDIT$shannon)
-# lm_AI=lm(rDIT$Biomass~rDIT$AI)
+lm_nspp2 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$shannon)
+lm_nspp3 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$rMI)
+lm_nspp4 = lm(rDIT_eq$Biomass~rDIT_eq$nspp+rDIT_eq$MI)
 
-# #Plots 
-# ggplot (rDIT, aes(x = nspp, y = Biomass,color = "1" ) ) + geom_point () + 
-# 	geom_point (aes(x = shannon, y =Biomass,color = "2"))+
-# 	geom_point( aes (x = AI, y=Biomass,color = "3" ) )+
-# 	scale_color_discrete(name ="", labels = c("# Species", "SDI","AI" ) )
+
+#Predict data from models to fit to figure
+#Log-Log
+lm_nspp = lm(rDIT_eq$Biomass~rDIT_eq$nspp)
+lm_nspp_log = lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$nspp)))
+lm_H=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$shannon) ))
+lm_rS=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) ))
+lm_rCE=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) ))
+lm_rMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rMI) ))
+lm_rCEMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rCE) )+I(log(rDIT_eq$rMI) ) )
+lm_rSMI=lm(I(log(rDIT_eq$Biomass))~I(log(rDIT_eq$rS) )+I(log(rDIT_eq$rMI) ) )
+
+
+n1 = ( seq( min( rDIT_eq$nspp) , max( rDIT_eq$nspp ),0.1 ) )
+newdata=data.frame("I(log(rDIT_eq$nspp))"=n1)
+exp(coef(lm_nspp_log)[1]) * exp(coef(lm_nspp_log)[2]*n1)
+pr_nspp_log = data.frame( Biomass =  predict.lm ( lm_nspp_log, newdata=newdata) ,
+ 	nspp = exp( n1 ) )
+n2 = log ( seq( min( rDIT_eq$shannon ), max(rDIT_eq$shannon ),0.1 ) ) 
+pr_H = data.frame( Biomass = exp(coef(lm_H)[1] ) * exp( coef(lm_H)[2]* n2) ,
+ 	shannon = exp( n2 )
+n3 =  log ( seq( min( rDIT_eq$rS ), max( rDIT_eq$rS ),0.1 ) ) 
+pr_rS =data.frame( Biomass = exp(coef(lm_rS)[1] ) * exp( coef(lm_rS)[2]* n3 ) ,
+ 	rS= exp( n3 ) )
+n4 = log ( seq( min( rDIT_eq$rCE), max(  rDIT_eq$rCE ),0.1 ) ) 
+pr_rCE = data.frame( Biomass = exp(coef(lm_rCE)[1] ) * exp(coef(lm_rCE)[2]* n4 ),
+	 rCE = exp( n4 ) )
+n5 = log( seq( min( rDIT_eq$rMI ), max( rDIT_eq$rMI ),0.1 ) )
+pr_rMI = data.frame( Biomass = exp(coef(lm_rMI)[1] ) * exp( coef(lm_rMI)[2]* n5),
+ 	rMI= exp( n5 ) )
+# pr_rCEMI
+# pr_rSMI
+
 
