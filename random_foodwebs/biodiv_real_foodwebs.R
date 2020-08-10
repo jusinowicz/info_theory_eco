@@ -95,14 +95,19 @@ colnames(rDIT) = ncnames
 
 for (n in 1:ncells){
 	rDIT$fwno[n] = n 
-	rDIT$nspp[n] = length(rweb_mb[[n]]$biomass) #Final number of species
 
-	rDIT$Biomass[n] = sum(rweb_mb[[n]]$biomass) #Total biomass
+	#Exclude Detritus from biomass count: 
+	bm1 = rweb_mb[[n]]$biomass[
+		names(rweb_mb[[n]]$biomass) != "Detritus" & 
+		names(rweb_mb[[n]]$biomass) != "detritus" ]
+	rDIT$nspp[n] = length(bm1) #Final number of species
+
+	rDIT$Biomass[n] = sum(bm1) #Total biomass
 
 	rDIT$var_Biomass[n] = 0
 
 	#Shannon Diversity
-	pi = rweb_mb[[n]]$biomass / rDIT$Biomass[n]
+	pi = bm1/ bm1
 	pi[pi <= 0 ] = NA
 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
@@ -178,7 +183,103 @@ ggplot ( ) +
 	ylab("Biomass")+
 	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rSD", "rMI","rCE") )
 
+##================================
+# Joint plots of real and sim data with fitted lines: 
+##================================
+#Species
+ggplot ( ) + 
+	geom_point (data= rDIT_eq, aes(x = (nspp), y = (Biomass),color = "1" )) + 
+	geom_text(data= rDIT_eq, aes(x = (nspp), y = (Biomass),label= fwno),hjust=0, vjust=0)+
+	geom_line ( data = pr_nspp_log, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
+	geom_point (data= rDIT_sim_eq, aes(x = (Fnspp), y = (Biomass),color = "2" )) + 
+	geom_line ( data = pr_nspp_log_sim, aes(x = (Fnspp), y = (Biomass),color = "2" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("# Species", "#Species Sims") )
 
+ggsave("./nsppVbio_rands1.pdf", width = 8, height = 10)
+
+#Shannon Diversity
+ggplot ( ) + 
+	geom_point (data= rDIT_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
+	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_point (data= rDIT_sim_eq,aes(x = (shannon), y = (Biomass),color = "3")) +
+	geom_line ( data = pr_H_sim, aes(x = shannon, y = Biomass,color = "3" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("SDI", "SDI Sims") )
+
+ggsave("./sdiVbio_rands1.pdf", width = 8, height = 10)
+
+#Rutledge Shannon
+ggplot ( ) + 
+	geom_point (data= rDIT_eq,aes(x = (rS), y =(Biomass),color = "4")) +
+	geom_text(data= rDIT_eq, aes(x = (rS), y = (Biomass),label= fwno),hjust=0, vjust=0)+
+	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
+	geom_point (data= rDIT_sim_eq,aes(x = (rS), y =(Biomass),color = "5")) +
+	geom_line ( data = pr_rS_sim, aes(x = rS, y = Biomass,color = "5" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims") )
+
+ggsave("./rsVbio_rands1.pdf", width = 8, height = 10)
+
+#MI
+ggplot ( ) + 
+	geom_point( data= rDIT_eq,aes (x = (rMI), y=(Biomass),color = "1" ) ) +
+	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "1" ) ) + 
+	geom_point( data= rDIT_sim_eq,aes (x = (rMI), y=(Biomass),color = "2" ) ) +
+	geom_line ( data = pr_rMI_sim, aes(x = rMI, y = Biomass,color = "2" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims") )
+
+ggsave("./rMIVbio_rands1.pdf", width = 8, height = 10)
+
+
+#CE
+ggplot()+ 
+	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "8" ) ) +
+	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "8" ) ) + 
+	geom_point( data= rDIT_sim_eq,aes (x = (rCE), y=(Biomass),color = "9" ) ) +
+	geom_line ( data = pr_rCE_sim, aes(x = rCE, y = Biomass,color = "9" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("rCE", "rCE Sims") )
+
+ggsave("./rCEVbio_rands1.pdf", width = 8, height = 10)
+
+
+
+#Multiple
+#Plot of data with fitted lines: 
+ggplot ( ) + 
+	geom_point (data= rDIT_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
+	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_point (data= rDIT_sim_eq,aes(x = (shannon), y = (Biomass),color = "3")) +
+	geom_line ( data = pr_H_sim, aes(x = shannon, y = Biomass,color = "3" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (rS), y =(Biomass),color = "4")) +
+	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
+	geom_point (data= rDIT_sim_eq,aes(x = (rS), y =(Biomass),color = "5")) +
+	geom_line ( data = pr_rS_sim, aes(x = rS, y = Biomass,color = "5" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rMI), y=(Biomass),color = "6" ) ) +
+	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "6" ) ) + 
+	geom_point( data= rDIT_sim_eq,aes (x = (rMI), y=(Biomass),color = "7" ) ) +
+	geom_line ( data = pr_rMI_sim, aes(x = rMI, y = Biomass,color = "7" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "8" ) ) +
+	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "8" ) ) + 
+	geom_point( data= rDIT_sim_eq,aes (x = (rCE), y=(Biomass),color = "9" ) ) +
+	geom_line ( data = pr_rCE_sim, aes(x = rCE, y = Biomass,color = "9" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("SDI", "SDI Sim",
+		"rSD", "rSD Sim","rMI","rMI Sim","rCE","rCE Sim") )
 
 
 #Log-y

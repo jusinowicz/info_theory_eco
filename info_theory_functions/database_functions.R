@@ -20,8 +20,8 @@ library(rmangal)
 #=============================================================================
 
 #EcoBase
-get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, study_id = TRUE, 
-    ecosyst = FALSE, ref = FALSE ) {
+get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, ex= TRUE, 
+    study_id = FALSE, ecosyst = FALSE, ref = FALSE ) {
 
   fwlist <- list()
     
@@ -105,6 +105,19 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, study_id = T
            nodes_ee <- as.data.frame(matrix(ncol=3, nrow=nnodes))
            names(nodes_ee) <- c("id", "name", "ee")
            }
+
+        if (gs == TRUE)
+           { 
+           nodes_gs <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+           names(nodes_gs) <- c("id", "name", "gs")
+           }
+                         
+        if (ex == TRUE)
+           { 
+           nodes_ex <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+           names(nodes_ex) <- c("id", "name", "ex")
+           }
+        
         
         
         int_matrix <- as.data.frame(matrix(ncol=nnodes, nrow=nnodes))
@@ -117,6 +130,9 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, study_id = T
           node1_pb <- as.numeric(node1$pb)  
           node1_qb <- as.numeric(node1$qb)  
           node1_ee <- as.numeric(node1$ee)  
+          node1_gs <- as.numeric(node1$gs)  
+          node1_ex <- as.numeric(node1$export)  
+
 
           node_name <- node_names[j]
           
@@ -148,7 +164,20 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, study_id = T
           nodes_ee[node_id, 2] <- node_name  
           nodes_ee[node_id, 3] <- node1_ee 
           }
+
+         if (gs == TRUE)
+          {  
+          nodes_gs[node_id, 1] <- node_id  
+          nodes_gs[node_id, 2] <- node_name  
+          nodes_gs[node_id, 3] <- node1_gs 
+          }
           
+         if (export == TRUE)
+          {  
+          nodes_ex[node_id, 1] <- node_id  
+          nodes_ex[node_id, 2] <- node_name  
+          nodes_ex[node_id, 3] <- node1_ex
+          }
           
           #matrix
           colnames(int_matrix)[node_id] <- node_name
@@ -172,7 +201,7 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, study_id = T
         
         if(biomass == TRUE) {  
           fwlist[[i]] <- list(biomass=nodes_biomass, pb = nodes_pb, qb = nodes_qb, ee = nodes_ee, 
-            trophic_relations=int_matrix) 
+            gs = nodes_gs, ex = nodes_ex, trophic_relations=int_matrix) 
         } else  { fwlist[[i]] <- int_matrix }
 
             #STUDY NUMBER
