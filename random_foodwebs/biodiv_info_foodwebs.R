@@ -33,7 +33,7 @@ source("../info_theory_functions/database_functions.R")
 #=============================================================================
 
 #Length and time steps of each model run
-tend = 2
+tend = 25
 delta1 = 0.01
 tl=tend/delta1
 
@@ -129,14 +129,16 @@ for (w in 1:nwebs){
 	tryCatch( {out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
 		tend, delta1, res_R = res_R) )
 
+		out1[w] = list(food_web_dynamics (spp_list = c(nRsp,nCsp,nPsp), spp_prms = spp_prms, 
+		tend, delta1, res_R = NULL) )
 		# print( paste( "nRsp", sum(out1[[w]]$out[tl,1:nRsp]>1) ) )
 		# print( paste( "nCsp", sum(out1[[w]]$out[tl,(nRsp+1):nCsp]>1) ) )
 		# print( paste( "nPsp", sum(out1[[w]]$out[tl,(nCsp+1):nPsp]>1) ) )		
 
-		# plot(out1[[w]]$out[,1], t="l", ylim = c(0, max(out1[[w]]$out[tl,],na.rm=T) ) )
-		# for(n in 2:nRsp){ lines(out1[[w]]$out[,n], col ="red") }
-		# for(n in (nRsp+1):(nCsp) ){ lines(out1[[w]]$out[,n], col ="blue") }
-		# for(n in (nCsp+1):(nPsp) ){ lines(out1[[w]]$out[,n]) }
+		plot(out1[[w]]$out[,2], t="l", ylim = c(0, max(out1[[w]]$out[tl,],na.rm=T) ),col="red" )
+		for(n in 2:(nRsp+1)) { lines(out1[[w]]$out[,n], col ="red") }
+		for(n in (nRsp+2):(nRsp+nCsp+1) ){ lines(out1[[w]]$out[,n], col ="blue") }
+		for(n in (nRsp+nCsp+1):(nspp+1) ){ lines(out1[[w]]$out[,n]) }
 
 	
 	#=============================================================================
@@ -283,7 +285,7 @@ for (n in 1:ncells){
 	nt2 = tlast
 
 	rweb1_all[n] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1_all[[n]]$out[nt1:nt2,2:(nspp+1)],
-		spp_prms = out1_all[[n]]$spp_prms) )
+		spp_prms = out1_all[[n]]$spp_prms, if_conditional = FALSE) )
 
 	#=============================================================================
 	aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
@@ -340,6 +342,48 @@ for (n in 1:ncells){
 }
 
 rDIT_eq = subset(rDIT, eq_state == 0)
+
+
+#Log-log 
+l_rDIT_eq = log (rDIT_eq[,1:9]+1)
+lm_nspp = lm(l_rDIT_eq$Biomass~l_rDIT_eq$Fnspp)
+lm_nspp_log = lm(l_rDIT_eq$Biomass~l_rDIT_eq$Fnspp)
+lm_H=lm(l_rDIT_eq$Biomass~l_rDIT_eq$shannon)
+lm_rS=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS)
+lm_rCE=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rCE)
+lm_rMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rMI)
+lm_rCEMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rCE+l_rDIT_eq$rMI)
+lm_rSMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS+l_rDIT_eq$rMI)
+
+#Predict data from models to fit to figure
+
+pr_nspp_log = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log) ),
+	Fnspp = exp(l_rDIT_eq$Fnspp ) )
+pr_H = data.frame( Biomass = exp(predict( lm_H) ) ,	shannon =exp(l_rDIT_eq$shannon ) )
+pr_rS =data.frame( Biomass = exp(predict (lm_rS ) ), rS= exp(l_rDIT_eq$rS  ) )
+pr_rCE = data.frame( Biomass = exp(predict(lm_rCE) ), rCE = exp(l_rDIT_eq$rCE ) )
+pr_rMI = data.frame( Biomass = exp(predict(lm_rMI) ), rMI = exp(l_rDIT_eq$rMI ) )
+
+#Plot of data with fitted lines: 
+ggplot ( ) + 
+	geom_point (data= rDIT_eq, aes(x = (Fnspp), y = (Biomass),color = "1" )) + 
+	geom_line ( data = pr_nspp_log, aes(x = (Fnspp), y = (Biomass),color = "1" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
+	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_point (data= rDIT_eq,aes(x = (rS), y =(Biomass),color = "3")) +
+	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "3" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rMI), y=(Biomass),color = "4" ) ) +
+	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "4" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "5" ) ) +
+	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "5" ) ) + 
+	scale_y_log10()+ scale_x_log10() +
+	xlab("#Species, Bits")+
+	ylab("Biomass")+
+	scale_color_discrete(name ="", labels = c("# Species", "SDI", "rSD", "rMI","rCE") )
+
+
+
+
 rDIT_non = subset(rDIT, eq_state == 0)
 
 lm_Snspp = lm(rDIT_eq$Biomass~rDIT_eq$Snspp)

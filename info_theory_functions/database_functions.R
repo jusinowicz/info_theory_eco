@@ -20,7 +20,8 @@ library(rmangal)
 #=============================================================================
 
 #EcoBase
-get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FALSE, ref = FALSE ) {
+get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, study_id = TRUE, 
+    ecosyst = FALSE, ref = FALSE ) {
 
   fwlist <- list()
     
@@ -172,15 +173,17 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, ecosyst = FA
         if(biomass == TRUE) {  
           fwlist[[i]] <- list(biomass=nodes_biomass, pb = nodes_pb, qb = nodes_qb, ee = nodes_ee, 
             trophic_relations=int_matrix) 
-        } else  { fwlist[[i]] <- int_matrix
-        
-        }
+        } else  { fwlist[[i]] <- int_matrix }
+
+            #STUDY NUMBER
+        if(study_id==TRUE){ fwlist[[i]]$study_id = liste_mod$model.model_number[[i]] }
         
       }
       
       names(fwlist) <- model.name
       
     })#end of outer suppressWarnings
+
 
     #REFERENCES
     if(ref==TRUE){
