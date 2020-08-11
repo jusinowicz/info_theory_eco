@@ -20,7 +20,7 @@ library(rmangal)
 #=============================================================================
 
 #EcoBase
-get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, ex= TRUE, 
+get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, export= TRUE, 
     study_id = FALSE, ecosyst = FALSE, ref = FALSE ) {
 
   fwlist <- list()
@@ -76,7 +76,7 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, e
       mnames <- names(input_list)
       
       for (i in 1:length(input_list)){
-        
+        print(i)
         m2 <- input_list[[i]] #get the model
         
         nnodes <- length(m2)
@@ -112,7 +112,7 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, e
            names(nodes_gs) <- c("id", "name", "gs")
            }
                          
-        if (ex == TRUE)
+        if (export == TRUE)
            { 
            nodes_ex <- as.data.frame(matrix(ncol=3, nrow=nnodes))
            names(nodes_ex) <- c("id", "name", "ex")
@@ -253,7 +253,7 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, e
 
 
 #MANGAL
-get_eb = function (type = c("herbivory","predation"), ecosyst = FALSE, ref = FALSE ) {
+get_mn = function (type = c("herbivory","predation"), ecosyst = FALSE, ref = FALSE ) {
 
   
   message("####################### MANGAL DATABASE #######################\n\n")

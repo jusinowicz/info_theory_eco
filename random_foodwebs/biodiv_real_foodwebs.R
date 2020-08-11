@@ -32,6 +32,22 @@ k= 5
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
 rweb_mb = vector("list",nwebs)
 
+bm1=NULL
+pb1=NULL
+ex1=NULL
+for (n in 1:nwebs){
+	bm1 = rbind(bm1, fwlist[[n]]$biomass[
+		(fwlist[[n]]$biomass$name) == "Detritus" | 
+		(fwlist[[n]]$biomass$name) == "detritus", ] )
+	pb1 = rbind(pb1, fwlist[[n]]$pb[
+		(fwlist[[n]]$pb$name) == "Detritus" | 
+		(fwlist[[n]]$pb$name) == "detritus", ] )
+	ex1 =rbind( ex1, fwlist[[n]]$ex[
+		(fwlist[[n]]$ex$name) == "Detritus" | 
+		(fwlist[[n]]$ex$name) == "detritus", ] )
+
+}
+
 for (w in 1:nwebs){ 
 	print(w)
 
@@ -53,6 +69,36 @@ for (w in 1:nwebs){
 
 	#The dietary matrix
 	DC = fwlist[[w]]$trophic_relations
+
+	#Percentage of consumption that is lost to Detritus
+	gs = fwlist[[w]]$gs$gs
+	names(gs) = fwlist[[w]]$gs$name
+
+	#The balance is given by  pb*biomass*ee- rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC)
+
+	#Do some pre-formatting for Detritus!!! Use the GS and Export of Detritus to 
+	#calculate its inputs and outputs:
+	#Total Detritus consumed: 
+	d_con = rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC) [ "Detritus"]
+	#Total Detritus produced by inefficency in consumption (GS) and mortality (1-EE)
+	d_prod = sum(biomass[(names(biomass)!="Detritus")]*qb[(names(qb)!="Detritus")]*gs[(names(gs)!="Detritus")]) + sum( (1-ee[(names(ee)!="Detritus")])*biomass[(names(biomass)!="Detritus")])
+
+	#Biomass of Detritus: 
+	biomass["Detritus"] = d_prod - d_con
+
+	#PB 
+	pb["Detritus"] = 
+
+	#QB
+	qb["Detritus"] = 
+	
+	#EE
+	ee ["Detritus"] = 1
+
+	#Use gs as the Detritus "consumption" rates
+	DC[,"Detritus"] = fwlist[[w]]$gs$gs
+
+
 
 	#=============================================================================
 	# Information theoretic assessment of the foodweb.
@@ -107,7 +153,7 @@ for (n in 1:ncells){
 	rDIT$var_Biomass[n] = 0
 
 	#Shannon Diversity
-	pi = bm1/ bm1
+	pi = bm1/bm1
 	pi[pi <= 0 ] = NA
 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
