@@ -71,6 +71,8 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, e
         colnames(input1) <- names_input
         input1 <- input1[-1,]
         input_list[[i]] <- input1
+        print(i)
+        print(input1[[1]]$habitat_area)
       }#end of loop to get input list
       
       mnames <- names(input_list)
@@ -126,7 +128,7 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, e
           
           node1 <- m2[[j]]
           node_id <- as.numeric(node1$group_seq)  
-          node1_biomass <- as.numeric(node1$biomass)  
+          node1_biomass <- as.numeric(node1$biomass)/as.numeric(node1$habitat_area) 
           node1_pb <- as.numeric(node1$pb)  
           node1_qb <- as.numeric(node1$qb)  
           node1_ee <- as.numeric(node1$ee)  
