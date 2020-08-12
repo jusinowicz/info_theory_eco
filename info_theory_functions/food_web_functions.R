@@ -914,7 +914,9 @@ rutledge_web_mb = function (biomass = biomass, pb = pb, qb = qb, DC = DC, ee = e
 	#Some of these numbers are weird. The value of fr should not be >1, but seems to be sometimes? 
 	#If it is, add this line to adjust: 
 	### 
+	#fr_true = fr[!(names(rweb$biomass)%in%c("Detritus") )] > 1
 	fr_true = fr > 1
+
 	if (sum(fr_true)>0){ 
 		pb_new = 0.9*consumption / rweb$biomass^2
 		rweb$pb[fr_true] = pb_new[fr_true]

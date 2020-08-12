@@ -32,22 +32,6 @@ k= 5
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
 rweb_mb = vector("list",nwebs)
 
-bm1=NULL
-pb1=NULL
-ex1=NULL
-for (n in 1:nwebs){
-	bm1 = rbind(bm1, fwlist[[n]]$biomass[
-		(fwlist[[n]]$biomass$name) == "Detritus" | 
-		(fwlist[[n]]$biomass$name) == "detritus", ] )
-	pb1 = rbind(pb1, fwlist[[n]]$pb[
-		(fwlist[[n]]$pb$name) == "Detritus" | 
-		(fwlist[[n]]$pb$name) == "detritus", ] )
-	ex1 =rbind( ex1, fwlist[[n]]$ex[
-		(fwlist[[n]]$ex$name) == "Detritus" | 
-		(fwlist[[n]]$ex$name) == "detritus", ] )
-
-}
-
 for (w in 1:nwebs){ 
 	print(w)
 
@@ -66,6 +50,7 @@ for (w in 1:nwebs){
 	#Ecotrophic efficiency EE
 	ee = fwlist[[w]]$ee$ee
 	names(ee) = fwlist[[w]]$ee$name 
+	ee[ee>1] = 1 #This should not happen, but it does. wtf???
 
 	#The dietary matrix
 	DC = fwlist[[w]]$trophic_relations
@@ -76,29 +61,88 @@ for (w in 1:nwebs){
 
 	#The balance is given by  pb*biomass*ee- rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC)
 
+	#=======================
 	#Do some pre-formatting for Detritus!!! Use the GS and Export of Detritus to 
 	#calculate its inputs and outputs:
+	#=======================
+
 	#Total Detritus consumed: 
-	d_con = rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC) [ "Detritus"]
+	nspp = length ( biomass )
+
+	#Test whether there are multiple sub-detritus groups, as well as categorized as 
+	# "discard" and "detached", and combine them if so: 
+	d_groups = biomass[grepl("etrit", names(biomass)) | grepl("iscard", names(biomass)) 
+						 | grepl("etached", names(biomass)) | grepl("Dead", names(biomass)) 
+						 | grepl("Matter", names(biomass)) ]
+ 	
+ 	n_d = length(d_groups)
+	if(n_d>1) {
+
+		#Create combined object
+		bm_d = sum(biomass[names(d_groups)] )
+		pb_d = sum(pb[names(d_groups)])
+		qb_d = sum(qb[names(d_groups)])
+		DC_d = colSums(DC[names(d_groups),])
+
+		#Remove from all of the data
+		biomass = biomass[!(names(biomass)%in%names (d_groups) )]
+		pb = pb[!(names(pb)%in%names (d_groups) )]
+		qb = qb[!(names(qb)%in%names (d_groups) )]
+		DC = DC[!(colnames(DC)%in%names (d_groups) ),!(rownames(DC)%in%names (d_groups) )]
+		ee = ee[!(names(ee)%in%names (d_groups) )]
+		gs = gs[!(names(gs)%in%names (d_groups) )]
+
+		#Replace with the combined objects
+		biomass = c(biomass, Detritus = bm_d)
+		pb = c(pb, Detritus = pb_d)
+		qb = c(qb, Detritus = qb_d)
+		DC = cbind(DC, Detritus = matrix(0, dim(DC)[2],1))
+		DC = rbind(DC, Detritus = DC_d)
+		ee = c(ee, Detritus = 1)
+		gs = c(gs, Detritus = 0)
+
+	} else if (names(d_groups) != "Detritus" ) {
+
+		#Make sure the name is "Detritus"
+		names(biomass)[names(biomass)==names(d_groups)] = "Detritus"	
+		names(pb)[names(pb)==names(d_groups)] = "Detritus"	
+		names(qb)[names(qb)==names(d_groups)] = "Detritus"	
+		names(gs)[names(gs)==names(d_groups)] = "Detritus"	
+		names(ee)[names(ee)==names(d_groups)] = "Detritus"	
+		rownames(DC)[rownames(DC)==names(d_groups)] = "Detritus"	
+		colnames(DC)[colnames(DC)==names(d_groups)] = "Detritus"	
+
+
+	}
+
+	nspp = length ( biomass )
+
+	#Total detritus consumed by other organisms
+	d_con = rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC)[grepl("etritus", names(DC))]
+
 	#Total Detritus produced by inefficency in consumption (GS) and mortality (1-EE)
 	d_prod = sum(biomass[(names(biomass)!="Detritus")]*qb[(names(qb)!="Detritus")]*gs[(names(gs)!="Detritus")]) + sum( (1-ee[(names(ee)!="Detritus")])*biomass[(names(biomass)!="Detritus")])
 
-	#Biomass of Detritus: 
-	biomass["Detritus"] = d_prod - d_con
+	# if( abs(biomass ["Detritus" ]) == 9999 | biomass ["Detritus" ] < 0) {  
+
+	# 	biomass["Detritus"] = d_prod
+
+	# } 
+	
+	#Always use d_prod for standing detritus biomass? 
+	biomass["Detritus"] = d_prod	
+
+	# #Use gs as the Detritus "consumption" rates
+	# DC[,"Detritus"] = gs/ sum (gs)
+	# #QB:This produces a vector but every value should be the same
+	# qb["Detritus"] = mean(gs/(DC[,"Detritus"] * biomass["Detritus"] ),na.rm=T)
+
+	#Alternatively, make Detritus more like primary productivity: 
+	DC[,"Detritus"] = matrix(0,nspp,1)
+	qb["Detritus"] = 0
 
 	#PB 
-	pb["Detritus"] = 
-
-	#QB
-	qb["Detritus"] = 
-	
-	#EE
-	ee ["Detritus"] = 1
-
-	#Use gs as the Detritus "consumption" rates
-	DC[,"Detritus"] = fwlist[[w]]$gs$gs
-
-
+	pb["Detritus"] = d_con/biomass["Detritus"] 
 
 	#=============================================================================
 	# Information theoretic assessment of the foodweb.
@@ -143,9 +187,13 @@ for (n in 1:ncells){
 	rDIT$fwno[n] = n 
 
 	#Exclude Detritus from biomass count: 
-	bm1 = rweb_mb[[n]]$biomass[
-		names(rweb_mb[[n]]$biomass) != "Detritus" & 
-		names(rweb_mb[[n]]$biomass) != "detritus" ]
+	# bm1 = rweb_mb[[n]]$biomass[
+	# 	names(rweb_mb[[n]]$biomass) != "Detritus" & 
+	# 	names(rweb_mb[[n]]$biomass) != "detritus" ]
+	
+	#Don't exclude Detritus from biomass count: 
+	bm1 = rweb_mb[[n]]$biomass
+	
 	rDIT$nspp[n] = length(bm1) #Final number of species
 
 	rDIT$Biomass[n] = sum(bm1) #Total biomass
@@ -153,7 +201,7 @@ for (n in 1:ncells){
 	rDIT$var_Biomass[n] = 0
 
 	#Shannon Diversity
-	pi = bm1/bm1
+	pi = bm1/sum(bm1)
 	pi[pi <= 0 ] = NA
 	rDIT$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
@@ -167,6 +215,9 @@ for (n in 1:ncells){
 
 #Fit models to see what predicts Biomass the best
 rDIT_eq = subset(rDIT, rMI >0.01 )
+rDIT_eq = rDIT[c(-153,-68),]
+rDIT_eq = subset(rDIT_eq, rMI >0.01 )
+
 
 #Log-log 
 l_rDIT_eq = log (rDIT_eq)
