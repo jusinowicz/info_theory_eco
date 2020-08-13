@@ -939,7 +939,7 @@ rutledge_web_mb = function (biomass = biomass, pb = pb, qb = qb, DC = DC, ee = e
 	
 	##Mortality loss:
 	#Resource: 
-	rweb$fijQi[ncol1,(1+1:nspp)] = rweb$biomass^2*rweb$pb*(1- rweb$ee)
+	#rweb$fijQi[ncol1,(1+1:nspp)] = rweb$biomass^2*rweb$pb*(1- rweb$ee)
 	rweb$fijQi[!is.finite(rweb$fijQi)] = 0
 	#Now make Qi/Pi
 

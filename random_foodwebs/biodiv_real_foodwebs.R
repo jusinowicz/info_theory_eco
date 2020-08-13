@@ -31,6 +31,7 @@ k= 5
 #Converting the web to Rutledge's compartment model and calculating the information
 #theoretic quantities: Shannon Entropy, Mutual Information, Conditional Entropy
 rweb_mb = vector("list",nwebs)
+all_names = NULL
 
 for (w in 1:nwebs){ 
 	print(w)
@@ -70,79 +71,80 @@ for (w in 1:nwebs){
 	nspp = length ( biomass )
 
 	#Test whether there are multiple sub-detritus groups, as well as categorized as 
-	# "discard" and "detached", and combine them if so: 
+	# "discard" and "detached" 
 	d_groups = biomass[grepl("etrit", names(biomass)) | grepl("iscard", names(biomass)) 
 						 | grepl("etached", names(biomass)) | grepl("Dead", names(biomass)) 
 						 | grepl("Matter", names(biomass)) ]
  	
  	n_d = length(d_groups)
-	if(n_d>1) {
-
-		#Create combined object
-		bm_d = sum(biomass[names(d_groups)] )
-		pb_d = sum(pb[names(d_groups)])
-		qb_d = sum(qb[names(d_groups)])
-		DC_d = colSums(DC[names(d_groups),])
-
-		#Remove from all of the data
-		biomass = biomass[!(names(biomass)%in%names (d_groups) )]
-		pb = pb[!(names(pb)%in%names (d_groups) )]
-		qb = qb[!(names(qb)%in%names (d_groups) )]
-		DC = DC[!(colnames(DC)%in%names (d_groups) ),!(rownames(DC)%in%names (d_groups) )]
-		ee = ee[!(names(ee)%in%names (d_groups) )]
-		gs = gs[!(names(gs)%in%names (d_groups) )]
-
-		#Replace with the combined objects
-		biomass = c(biomass, Detritus = bm_d)
-		pb = c(pb, Detritus = pb_d)
-		qb = c(qb, Detritus = qb_d)
-		DC = cbind(DC, Detritus = matrix(0, dim(DC)[2],1))
-		DC = rbind(DC, Detritus = DC_d)
-		ee = c(ee, Detritus = 1)
-		gs = c(gs, Detritus = 0)
-
-	} else if (names(d_groups) != "Detritus" ) {
-
-		#Make sure the name is "Detritus"
-		names(biomass)[names(biomass)==names(d_groups)] = "Detritus"	
-		names(pb)[names(pb)==names(d_groups)] = "Detritus"	
-		names(qb)[names(qb)==names(d_groups)] = "Detritus"	
-		names(gs)[names(gs)==names(d_groups)] = "Detritus"	
-		names(ee)[names(ee)==names(d_groups)] = "Detritus"	
-		rownames(DC)[rownames(DC)==names(d_groups)] = "Detritus"	
-		colnames(DC)[colnames(DC)==names(d_groups)] = "Detritus"	
-
-
-	}
-
-	nspp = length ( biomass )
-
 	#Total detritus consumed by other organisms
-	d_con = rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC)[grepl("etritus", names(DC))]
-
-	#Total Detritus produced by inefficency in consumption (GS) and mortality (1-EE)
-	d_prod = sum(biomass[(names(biomass)!="Detritus")]*qb[(names(qb)!="Detritus")]*gs[(names(gs)!="Detritus")]) + sum( (1-ee[(names(ee)!="Detritus")])*biomass[(names(biomass)!="Detritus")])
-
-	# if( abs(biomass ["Detritus" ]) == 9999 | biomass ["Detritus" ] < 0) {  
-
-	# 	biomass["Detritus"] = d_prod
-
-	# } 
+	d_con = rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC)[
+			names(biomass)%in%names(d_groups)]
+		
+ 	#If they do not have a biomass value assigned to them (usually specified with -9999),
+ 	#then group all of the categories into one "Detritus" category and use the expected
+ 	#production of biomass from the GS of other organisms to assign it: 
+ 	#Test for the -9999 condition, which means biomass hasn't been specified
+	test1 = abs(biomass[(names(biomass)%in%names(d_groups) )]) == 9999
+	test2 = biomass[(names(biomass)%in%names(d_groups) )]< 0
 	
+	if( sum(test1) > 0 | sum(test2) > 0) {  
+		
+		biomass [names(biomass)%in%names(d_groups)] = d_con
+	}
+		#biomass [names(biomass)%in%names(d_groups)] = d_con
+		
+
+		# #Use gs as the Detritus "consumption" rates
+		# DC[,"Detritus"] = gs/ sum (gs)
+		# #QB:This produces a vector but every value should be the same
+		# qb["Detritus"] = mean(gs/(DC[,"Detritus"] * biomass["Detritus"] ),na.rm=T)
+
+		#Alternatively, make Detritus more like primary productivity: 
+		DC[,names(d_groups)] = matrix(0,nspp,n_d)
+		qb[names(d_groups)] = 0
+
+		#PB 
+		pb[names(d_groups)] = d_con/biomass[names(d_groups)] 
+	
+	
+	
+			#Calculate the replacement biomass field:
+		# #Total Detritus produced by inefficency in consumption (GS) and mortality (1-EE)
+		# d_prod = sum(biomass[(names(biomass)!="Detritus")]*
+		# 	qb[(names(qb)!="Detritus")]*
+		# 	gs[(names(gs)!="Detritus")]) + 
+		# 	sum( (1-ee[(names(ee)!="Detritus")])*
+		# 	biomass[(names(biomass)!="Detritus")])
+
+		# d_prod = (biomass[!(names(biomass)%in%names(d_groups) )]*
+		# 	qb[!(names(qb)%in%names(d_groups) )]*
+		# 	gs[!(names(gs)%in%names(d_groups) )]) + 
+		# 	( (1-ee[!(names(ee)%in%names(d_groups) )])*
+		# 		biomass[!(names(biomass)%in%names(d_groups) )])
+
 	#Always use d_prod for standing detritus biomass? 
-	biomass["Detritus"] = d_prod	
+	#biomass["Detritus"] = d_prod	
 
-	# #Use gs as the Detritus "consumption" rates
-	# DC[,"Detritus"] = gs/ sum (gs)
-	# #QB:This produces a vector but every value should be the same
-	# qb["Detritus"] = mean(gs/(DC[,"Detritus"] * biomass["Detritus"] ),na.rm=T)
+	
+	#Remove Detritus: 
+	# biomass= biomass[!(names(biomass)%in% names(d_groups) ) ]
+	# qb= qb[!(names(qb)%in% names(d_groups) ) ]
+	# pb= pb[!(names(pb)%in% names(d_groups) ) ]
+	# ee= ee[!(names(ee)%in% names(d_groups) ) ]
+	# DC = DC[!(colnames(DC)%in%names(d_groups) ),!(rownames(DC)%in%names(d_groups) )]
 
-	#Alternatively, make Detritus more like primary productivity: 
-	DC[,"Detritus"] = matrix(0,nspp,1)
-	qb["Detritus"] = 0
 
-	#PB 
-	pb["Detritus"] = d_con/biomass["Detritus"] 
+	#Remove Benthic categories:
+	# b_groups = biomass[grepl("enthos", names(biomass)) | grepl("enthic", names(biomass)) ]
+ 	
+ # 	n_b = length(b_groups)  
+	# biomass= biomass[!(names(biomass)%in% names(b_groups) ) ]
+	# qb= qb[!(names(qb)%in% names(b_groups) ) ]
+	# pb= pb[!(names(pb)%in% names(b_groups) ) ]
+	# ee= ee[!(names(ee)%in% names(b_groups) ) ]
+	# DC = DC[!(colnames(DC)%in%names(b_groups) ),!(rownames(DC)%in%names(b_groups) )]
+
 
 	#=============================================================================
 	# Information theoretic assessment of the foodweb.
@@ -168,6 +170,8 @@ for (w in 1:nwebs){
 	
 	rweb_mb[w] = list(rutledge_web_mb(biomass = biomass, pb = pb, qb = qb, DC = DC, ee = ee,  
 						 if_conditional = FALSE) )
+
+	all_names = c(all_names, names(biomass))
 
 	
 }
@@ -214,9 +218,12 @@ for (n in 1:ncells){
 
 
 #Fit models to see what predicts Biomass the best
-rDIT_eq = subset(rDIT, rMI >0.01 )
-rDIT_eq = rDIT[c(-153,-68),]
+#rDIT_eq = subset(rDIT, rMI >0.01 )
+rDIT_eq = rDIT[c(-71,-68),]
 rDIT_eq = subset(rDIT_eq, rMI >0.01 )
+
+# rDIT_eq_con = rDIT_con[c(-71,-68),]
+# rDIT_eq_con = subset(rDIT_eq_con, rMI >0.01 )
 
 
 #Log-log 
@@ -225,11 +232,14 @@ lm_nspp = lm(l_rDIT_eq$Biomass~l_rDIT_eq$nspp)
 lm_nspp_log = lm(l_rDIT_eq$Biomass~l_rDIT_eq$nspp)
 lm_H=lm(l_rDIT_eq$Biomass~l_rDIT_eq$shannon)
 lm_rS=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS)
+#lm_rS=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS+I(l_rDIT_eq$rS^2))
 lm_rCE=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rCE)
 lm_rMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rMI)
 lm_rCEMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rCE+l_rDIT_eq$rMI)
 lm_rSMI=lm(l_rDIT_eq$Biomass~l_rDIT_eq$rS+l_rDIT_eq$rMI)
 
+gam_rS= gam (Biomass~s(rS),data=rDIT_eq )
+pr_gam_rS = predict(gam_rS, newdata =data.frame(rS = rDIT_eq$rS), type="response")
 #Predict data from models to fit to figure
 
 pr_nspp_log = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log) ),
@@ -295,7 +305,7 @@ ggplot ( ) +
 	ylab("Biomass")+
 	scale_color_discrete(name ="", labels = c("# Species", "#Species Sims") )
 
-ggsave("./nsppVbio_rands1.pdf", width = 8, height = 10)
+ggsave("./nsppVbio_rands1_sub.pdf", width = 8, height = 10)
 
 #Shannon Diversity
 ggplot ( ) + 
@@ -315,18 +325,20 @@ ggplot ( ) +
 	geom_point (data= rDIT_eq,aes(x = (rS), y =(Biomass),color = "4")) +
 	geom_text(data= rDIT_eq, aes(x = (rS), y = (Biomass),label= fwno),hjust=0, vjust=0)+
 	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
+	#geom_line ( data = pr_gam_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
 	geom_point (data= rDIT_sim_eq,aes(x = (rS), y =(Biomass),color = "5")) +
 	geom_line ( data = pr_rS_sim, aes(x = rS, y = Biomass,color = "5" ) ) + 
-	scale_y_log10()+ scale_x_log10() +
+	scale_y_log10()+ scale_x_log10() + 
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
 	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims") )
 
-ggsave("./rsVbio_rands1.pdf", width = 8, height = 10)
+ggsave("./rsVbio_rands1_sub.pdf", width = 8, height = 10)
 
 #MI
 ggplot ( ) + 
 	geom_point( data= rDIT_eq,aes (x = (rMI), y=(Biomass),color = "1" ) ) +
+	geom_text(data= rDIT_eq, aes(x = (rMI), y = (Biomass),label= fwno),hjust=0, vjust=0)+
 	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "1" ) ) + 
 	geom_point( data= rDIT_sim_eq,aes (x = (rMI), y=(Biomass),color = "2" ) ) +
 	geom_line ( data = pr_rMI_sim, aes(x = rMI, y = Biomass,color = "2" ) ) + 
@@ -335,7 +347,7 @@ ggplot ( ) +
 	ylab("Biomass")+
 	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims") )
 
-ggsave("./rMIVbio_rands1.pdf", width = 8, height = 10)
+ggsave("./rMIVbio_rands1_sub.pdf", width = 8, height = 10)
 
 
 #CE
@@ -398,6 +410,8 @@ summary(lm_rMI )
 summary(lm_rCEMI )
 summary(lm_rSMI )
 
+gam_rS= gam (I(log(Biomass))~s(rS),data=rDIT_eq )
+pr_gam_rS = predict(gam_rS, newdata =data.frame(rS = rDIT_eq$rS), type="response")
 #Predict data from models to fit to figure
 pr_nspp = data.frame( Biomass = coef(lm_nspp)[1] + coef(lm_nspp)[2]* (1:max(rDIT_eq$nspp) ),
  nspp = 1:max(rDIT_eq$nspp) )
