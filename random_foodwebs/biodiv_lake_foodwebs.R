@@ -133,22 +133,21 @@ for (w in 1:nwebs){
 
 	
 	#Remove Detritus: 
-	# biomass= biomass[!(names(biomass)%in% names(d_groups) ) ]
-	# qb= qb[!(names(qb)%in% names(d_groups) ) ]
-	# pb= pb[!(names(pb)%in% names(d_groups) ) ]
-	# ee= ee[!(names(ee)%in% names(d_groups) ) ]
-	# DC = DC[!(colnames(DC)%in%names(d_groups) ),!(rownames(DC)%in%names(d_groups) )]
+	biomass= biomass[!(names(biomass)%in% names(d_groups) ) ]
+	qb= qb[!(names(qb)%in% names(d_groups) ) ]
+	pb= pb[!(names(pb)%in% names(d_groups) ) ]
+	ee= ee[!(names(ee)%in% names(d_groups) ) ]
+	DC = DC[!(colnames(DC)%in%names(d_groups) ),!(rownames(DC)%in%names(d_groups) )]
 
 
 	#Remove Benthic categories:
-	# b_groups = biomass[grepl("enthos", names(biomass)) | grepl("enthic", names(biomass)) ]
- 	
- # 	n_b = length(b_groups)  
-	# biomass= biomass[!(names(biomass)%in% names(b_groups) ) ]
-	# qb= qb[!(names(qb)%in% names(b_groups) ) ]
-	# pb= pb[!(names(pb)%in% names(b_groups) ) ]
-	# ee= ee[!(names(ee)%in% names(b_groups) ) ]
-	# DC = DC[!(colnames(DC)%in%names(b_groups) ),!(rownames(DC)%in%names(b_groups) )]
+	b_groups = biomass[grepl("enthos", names(biomass)) | grepl("enthic", names(biomass)) ]
+ 	n_b = length(b_groups)  
+	biomass= biomass[!(names(biomass)%in% names(b_groups) ) ]
+	qb= qb[!(names(qb)%in% names(b_groups) ) ]
+	pb= pb[!(names(pb)%in% names(b_groups) ) ]
+	ee= ee[!(names(ee)%in% names(b_groups) ) ]
+	DC = DC[!(colnames(DC)%in%names(b_groups) ),!(rownames(DC)%in%names(b_groups) )]
 
 
 	#=============================================================================
@@ -189,7 +188,7 @@ for (w in 1:nwebs){
 #Take variables out of the lists to plot: 
 ncells=length(rweb_mb)
 rDIT_lake = data.frame(matrix(0, nrow=ncells, ncol =9) ) 
-ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rS","rCE","rMI")
+ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rS","rCE","rMI","type")
 colnames(rDIT_lake) = ncnames
 
 for (n in 1:ncells){
@@ -218,6 +217,8 @@ for (n in 1:ncells){
 	rDIT_lake$rS[n] = rweb_mb[[n]]$sD
 	rDIT_lake$rCE[n] = rweb_mb[[n]]$ce2
 	rDIT_lake$rMI[n] = rweb_mb[[n]]$mI_mean2
+	t1 = as.factor(c("fresh","marine"))
+	rDIT$type = t1[2]
 
 }
 
