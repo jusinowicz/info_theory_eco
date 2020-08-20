@@ -1,0 +1,15 @@
+Group,biomass,pb,qb,ee,Food,ge
+Catfish,3.288,1.4,4.75,0.96,15.6,0.295
+Juvenile Catfish,0.358,0.5,9.2,0.916,3.3,0.054
+Large Labeobarbus,1.081,0.33,20.38,0.992,22,0.016
+Tilapia,3.71,1.8,29.53,1,109.6,0.061
+Juvenile Tilapia,2.4,1.2,41.64,1,99.9,0.029
+Aplocheilichtys,0.714,3.5,36.51,0.999,26.1,0.096
+Small Barbus,1.093,2.59,18.51,0.992,20.2,0.14
+Garra sp.,0.192,2.68,17.08,0.894,3.3,0.157
+Zoobenthos,41.95,4.3,21.05,1,883,0.204
+Carnivore zooplankton,2.53,20,93.88,1,237.5,0.213
+Herbivore zooplankton,1.78,118.2,538.86,1,961.3,0.219
+Phytoplankton,34.45,238.5,0,0.144,0,0
+Macrophytes,200,1,0,0.644,0,0
+Detritus,63.79,0,0,0.104,0,0

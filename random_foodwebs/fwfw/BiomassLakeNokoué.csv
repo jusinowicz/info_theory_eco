@@ -1,0 +1,43 @@
+Group,TL,biomass,pb,qb,Y,OI
+Sphyraena afra,3.9,0.01,2.06,8.427,0.02,0.204
+Polydactylus quadrifilis,3.2,0.199,1.56,8.225,0.187,0.142
+Galeoides decadactylus,3.4,0.214,1.38,15.201,0.03,0.124
+Pseudotolithus elongatus,3.6,0.079,1.46,10.235,0.06,0.214
+Pseudotolithus senegalensis,3.7,0.115,0.687,5.352,0.01,0.152
+Elops lacerta,3.3,0.854,2.79,15.45,1.282,0.101
+Arius lastiscutatus,3.3,0.16,0.43,7.29,0.004,0.126
+Pomadasys jubelini,3.4,0.018,2.13,12.058,0.022,0.076
+Chloroscombrus chrysurus,3.1,0.117,2.15,23.817,0.054,0.159
+Caranx hippos,3.5,0.108,1.71,16.004,0.04,0.125
+Trachinotus teraia,3.3,0.119,0.93,6.885,0.056,0.364
+Citharichthys stampflii,3.5,0.177,3.35,17.576,0.025,0.092
+Cynoglossus senegalensis,3.4,0.156,0.51,6.424,0.025,0.201
+Gerres nigri,3.1,0.244,3.87,19.762,0.658,0.138
+Drepane africana,2.8,0.083,0.91,8.207,0.02,0.396
+Dasyatis margarita,3.4,0.25,0.53,3.726,0.02,0.125
+Ilisha africana,3,0.217,1.559,15.071,0.03,0.147
+Brachydeuterus auritus,3,0.022,4.22,23.047,0.05,0.024
+Hemichromis fasciatus,3.3,0.014,3.68,16.315,0.03,0.123
+Schilbe intermedius,3,0.009,4.2,20.98,0.02,0.18
+Strongylura senegalensis,3.2,0.147,1.05,9.84,0.01,0.135
+Hydrocynus forskahlii,3.3,0.027,1.375,12.31,0.005,0.245
+Pellonula leonensis,3.1,0.047,3.56,26.022,0.07,0.069
+Eleotris senegalensis,3.3,0.377,1.89,18.45,0.08,0.144
+Chrysichthys nigrodigitatus,3.3,1.027,1.13,7.682,0.674,0.037
+Trichiurus lepturus,3.1,0.05,0.6,5.454,0.001,0.309
+Synodontis gambiensis,2.8,0.026,1.6,12.76,0.01,0.288
+Monodactylus sebae,3.1,0.129,2.24,20.021,0.056,0.025
+Ethmalosa fimbriata,2.7,1.125,4.71,18.515,3.37,0.233
+Sardinella maderensis,2.9,0.55,4.18,25.229,0.67,0.105
+Liza grandisquamis,2.4,0.469,0.88,26.596,0.174,0.229
+Tylochromis jentinki,3,0.386,1.4,10.508,0.354,0.269
+Sarotherodon melanotheron,2.1,1.456,1.2,23.82,0.326,0.066
+Tilapia guineensis,2,0.473,1.44,34.547,0.151,0.02
+Shrimps,2.6,0.91,3.146,22,0.565,0.322
+Crabs,2.9,4.39,2.228,6.285,1.956,0.31
+Mollusks,2.3,12.518,3.685,10.68,0,0.206
+Zoobenthos,2,4.542,3.965,28,0,0
+Zooplankton,2,2.74,65,268.2,0,0.01
+Phytoplankton,1,22.355,93.491,0,0,0
+Phytobenthos,1,6.48,83.333,0,0,0
+Detritus,1,19.2,0,0,0,0.22

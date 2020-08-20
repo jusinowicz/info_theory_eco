@@ -254,6 +254,165 @@ get_eb = function (biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = TRUE, e
 }#end of eb
 
 
+#=============================================================================
+#get_eb_fw 
+#
+# This function is meant to process a set of CSV files from a series of 
+# freshwater food webs published in Christensen and Pauly, 1993. Each Lake
+# has two files: Biomass... and DC... The DC file contains the dietary matrix,
+# and the Biomass file contains biomass, PB, QB, and EE. Here they are 
+# processed into a data structure that matches that produced by get_eb above. 
+#=============================================================================
+
+get_eb_fw = function (biomass_file_list = NULL, DC_file_list = NULL, 
+    biomass = TRUE, pb = TRUE, qb = TRUE, ee = TRUE, gs = FALSE, export= FALSE, 
+    study_id = FALSE, ecosyst = FALSE, ref = FALSE ) {
+
+  fwlist = list()
+  #Get model names
+  model.names =  unlist(strsplit(unlist(strsplit(biomass_file_list, c("Biomass"))), c(".csv") ))
+  input_list = list()
+  
+   for (i in 1:length(model.names) ){
+        print(i)
+        m2b = read.csv(paste("./fwfw/",biomass_file_list[[i]],sep=""),stringsAsFactors =F ) #get the biomass list
+        colnames(m2b)[grepl("roup", names(m2b))] = "Groups"  #Make sure this category has the same name
+        if(i == 12){colnames(m2b)[1] = "Groups"}
+        m2b[is.na(m2b)]=0
+
+        m2dc = read.csv(paste("./fwfw/",DC_file_list[[i]],sep=""),stringsAsFactors =F) #get the DC
+        rownames(m2dc) = m2dc[,1]
+        m2dc = m2dc[,-1]
+        m2dc[is.na(m2dc)]=0
+        m2dc = as.matrix(m2dc)
+
+        #How many species? 
+        node_names = m2b$Groups
+        get_d = m2b$Groups[grepl("etritus", m2b$Groups) | grepl("Detr", m2b$Groups) ]
+        get_d = get_d[!grepl("ivores", get_d)]
+        if(length(get_d)<1){  #Add Detritus if it's not there
+          node_names = c(node_names, "Detritus")
+          d_true = rownames(m2dc)[grepl("etritus", rownames(m2dc))]
+          
+            nm2b = colnames(m2b)
+            if("Detritus" %in% d_true == TRUE){
+              d_use  = data.frame( Groups = "Detritus", biomass=sum(m2dc[grepl("etritus", rownames(m2dc)),]),
+                pb= 1, qb=0)  
+            }else{ 
+              d_use  = data.frame( Groups = "Detritus", biomass=0,
+              pb= 1, qb=0)  
+            }
+            m2b = full_join(m2b,d_use)
+            m2b [is.na(m2b)] = 0
+        }
+        nnodes = dim(m2b)[1]
+        nnodes2 = length(node_names)
+
+        #Biomass, pb,qb
+        nodes_biomass <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+        names(nodes_biomass) <- c("id", "name", "biomass")
+
+        nodes_pb <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+        names(nodes_pb) <- c("id", "name", "pb")
+
+        #qb is not always present in these data sets but we need it regardless:
+        qb = "qb" %in% colnames(m2b) 
+        nodes_qb <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+        names(nodes_qb) <- c("id", "name", "qb")
+  
+        #EE is not always present in these data sets but we need it regardless:
+        ee = "ee"  %in% colnames(m2b) 
+        nodes_ee <- as.data.frame(matrix(ncol=3, nrow=nnodes))
+        names(nodes_ee) <- c("id", "name", "ee")
+
+        for(j in 1:nnodes){
+          
+          node1 <- m2b[j,]
+          node_id <- j 
+          node_name <- node_names[j]
+          
+          #biomass
+          node1_biomass <- as.numeric(node1$biomass)
+          nodes_biomass[node_id, 1] <- node_id  
+          nodes_biomass[node_id, 2] <- node_name  
+          nodes_biomass[node_id, 3] <- node1_biomass  
+      
+          #pb
+          node1_pb <- as.numeric(node1$pb)  
+          nodes_pb[node_id, 1] <- node_id  
+          nodes_pb[node_id, 2] <- node_name  
+          nodes_pb[node_id, 3] <- node1_pb
+          
+          #qb
+         if ( sum(qb) >0 )
+          {  
+          node1_qb <- as.numeric(node1$qb)  
+          nodes_qb[node_id, 1] <- node_id  
+          nodes_qb[node_id, 2] <- node_name  
+          nodes_qb[node_id, 3] <- node1_qb 
+          } else {
+          #Hopefully this info is in the DC, so sum along the
+          #appropriate row/column. 
+          #Which is Smaller dimension? This is the one to sum across. 
+          if(dim(m2dc)[1]>dim(m2dc)[2]){
+             node1_qb = sum(m2dc[j,])
+          } else {
+             node1_qb = sum(m2dc[,j])
+          }
+          nodes_qb[node_id, 1] <- node_id  
+          nodes_qb[node_id, 2] <- node_name  
+          nodes_qb[node_id, 3] <- node1_qb 
+        }
+          
+          if ( sum(ee) > 0 )
+          {  
+            node1_ee <- as.numeric(node1$ee)  
+            nodes_ee[node_id, 1] <- node_id  
+            nodes_ee[node_id, 2] <- node_name  
+            nodes_ee[node_id, 3] <- node1_ee 
+          } else {
+            node1_ee = runif(1) #Uniform random number? 
+            nodes_ee[node_id, 1] <- node_id  
+            nodes_ee[node_id, 2] <- node_name  
+            nodes_ee[node_id, 3] <- node1_ee 
+          }
+
+          
+        }
+
+        #This section is to parse out the DC. 
+        #Get the orientation right. Consumers should be columns. In some cases 
+        #the opposite is true and there are more columns than rows (because 
+        #primary producers are not given entries) 
+        if(dim(m2dc)[2]>dim(m2dc)[1]){
+          m2dc=t(m2dc)
+        } 
+
+        #Normalize columns to sum to 1.
+        m2dc = m2dc/matrix(colSums(m2dc),dim(m2dc)[1],dim(m2dc)[2],byrow=T )
+        m2dc[!is.finite(m2dc)] = 0
+
+        #Interaction matrix
+        int_matrix = matrix(0, ncol=nnodes2, nrow=nnodes2)
+        #In case dimensions are not square:
+        int_matrix[1:dim(m2dc)[1], 1:dim(m2dc)[2] ] =  as.matrix(m2dc)
+        colnames(int_matrix) = node_names; rownames(int_matrix) = node_names;
+        int_matrix=as.data.frame(int_matrix)
+
+        fwlist[[i]] <- list(biomass=nodes_biomass, pb = nodes_pb, qb = nodes_qb, ee = nodes_ee, 
+        trophic_relations=int_matrix) 
+  
+        
+      }
+      
+  names(fwlist) = model.names
+  return (fwlist)
+
+}#end of get_eb_fw
+
+
+
+
 #MANGAL
 get_mn = function (type = c("herbivory","predation"), ecosyst = FALSE, ref = FALSE ) {
 

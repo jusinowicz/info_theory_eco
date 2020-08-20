@@ -1,0 +1,16 @@
+Group,biomass,ee,pb
+Nile perch,0.001,0.75,0.89
+Catfishes,0.77,0.95,0.79
+Lungfish,0.4204,0.95,0.3
+Snoutfishes and,0.06,0.95,0.9
+Predatory dwarf breams ,0.28,0.95,1.4
+Planktivorous dwarf breams ,0.11,0.95,2.5
+Benthivorous dwarf breams ,0.73,0.95,2.5
+Dagaa,0.24,0.95,1.8
+Nile tilapia,0.02,0.9,0.65
+Other tilapiines ,0.66,0.95,1
+Zooplankton,0,0.7,33.5
+Lake prawn,0,0.7,14
+Macrozoobenthos ,0,0.95,5
+Phytoplankton,0,0.85,365
+Benthic producers ,0,0.85,25

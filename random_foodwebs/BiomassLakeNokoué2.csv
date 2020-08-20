@@ -1,0 +1,32 @@
+,Group name,TL,B,P/B,Q/B,Y,OI
+1,Polydactylus quadrifilis,3.2,0.489,2,17.848,0.088,0.127
+2,Elops lacerta,3.4,3.969,1.9,17.183,1.429,0.097
+3,Pomadasys jubelini,3.3,0.367,1.67,14.714,0.088,0.092
+4,Caranx hippos,3.4,0.03,2.25,21.487,0.01,0.054
+5,Citarichthys stampflii,3.5,0.07,2.67,14.477,0.088,0.082
+6,Cynoglossus senegalensis,3.2,0.88,1.5,10.861,0.088,0.111
+7,Eucinostomus melanopterus,3.2,1.118,3.56,26.909,0.84,0.202
+8,Lutjanus goreensis,3.3,0.326,1.9,14.397,0.088,0.081
+9,Hemichromis fasciatus,3.3,0.191,2.56,18.9,0.088,0.115
+10,Schilbe intermedius,3.1,0.406,1.8,25.2,0.292,0.164
+11,Strongylura senegalensis,3.2,0.218,2.087,20.232,0.088,0.164
+12,Hyporhamphus picarti,3,0.157,3.5,28.377,0.088,0.123
+13,Hepsetus odoe,3.4,0.048,1.5,16.013,0.011,0.28
+14,Pellonula leonensis,3,0.047,5.6,37.55,0.088,0.048
+15,Eleotris vitatta,3.4,0.293,2.39,15.77,0.088,0.127
+16,Gobionellus occidentalis,2.4,15.501,2.5,19.887,7.797,0.253
+17,Chrysichthys nigrodigitatus,3.1,14.492,1.59,12.364,3.681,0.102
+18,Synodontis schall,2.9,0.105,1.7,13.257,0.048,0.311
+19,Monodactylus sebae,3.2,0.259,2.7,21.087,0.088,0.022
+20,Ethmalosa fimbriata,2.5,42.191,2.25,14.3,12.362,0.303
+21,Liza falcipinnis,2.2,5.659,2.1,37.033,3.339,0.156
+22,Sarotherodon melanotheron,2.1,38.928,2.3,32.803,30.364,0.073
+23,Tilapia guineensis,2.1,6.673,2.3,43.8,3.003,0.124
+24,Shrimps,2.4,18.267,3.1,22,10.595,0.26
+25,Crabs,2.8,20.439,2.982,8.5,27.26,0.369
+26,Mollusks,2.3,47.227,3.277,10.68,0,0.233
+27,Zoobenthos,2.1,87.76,16.475,45,0,0.073
+28,Zooplankton,2.1,147.23,39.094,120,0,0.053
+29,Phytoplankton,1,29.2,270,0,0,0
+30,Phytobenthos,1,14.6,270,0,0,0
+31,Detritus,1,33.2,0,0,0,0.286

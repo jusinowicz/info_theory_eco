@@ -1,0 +1,12 @@
+Group,biomass,pb,qb,ee
+pike/sander,1,0.3,11,0.04
+perch/pope,3.3,0.4,2,0.95
+Roach adults,0.5,1.3,5.8,0.95
+Roach fry,0.1,6,22.4,0.95
+Insects/molluscs,2.1,3,11,0.95
+Predatory zooplankton,22,5,20,0.44
+Herbivorous zooplankton,35,16,53,0.24
+Bacterioplankton,0,160,320,0.4
+Phytoplankton,48,307,0,0.16
+Benthic producers,137,10,0,0.13
+Detritus,5,0,0,0.1
