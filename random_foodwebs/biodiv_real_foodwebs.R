@@ -22,8 +22,8 @@ source("../info_theory_functions/database_functions.R")
 # EcoBase: Get all of the available full foodwebs
 #=============================================================================
 fwlist = get_eb() 
-nwebs = length (fwlist)
 
+nwebs = length (fwlist)
 #The maximum block depth for dynamic info metrics (larger is more accurate, but
 #slower and could cause crashing if too large)
 k= 5 
@@ -128,22 +128,21 @@ for (w in 1:nwebs){
 
 	
 	#Remove Detritus: 
-	# biomass= biomass[!(names(biomass)%in% names(d_groups) ) ]
-	# qb= qb[!(names(qb)%in% names(d_groups) ) ]
-	# pb= pb[!(names(pb)%in% names(d_groups) ) ]
-	# ee= ee[!(names(ee)%in% names(d_groups) ) ]
-	# DC = DC[!(colnames(DC)%in%names(d_groups) ),!(rownames(DC)%in%names(d_groups) )]
+	biomass= biomass[!(names(biomass)%in% names(d_groups) ) ]
+	qb= qb[!(names(qb)%in% names(d_groups) ) ]
+	pb= pb[!(names(pb)%in% names(d_groups) ) ]
+	ee= ee[!(names(ee)%in% names(d_groups) ) ]
+	DC = DC[!(colnames(DC)%in%names(d_groups) ),!(rownames(DC)%in%names(d_groups) )]
 
 
 	#Remove Benthic categories:
-	# b_groups = biomass[grepl("enthos", names(biomass)) | grepl("enthic", names(biomass)) ]
- 	
- # 	n_b = length(b_groups)  
-	# biomass= biomass[!(names(biomass)%in% names(b_groups) ) ]
-	# qb= qb[!(names(qb)%in% names(b_groups) ) ]
-	# pb= pb[!(names(pb)%in% names(b_groups) ) ]
-	# ee= ee[!(names(ee)%in% names(b_groups) ) ]
-	# DC = DC[!(colnames(DC)%in%names(b_groups) ),!(rownames(DC)%in%names(b_groups) )]
+	b_groups = biomass[grepl("enthos", names(biomass)) | grepl("enthic", names(biomass)) ]	
+	n_b = length(b_groups)  
+	biomass= biomass[!(names(biomass)%in% names(b_groups) ) ]
+	qb= qb[!(names(qb)%in% names(b_groups) ) ]
+	pb= pb[!(names(pb)%in% names(b_groups) ) ]
+	ee= ee[!(names(ee)%in% names(b_groups) ) ]
+	DC = DC[!(colnames(DC)%in%names(b_groups) ),!(rownames(DC)%in%names(b_groups) )]
 
 
 	#=============================================================================
@@ -184,7 +183,7 @@ for (w in 1:nwebs){
 #Take variables out of the lists to plot: 
 ncells=length(rweb_mb)
 rDIT = data.frame(matrix(0, nrow=ncells, ncol =9) ) 
-ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rS","rCE","rMI")
+ncnames = c("fwno","Biomass", "var_Biomass", "nspp", "shannon", "rS","rCE","rMI","type")
 colnames(rDIT) = ncnames
 
 for (n in 1:ncells){
@@ -213,8 +212,16 @@ for (n in 1:ncells){
 	rDIT$rS[n] = rweb_mb[[n]]$sD
 	rDIT$rCE[n] = rweb_mb[[n]]$ce2
 	rDIT$rMI[n] = rweb_mb[[n]]$mI_mean2
+	t1 = as.factor(c("fresh","marine"))
+	rDIT$type = t1[2]
 
 }
+
+#=============================================================================
+#If the data are available, combine with Lakes:
+rDIT = rbind(rDIT,rDIT_lake)
+
+#=============================================================================
 
 
 #Fit models to see what predicts Biomass the best
@@ -227,7 +234,7 @@ rDIT_eq = subset(rDIT_eq, rMI >0.01 )
 
 
 #Log-log 
-l_rDIT_eq = log (rDIT_eq)
+l_rDIT_eq = cbind(log (rDIT_eq[,1:8]), rDIT_eq[,9])
 lm_nspp = lm(l_rDIT_eq$Biomass~l_rDIT_eq$nspp)
 lm_nspp_log = lm(l_rDIT_eq$Biomass~l_rDIT_eq$nspp)
 lm_H=lm(l_rDIT_eq$Biomass~l_rDIT_eq$shannon)
@@ -300,10 +307,12 @@ ggplot ( ) +
 	geom_line ( data = pr_nspp_log, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
 	geom_point (data= rDIT_sim_eq, aes(x = (Fnspp), y = (Biomass),color = "2" )) + 
 	geom_line ( data = pr_nspp_log_sim, aes(x = (Fnspp), y = (Biomass),color = "2" ) ) + 
+	geom_point (data= rDIT_lake_eq, aes(x = (nspp), y = (Biomass),color = "3" )) + 
+	geom_text(data= rDIT_lake_eq, aes(x = (nspp), y = (Biomass),label= fwno),hjust=0, vjust=0)+
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("# Species", "#Species Sims") )
+	scale_color_discrete(name ="", labels = c("# Species", "#Species Sims", "#Species Lakes") )
 
 ggsave("./nsppVbio_rands1_sub.pdf", width = 8, height = 10)
 
@@ -328,10 +337,12 @@ ggplot ( ) +
 	#geom_line ( data = pr_gam_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
 	geom_point (data= rDIT_sim_eq,aes(x = (rS), y =(Biomass),color = "5")) +
 	geom_line ( data = pr_rS_sim, aes(x = rS, y = Biomass,color = "5" ) ) + 
+	geom_point (data= rDIT_lake_eq,aes(x = (rS), y =(Biomass),color = "6")) +
+	geom_text(data= rDIT_lake_eq, aes(x = (rS), y = (Biomass),label= fwno),hjust=0, vjust=0)+
 	scale_y_log10()+ scale_x_log10() + 
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims") )
+	scale_color_discrete(name ="", labels = c("rS", "rS Sims","rS Lakes") )
 
 ggsave("./rsVbio_rands1_sub.pdf", width = 8, height = 10)
 
@@ -342,24 +353,28 @@ ggplot ( ) +
 	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "1" ) ) + 
 	geom_point( data= rDIT_sim_eq,aes (x = (rMI), y=(Biomass),color = "2" ) ) +
 	geom_line ( data = pr_rMI_sim, aes(x = rMI, y = Biomass,color = "2" ) ) + 
+	geom_point( data= rDIT_lake_eq,aes (x = (rMI), y=(Biomass),color = "3" ) ) +
+	geom_text(data= rDIT_lake_eq, aes(x = (rMI), y = (Biomass),label= fwno),hjust=0, vjust=0)+
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims") )
+	scale_color_discrete(name ="", labels = c("rMI", "rMI Sims","rMI Lakes") )
 
 ggsave("./rMIVbio_rands1_sub.pdf", width = 8, height = 10)
 
 
 #CE
 ggplot()+ 
-	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "8" ) ) +
-	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "8" ) ) + 
-	geom_point( data= rDIT_sim_eq,aes (x = (rCE), y=(Biomass),color = "9" ) ) +
-	geom_line ( data = pr_rCE_sim, aes(x = rCE, y = Biomass,color = "9" ) ) + 
+	geom_point( data= rDIT_eq,aes (x = (rCE), y=(Biomass),color = "1" ) ) +
+	geom_text(data= rDIT_eq, aes(x = (rCE), y = (Biomass),label= fwno),hjust=0, vjust=0)+
+	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "1" ) ) + 
+	geom_point( data= rDIT_sim_eq,aes (x = (rCE), y=(Biomass),color = "2" ) ) +
+	geom_line ( data = pr_rCE_sim, aes(x = rCE, y = Biomass,color = "2" ) ) + 
+	geom_point( data= rDIT_lake_eq, aes (x = (rCE), y=(Biomass),color = "3" ) ) +
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
-	scale_color_discrete(name ="", labels = c("rCE", "rCE Sims") )
+	scale_color_discrete(name ="", labels = c("rCE", "rCE Sims", "rCE Lakes") )
 
 ggsave("./rCEVbio_rands1.pdf", width = 8, height = 10)
 
