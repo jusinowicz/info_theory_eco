@@ -25,9 +25,9 @@ source("../info_theory_functions/database_functions.R")
 #=============================================================================
 flist_b = list.files("./fwfw", pattern="iomass")  #Load the biomass 
 flist_DC = list.files("./fwfw", pattern="DC")  #Load the biomass 
-fwlist = get_eb_fw (biomass_file_list=flist_b, DC_file_list=flist_DC)
+fwlist_l = get_eb_fw (biomass_file_list=flist_b, DC_file_list=flist_DC)
 
-nwebs = length (fwlist)
+nwebs = length (fwlist_l)
 
 #The maximum block depth for dynamic info metrics (larger is more accurate, but
 #slower and could cause crashing if too large)
@@ -42,28 +42,28 @@ for (w in 1:nwebs){
 	print(w)
 
 	#Reformat these to a vector with named entries
-	biomass = abs(fwlist[[w]]$biomass$biomass)
-	names(biomass) = fwlist[[w]]$biomass$name 
+	biomass = abs(fwlist_l[[w]]$biomass$biomass)
+	names(biomass) = fwlist_l[[w]]$biomass$name 
 
 	#Ratio of production P/B
-	pb = fwlist[[w]]$pb$pb
-	names(pb) = fwlist[[w]]$pb$name 
+	pb = fwlist_l[[w]]$pb$pb
+	names(pb) = fwlist_l[[w]]$pb$name 
 
 	#Ratio of consumption Q/B
-	qb = fwlist[[w]]$qb$qb
-	names(qb) = fwlist[[w]]$qb$name 
+	qb = fwlist_l[[w]]$qb$qb
+	names(qb) = fwlist_l[[w]]$qb$name 
 
 	#Ecotrophic efficiency EE
-	ee = fwlist[[w]]$ee$ee
-	names(ee) = fwlist[[w]]$ee$name 
+	ee = fwlist_l[[w]]$ee$ee
+	names(ee) = fwlist_l[[w]]$ee$name 
 	ee[ee>1] = 1 #This should not happen, but it does. wtf???
 
 	#The dietary matrix
-	DC = fwlist[[w]]$trophic_relations
+	DC = fwlist_l[[w]]$trophic_relations
 
 	#Percentage of consumption that is lost to Detritus
-	gs = fwlist[[w]]$gs$gs
-	names(gs) = fwlist[[w]]$gs$name
+	gs = fwlist_l[[w]]$gs$gs
+	names(gs) = fwlist_l[[w]]$gs$name
 
 	#The balance is given by  pb*biomass*ee- rowSums(matrix(qb*biomass, nspp,nspp,byrow=T)*DC)
 
@@ -79,7 +79,7 @@ for (w in 1:nwebs){
 	# "discard" and "detached" 
 	d_groups = biomass[grepl("etrit", names(biomass)) | grepl("iscard", names(biomass)) 
 						 | grepl("etached", names(biomass)) | grepl("Dead", names(biomass)) 
-						 | grepl("Matter", names(biomass)) ]
+						 | grepl("Matter", names(biomass)) | grepl("Detr", names(biomass)) ]
  	
  	n_d = length(d_groups)
 	#Total detritus consumed by other organisms
@@ -218,7 +218,7 @@ for (n in 1:ncells){
 	rDIT_lake$rCE[n] = rweb_mb[[n]]$ce2
 	rDIT_lake$rMI[n] = rweb_mb[[n]]$mI_mean2
 	t1 = as.factor(c("fresh","marine"))
-	rDIT$type = t1[2]
+	rDIT_lake$type = t1[1]
 
 }
 
@@ -232,37 +232,37 @@ rDIT_lake_eq = subset(rDIT_lake_eq, rMI >0.01 )
 # rDIT_lake_eq_con = subset(rDIT_lake_eq_con, rMI >0.01 )
 
 #Log-log 
-l_rDIT_lake_eq = log (rDIT_lake_eq)
-lm_nspp = lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$nspp)
-lm_nspp_log = lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$nspp)
-lm_H=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$shannon)
-lm_rS=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rS)
+l_rDIT_lake_eq = cbind(log (rDIT_lake_eq[,1:8]), rDIT_lake_eq[,9])
+lm_nspp_lake = lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$nspp)
+lm_nspp_log_lake = lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$nspp)
+lm_H_lake=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$shannon)
+lm_rS_lake=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rS)
 #lm_rS=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rS+I(l_rDIT_lake_eq$rS^2))
-lm_rCE=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rCE)
-lm_rMI=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rMI)
-lm_rCEMI=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rCE+l_rDIT_lake_eq$rMI)
-lm_rSMI=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rS+l_rDIT_lake_eq$rMI)
+lm_rCE_lake=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rCE)
+lm_rMI_lake=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rMI)
+lm_rCEMI_lake=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rCE+l_rDIT_lake_eq$rMI)
+lm_rSMI_lake=lm(l_rDIT_lake_eq$Biomass~l_rDIT_lake_eq$rS+l_rDIT_lake_eq$rMI)
 
 gam_rS= gam (Biomass~s(rS),data=rDIT_lake_eq )
 pr_gam_rS = predict(gam_rS, newdata =data.frame(rS = rDIT_lake_eq$rS), type="response")
 #Predict data from models to fit to figure
 
-pr_nspp_log = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log) ),
+pr_nspp_log_lake = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log_lake) ),
 	nspp = exp(l_rDIT_lake_eq$nspp ) )
-pr_H = data.frame( Biomass = exp(predict( lm_H) ) ,	shannon =exp(l_rDIT_lake_eq$shannon ) )
-pr_rS =data.frame( Biomass = exp(predict (lm_rS ) ), rS= exp(l_rDIT_lake_eq$rS  ) )
-pr_rCE = data.frame( Biomass = exp(predict(lm_rCE) ), rCE = exp(l_rDIT_lake_eq$rCE ) )
-pr_rMI = data.frame( Biomass = exp(predict(lm_rMI) ), rMI = exp(l_rDIT_lake_eq$rMI ) )
+pr_H_lake = data.frame( Biomass = exp(predict( lm_H_lake) ) ,	shannon =exp(l_rDIT_lake_eq$shannon ) )
+pr_rS_lake =data.frame( Biomass = exp(predict (lm_rS_lake ) ), rS= exp(l_rDIT_lake_eq$rS  ) )
+pr_rCE_lake = data.frame( Biomass = exp(predict(lm_rCE_lake) ), rCE = exp(l_rDIT_lake_eq$rCE ) )
+pr_rMI_lake = data.frame( Biomass = exp(predict(lm_rMI_lake) ), rMI = exp(l_rDIT_lake_eq$rMI ) )
 
 
-summary(lm_nspp )
-summary(lm_nspp_log )
-summary(lm_H )
-summary(lm_rS )
-summary(lm_rCE )
-summary(lm_rMI )
-summary(lm_rCEMI )
-summary(lm_rSMI )
+summary(lm_nspp_lake )
+summary(lm_nspp_log_lake )
+summary(lm_H_lake )
+summary(lm_rS_lake )
+summary(lm_rCE_lake )
+summary(lm_rMI_lake )
+summary(lm_rCEMI_lake )
+summary(lm_rSMI_lake )
 
 #Plots 
 
@@ -281,15 +281,15 @@ ggplot ( ) +
 #Plot of data with fitted lines: 
 ggplot ( ) + 
 	geom_point (data= rDIT_lake_eq, aes(x = (nspp), y = (Biomass),color = "1" )) + 
-	geom_line ( data = pr_nspp_log, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
+	geom_line ( data = pr_nspp_log_lake, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
 	geom_point (data= rDIT_lake_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
-	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_line ( data = pr_H_lake, aes(x = shannon, y = Biomass,color = "2" ) ) + 
 	geom_point (data= rDIT_lake_eq,aes(x = (rS), y =(Biomass),color = "3")) +
-	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "3" ) ) + 
+	geom_line ( data = pr_rS_lake, aes(x = rS, y = Biomass,color = "3" ) ) + 
 	geom_point( data= rDIT_lake_eq,aes (x = (rMI), y=(Biomass),color = "4" ) ) +
-	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "4" ) ) + 
+	geom_line ( data = pr_rMI_lake, aes(x = rMI, y = Biomass,color = "4" ) ) + 
 	geom_point( data= rDIT_lake_eq,aes (x = (rCE), y=(Biomass),color = "5" ) ) +
-	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "5" ) ) + 
+	geom_line ( data = pr_rCE_lake, aes(x = rCE, y = Biomass,color = "5" ) ) + 
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
@@ -302,9 +302,9 @@ ggplot ( ) +
 ggplot ( ) + 
 	geom_point (data= rDIT_lake_eq, aes(x = (nspp), y = (Biomass),color = "1" )) + 
 	geom_text(data= rDIT_lake_eq, aes(x = (nspp), y = (Biomass),label= fwno),hjust=0, vjust=0)+
-	geom_line ( data = pr_nspp_log, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
+	geom_line ( data = pr_nspp_log_lake, aes(x = (nspp), y = (Biomass),color = "1" ) ) + 
 	geom_point (data= rDIT_lake_sim_eq, aes(x = (Fnspp), y = (Biomass),color = "2" )) + 
-	geom_line ( data = pr_nspp_log_sim, aes(x = (Fnspp), y = (Biomass),color = "2" ) ) + 
+	geom_line ( data = pr_nspp_log_sim_lake, aes(x = (Fnspp), y = (Biomass),color = "2" ) ) + 
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
@@ -315,9 +315,9 @@ ggsave("./nsppVbio_rands1_sub.pdf", width = 8, height = 10)
 #Shannon Diversity
 ggplot ( ) + 
 	geom_point (data= rDIT_lake_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
-	geom_line ( data = pr_H, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_line ( data = pr_H_lake, aes(x = shannon, y = Biomass,color = "2" ) ) + 
 	geom_point (data= rDIT_lake_sim_eq,aes(x = (shannon), y = (Biomass),color = "3")) +
-	geom_line ( data = pr_H_sim, aes(x = shannon, y = Biomass,color = "3" ) ) + 
+	geom_line ( data = pr_H_sim_lake, aes(x = shannon, y = Biomass,color = "3" ) ) + 
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
@@ -329,10 +329,10 @@ ggsave("./sdiVbio_rands1.pdf", width = 8, height = 10)
 ggplot ( ) + 
 	geom_point (data= rDIT_lake_eq,aes(x = (rS), y =(Biomass),color = "4")) +
 	geom_text(data= rDIT_lake_eq, aes(x = (rS), y = (Biomass),label= fwno),hjust=0, vjust=0)+
-	geom_line ( data = pr_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
+	geom_line ( data = pr_rS_lake, aes(x = rS, y = Biomass,color = "4" ) ) + 
 	#geom_line ( data = pr_gam_rS, aes(x = rS, y = Biomass,color = "4" ) ) + 
 	geom_point (data= rDIT_lake_sim_eq,aes(x = (rS), y =(Biomass),color = "5")) +
-	geom_line ( data = pr_rS_sim, aes(x = rS, y = Biomass,color = "5" ) ) + 
+	geom_line ( data = pr_rS_sim_lake, aes(x = rS, y = Biomass,color = "5" ) ) + 
 	scale_y_log10()+ scale_x_log10() + 
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
@@ -344,9 +344,9 @@ ggsave("./rsVbio_rands1_sub.pdf", width = 8, height = 10)
 ggplot ( ) + 
 	geom_point( data= rDIT_lake_eq,aes (x = (rMI), y=(Biomass),color = "1" ) ) +
 	geom_text(data= rDIT_lake_eq, aes(x = (rMI), y = (Biomass),label= fwno),hjust=0, vjust=0)+
-	geom_line ( data = pr_rMI, aes(x = rMI, y = Biomass,color = "1" ) ) + 
+	geom_line ( data = pr_rMI_lake, aes(x = rMI, y = Biomass,color = "1" ) ) + 
 	geom_point( data= rDIT_lake_sim_eq,aes (x = (rMI), y=(Biomass),color = "2" ) ) +
-	geom_line ( data = pr_rMI_sim, aes(x = rMI, y = Biomass,color = "2" ) ) + 
+	geom_line ( data = pr_rMI_sim_lake, aes(x = rMI, y = Biomass,color = "2" ) ) + 
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+
@@ -359,9 +359,9 @@ ggsave("./rMIVbio_rands1_sub.pdf", width = 8, height = 10)
 ggplot()+ 
 	geom_point( data= rDIT_lake_eq,aes (x = (rCE), y=(Biomass),color = "8" ) ) +
 	geom_text(data= rDIT_lake_eq, aes(x = (rCE), y = (Biomass),label= fwno),hjust=0, vjust=0)+
-	geom_line ( data = pr_rCE, aes(x = rCE, y = Biomass,color = "8" ) ) + 
+	geom_line ( data = pr_rCE_lake, aes(x = rCE, y = Biomass,color = "8" ) ) + 
 	geom_point( data= rDIT_lake_sim_eq,aes (x = (rCE), y=(Biomass),color = "9" ) ) +
-	geom_line ( data = pr_rCE_sim, aes(x = rCE, y = Biomass,color = "9" ) ) + 
+	geom_line ( data = pr_rCE_sim_lake, aes(x = rCE, y = Biomass,color = "9" ) ) + 
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+

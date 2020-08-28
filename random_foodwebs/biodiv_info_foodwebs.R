@@ -287,25 +287,30 @@ for (n in 1:ncells){
 	# rweb1_all[n] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1_all[[n]]$out[nt1:nt2,2:(nspp+1)],
 	# 	spp_prms = out1_all[[n]]$spp_prms, if_conditional = FALSE) )
 
-	# #=============================================================================
-	# aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
-	# 	k=k, ensemble = TRUE)    )
+	#=============================================================================
+	aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
+		k=k, ensemble = TRUE)    )
 
-	# #=============================================================================
-	# MMI_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
-	# 	k=k, ensemble = TRUE)    )
+	#=============================================================================
+	MMI_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,2:(nspp+1)]), 
+		k=k, ensemble = TRUE)    )
 
 	#Run these without any Resource species for comparison with the real data: 
-		rweb1_all[n] = list(rutledge_web( spp_list=c(nRsp,nCsp,nPsp), pop_ts = out1_all[[n]]$out[nt1:nt2,(1+nRsp):(nspp+1)],
-		spp_prms = out1_all[[n]]$spp_prms, if_conditional = FALSE) )
+		spp_prms1 = out1_all[[n]]$spp_prms
+		spp_prms1$rR = spp_prms1$rR[nRsp]
+		spp_prms1$Ki = spp_prms1$Ki[nRsp]
+		spp_prms1$cC = spp_prms1$cC[nRsp,]
+
+		rweb1_all[n] = list(rutledge_web( spp_list=c(1,nCsp,nPsp), pop_ts = out1_all[[n]]$out[nt1:nt2,(1+nRsp):(nspp+1)],
+		spp_prms = spp_prms1, if_conditional = FALSE) )
 
 	#=============================================================================
-	aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,(1+nRsp):(nspp+1)]), 
-		k=k, ensemble = TRUE)    )
+	# aiE_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,(1+nRsp):(nspp+1)]), 
+	# 	k=k, ensemble = TRUE)    )
 
-	#=============================================================================
-	MMI_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,(1+nRsp):(nspp+1)]), 
-		k=k, ensemble = TRUE)    )
+	# #=============================================================================
+	# MMI_web_all[n] = list( get_ais (  series1 = floor(out1_all[[n]]$out[nt1:nt2,(1+nRsp):(nspp+1)]), 
+	# 	k=k, ensemble = TRUE)    )
 }
 
 #Take variables out of the lists to plot: 
