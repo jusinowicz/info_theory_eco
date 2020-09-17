@@ -143,87 +143,87 @@ for (n in 1:ncells){
 
 #Take variables out of the lists to plot: 
 ncells=length(aiE_web_all)
-rDIT_sim = data.frame(matrix(0, nrow=ncells, ncol =12) ) 
+rDIT_sim_match = data.frame(matrix(0, nrow=ncells, ncol =12) ) 
 ncnames = c("fwno","Biomass", "var_Biomass", "Snspp", "Fnspp", "shannon", "rS","rCE","rMI", "MI", 
 	"AI","eq_state" )
-colnames(rDIT_sim) = ncnames
+colnames(rDIT_sim_match) = ncnames
 
 for (n in 1:ncells){
 	tlast1 = dim(out1_all[[n]]$out)[1] - 1 #Length of time series
 	tlast2 = dim(aiE_web_all[[n]]$local)[1] - 1 #Length of time series
 
 
-	rDIT_sim$fwno[n] = n 
-	rDIT_sim$Snspp[n] = out1_all[[n]]$spp_prms$nspp #Starting number of species
+	rDIT_sim_match$fwno[n] = n 
+	rDIT_sim_match$Snspp[n] = out1_all[[n]]$spp_prms$nspp #Starting number of species
 
 	#####This needs to match the code above -- Are the Rsp being counted or not? 
 	nRsp = out1_all[[n]]$spp_prms$nRsp
-	rDIT_sim$Fnspp[n] = sum(out1_all[[n]]$out[tlast1,] > 0) - nRsp  #Final number of species
+	rDIT_sim_match$Fnspp[n] = sum(out1_all[[n]]$out[tlast1,] > 0) - nRsp  #Final number of species
 
-	rDIT_sim$Biomass[n] = sum(out1_all[[n]]$out[tlast1, 2:(rDIT_sim$Snspp[n]+1) ]) #Biomass at last time
+	rDIT_sim_match$Biomass[n] = sum(out1_all[[n]]$out[tlast1, 2:(rDIT_sim_match$Snspp[n]+1) ]) #Biomass at last time
 
 	tbck = 1 #tlast*3/4 #Use a subset that excludes transient stage for variance
-	rDIT_sim$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast1-tbck):tlast, 2:(rDIT_sim$Snspp[n]+1) ]) )
+	rDIT_sim_match$var_Biomass[n] = var( rowSums( out1_all[[n]]$out[ (tlast1-tbck):tlast, 2:(rDIT_sim_match$Snspp[n]+1) ]) )
 
 	#Shannon Diversity
-	pi = out1_all[[n]]$out[tlast1, 2:(rDIT_sim$Snspp[n]+1) ] / rDIT_sim$Biomass[n]
+	pi = out1_all[[n]]$out[tlast1, 2:(rDIT_sim_match$Snspp[n]+1) ] / rDIT_sim_match$Biomass[n]
 	pi[pi <= 0 ] = NA
-	rDIT_sim$shannon[n] = - sum( pi*log(pi),na.rm=T )
+	rDIT_sim_match$shannon[n] = - sum( pi*log(pi),na.rm=T )
 
 	#Rutledge Shannon Diversity, Conditional Entropy, and Mutual Information:  
-	rDIT_sim$rS[n] = rweb1_all[[n]]$sD[tlast2]
-	rDIT_sim$rCE[n] = rweb1_all[[n]]$ce2[tlast2]
-	rDIT_sim$rMI[n] = rweb1_all[[n]]$mI_mean[tlast2]
+	rDIT_sim_match$rS[n] = rweb1_all[[n]]$sD[tlast2]
+	rDIT_sim_match$rCE[n] = rweb1_all[[n]]$ce2[tlast2]
+	rDIT_sim_match$rMI[n] = rweb1_all[[n]]$mI_mean[tlast2]
 
 	#Multiple Mutual Information
-	rDIT_sim$MI[n] = MMI_web_all[[n]]$mean
+	rDIT_sim_match$MI[n] = MMI_web_all[[n]]$mean
 
 	#Ensemble active information
-	rDIT_sim$AI[n] = aiE_web_all[[n]]$mean
+	rDIT_sim_match$AI[n] = aiE_web_all[[n]]$mean
 
 	#Determine whether this was a web in equilibrium (0) or not (1).
 	eqtf = factor(levels=c(0,1))
 	eq_test = test_eq( foodweb = out1_all[[n]], eqtest =tlast-50, t_type = "deriv")
-	if(sum(eq_test)>1) {rDIT_sim$eq_state[n] = levels(eqtf)[2]} else { rDIT_sim$eq_state[n] = levels(eqtf)[1]   }
+	if(sum(eq_test)>1) {rDIT_sim_match$eq_state[n] = levels(eqtf)[2]} else { rDIT_sim_match$eq_state[n] = levels(eqtf)[1]   }
 
 
 }
 
-rDIT_sim_eq = subset(rDIT_sim, eq_state == 0)
+rDIT_sim_match_eq = subset(rDIT_sim_match, eq_state == 0)
 
 #Log-log 
-l_rDIT_sim_eq = log (rDIT_sim_eq[,1:9])
-#l_rDIT_sim_eq[!is.finite(l_rDIT_sim_eq)] = NA
-lm_nspp_sim = lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$Fnspp)
-lm_nspp_log_sim = lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$Fnspp)
-lm_H_sim=lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$shannon)
-lm_rS_sim=lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$rS)
-lm_rCE_sim=lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$rCE)
-lm_rMI_sim=lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$rMI)
-lm_rCEMI_sim=lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$rCE+l_rDIT_sim_eq$rMI)
-lm_rSMI_sim=lm(l_rDIT_sim_eq$Biomass~l_rDIT_sim_eq$rS+l_rDIT_sim_eq$rMI)
+l_rDIT_sim_match_eq = log (rDIT_sim_match_eq[,1:9])
+#l_rDIT_sim_match_eq[!is.finite(l_rDIT_sim_match_eq)] = NA
+lm_nspp_sim_match = lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$Fnspp)
+lm_nspp_log_sim_match = lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$Fnspp)
+lm_H_sim_match=lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$shannon)
+lm_rS_sim_match=lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$rS)
+lm_rCE_sim_match=lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$rCE)
+lm_rMI_sim_match=lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$rMI)
+lm_rCEMI_sim_match=lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$rCE+l_rDIT_sim_match_eq$rMI)
+lm_rSMI_sim_match=lm(l_rDIT_sim_match_eq$Biomass~l_rDIT_sim_match_eq$rS+l_rDIT_sim_match_eq$rMI)
 
 #Predict data from models to fit to figure
 
-pr_nspp_log_sim = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log_sim) ),
-	Fnspp = exp(l_rDIT_sim_eq$Fnspp ) )
-pr_H_sim = data.frame( Biomass = exp(predict( lm_H_sim) ) ,	shannon =exp(l_rDIT_sim_eq$shannon ) )
-pr_rS_sim =data.frame( Biomass = exp(predict (lm_rS_sim ) ), rS= exp(l_rDIT_sim_eq$rS  ) )
-pr_rCE_sim = data.frame( Biomass = exp(predict(lm_rCE_sim) ), rCE = exp(l_rDIT_sim_eq$rCE ) )
-pr_rMI_sim = data.frame( Biomass = exp(predict(lm_rMI_sim) ), rMI = exp(l_rDIT_sim_eq$rMI ) )
+pr_nspp_log_sim_match = data.frame( Biomass =  exp(predict.lm ( lm_nspp_log_sim_match) ),
+	Fnspp = exp(l_rDIT_sim_match_eq$Fnspp ) )
+pr_H_sim_match = data.frame( Biomass = exp(predict( lm_H_sim_match) ) ,	shannon =exp(l_rDIT_sim_match_eq$shannon ) )
+pr_rS_sim_match =data.frame( Biomass = exp(predict (lm_rS_sim_match ) ), rS= exp(l_rDIT_sim_match_eq$rS  ) )
+pr_rCE_sim_match = data.frame( Biomass = exp(predict(lm_rCE_sim_match) ), rCE = exp(l_rDIT_sim_match_eq$rCE ) )
+pr_rMI_sim_match = data.frame( Biomass = exp(predict(lm_rMI_sim_match) ), rMI = exp(l_rDIT_sim_match_eq$rMI ) )
 
 #Plot of data with fitted lines: 
 ggplot ( ) + 
-	geom_point (data= rDIT_sim_eq, aes(x = (Fnspp), y = (Biomass),color = "1" )) + 
-	geom_line ( data = pr_nspp_log_sim, aes(x = (Fnspp), y = (Biomass),color = "1" ) ) + 
-	geom_point (data= rDIT_sim_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
-	geom_line ( data = pr_H_sim, aes(x = shannon, y = Biomass,color = "2" ) ) + 
-	geom_point (data= rDIT_sim_eq,aes(x = (rS), y =(Biomass),color = "3")) +
-	geom_line ( data = pr_rS_sim, aes(x = rS, y = Biomass,color = "3" ) ) + 
-	geom_point( data= rDIT_sim_eq,aes (x = (rMI), y=(Biomass),color = "4" ) ) +
-	geom_line ( data = pr_rMI_sim, aes(x = rMI, y = Biomass,color = "4" ) ) + 
-	geom_point( data= rDIT_sim_eq,aes (x = (rCE), y=(Biomass),color = "5" ) ) +
-	geom_line ( data = pr_rCE_sim, aes(x = rCE, y = Biomass,color = "5" ) ) + 
+	geom_point (data= rDIT_sim_match_eq, aes(x = (Fnspp), y = (Biomass),color = "1" )) + 
+	geom_line ( data = pr_nspp_log_sim_match, aes(x = (Fnspp), y = (Biomass),color = "1" ) ) + 
+	geom_point (data= rDIT_sim_match_eq,aes(x = (shannon), y = (Biomass),color = "2")) +
+	geom_line ( data = pr_H_sim_match, aes(x = shannon, y = Biomass,color = "2" ) ) + 
+	geom_point (data= rDIT_sim_match_eq,aes(x = (rS), y =(Biomass),color = "3")) +
+	geom_line ( data = pr_rS_sim_match, aes(x = rS, y = Biomass,color = "3" ) ) + 
+	geom_point( data= rDIT_sim_match_eq,aes (x = (rMI), y=(Biomass),color = "4" ) ) +
+	geom_line ( data = pr_rMI_sim_match, aes(x = rMI, y = Biomass,color = "4" ) ) + 
+	geom_point( data= rDIT_sim_match_eq,aes (x = (rCE), y=(Biomass),color = "5" ) ) +
+	geom_line ( data = pr_rCE_sim_match, aes(x = rCE, y = Biomass,color = "5" ) ) + 
 	scale_y_log10()+ scale_x_log10() +
 	xlab("#Species, Bits")+
 	ylab("Biomass")+

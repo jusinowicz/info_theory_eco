@@ -62,3 +62,4 @@ scenario_foodwebs/scen_fwebmod6Rand.var
 *.var
 *.pdf
 .DS_Store
+*.png
