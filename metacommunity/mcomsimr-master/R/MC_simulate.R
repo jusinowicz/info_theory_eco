@@ -45,9 +45,10 @@ simulate_MC <- function(patches, species, dispersal = 0.01,
                         torus = FALSE, kernel_exp = 0.1,
                         env1Scale = 500, timesteps = 1200, burn_in = 800, initialization = 200,
                         max_r = 5, min_env = 0, max_env = 1, env_niche_breadth = 0.5, optima_spacing = "random",
-                        intra = 1, min_inter = 0, max_inter = 1, comp_scaler = 0.05,
+                        m = 0.99, intra = 1, min_inter = 0, max_inter = 1, comp_scaler = 0.05,
                         extirp_prob = 0,
-                        landscape, disp_mat, env.df, env_optima, int_mat){
+                        landscape, disp_mat, env.df, env_optima, int_mat,
+                        constant = FALSE){
   if (missing(landscape)){
     landscape <- landscape_generate(patches = patches, plot = plot)
   } else {
@@ -90,10 +91,16 @@ simulate_MC <- function(patches, species, dispersal = 0.01,
    } else {
      env <- env.df$env1[env.df$time == (i-initialization)]
    }
-    r <- max_r*exp(-(t((env_traits.df$optima - matrix(rep(env, each = species), nrow = species, ncol = patches))/(2*env_traits.df$env_niche_breadth)))^2)
-    N_hat <- N*r/(1+N%*%int_mat)
+    r <- env_traits.df$max_r*exp(-(t((env_traits.df$optima - matrix(rep(env, each = species), nrow = species, ncol = patches))/(2*env_traits.df$env_niche_breadth)))^2)
+    N_hat <- N*r/(1+N%*%int_mat) - m
     N_hat[N_hat < 0] <- 0
-    N_hat <- matrix(rpois(n = species*patches, lambda = N_hat), ncol = species, nrow = patches)
+
+    #Added this for the option of removing demographic stochasticity
+    if (constant == TRUE) { 
+         N_hat <- matrix( round(N_hat), ncol = species, nrow = patches)
+      } else {    
+        N_hat <- matrix(rpois(n = species*patches, lambda = N_hat), ncol = species, nrow = patches)
+    }
 
     E <- matrix(rbinom(n = patches * species, size = N_hat, prob = rep(dispersal, each = patches)), nrow = patches, ncol = species)
     dispSP <- colSums(E)
