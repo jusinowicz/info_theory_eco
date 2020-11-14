@@ -44,6 +44,35 @@ shannon_D2 = function ( freq = freq) {
 }
 
 #=============================================================================
+# get_ce
+# Conditional entropy in the Rutldege web model. This is mostly implemented to
+# double check the math and have multiple routes to the answer.
+#
+# Note: The code is written to give H(X|Y) but for the Rutledge web we actually
+# want H(Y|X). Make sure the t(fij) is being passed to this function for the 
+# Rutledge investigations! 
+#
+# Note: This was originally written for the Rutledge foodweb model, but it is 
+# a generic function which can be applied to get the CE from a joint 
+# probability table (given by fij). 
+#
+# freq 			A frequency distribution that is standardized to 1
+# fij 			The transition rates from the Rutledge web 
+#=============================================================================
+
+get_ce = function (fij=fij) {
+	ncol1 = dim(fij)[1]
+
+	fij_x = rowSums(fij) #Marginals of x and y
+	fij_y = colSums(fij)
+	cp = fij/matrix(fij_x,ncol1,ncol1) #Conditional probability table P(X|Y)
+	ce = -sum(fij_x*rowSums((cp)*log(cp),na.rm=T)) #H(X|Y) = sum over x{ p(x)*H(X|Y=x)}
+
+	return(ce)
+}
+
+
+#=============================================================================
 # Time-series information theoretic functions
 #=============================================================================
 #=============================================================================
