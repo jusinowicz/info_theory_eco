@@ -71,14 +71,37 @@ print(g)
 
 #1. Make a time series out of the environmental state and the population. 
 #	This is to get the per-species environmental information: 
-series1 = data.frame(cbind (env = mcm1$dynamics.df$env, species = mcm1$dynamics.df$species, N = mcm1$dynamics.df$N) ,
+series1 = data.frame(cbind (env = as.factor(mcm1$dynamics.df$env), species = mcm1$dynamics.df$species, N = mcm1$dynamics.df$N) ,
 						time = mcm1$dynamics.df$time) 
 series1 = series1[series1$time>=1,]
 
 for (s in 1:nspp){ 
 
 	for (t in 1:(timesteps)) {
-		s1_temp = subset(series1, species == s & time == t)
+		#s1_temp = subset(series1, species == s & time == t)
+		s1_temp = spread( subset(series1, time == t), species, N)
+		#s1_temp =  subset(series1, time == t)
+		s1_temp = s1_temp[,colnames(s1_temp)!="time" ]
+		
+		#Expand this into an n-dimensional table where each species is 
+		#considered jointly with every other (for interactions?)
+		#I think this is the right way to expand this. 
+		#	1. When you look at s2_temp[1,,], it should be like a matrix of pairwise interactions
+		#		per environment 
+		#	2. If these were e.g. invasions, then s2_temp[,1,] gives species 1 invading into 
+		#		every other species, while s2_temp[,,1] shows 1 as resident and species invading
+		#		into 1. 
+		s2_temp = array(as.matrix(s1_temp[,2:(nspp+1)] ), dim= c(dim(s1_temp)[1], nspp,nspp) ) 
+
+		#Joint probability distribution: 
+		#Now there are two interesting dimensions of information: one in the p(Ni|E), and the other
+		#in p(Ni|Nj). Also the simultaneous consideration as p(Ni|E, Nj). 
+		#Also, without the actual factorial treatment of both intra and interspecific environment
+		#treatments there is an aspect of the information that is missing. 
+		s1_joint = prop.table(s2_temp)
+
+
+
 	}
 }
 
