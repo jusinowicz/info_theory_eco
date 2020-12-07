@@ -20,7 +20,6 @@ source("./env_functions.R")
 #=============================================================================
 ngens = 1000 #Time steps
 nspp = 2 #Species
-env_coarse = 2 #Coarseness of environment. These are decimal pl for round()
 
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
@@ -108,10 +107,12 @@ env_fit$cue_method = "g_corr"
 env_fit$g_corr = runif(nspp, min = 0.98, max=0.999)
 env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
 
+#Survival rates
+env_fit$sr = c(matrix(0.1,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
-
-#species' survival rates
-sr = c(matrix(0.1,nspp,1)) #rnorm(nspp, 0.1, 0.1)
+#Scale the intrinsic fitness: 
+env_fit$lambda_r = c(1,1)
+env_fit$fr = env_fit$fr* env_fit$lambda_r
 
 #####
 ####	Species population-level parameters.  
@@ -127,8 +128,10 @@ sr = c(matrix(0.1,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 for (n in 1:ngens){
 
 	#Lottery model with germination 
-	Ni[n+1, ] = Ni[n, ]*( (sr*(1-gr[n,]) )  + (1-sum(sr *Ni[n, ]) ) * 
-					( fr[n,]*gr[n,]/(sum(fr[n,]* gr[n,] *Ni[n, ]) ) ) ) 
+	env_fit$Ni[n+1, ] = env_fit$Ni[n, ]*( ( env_fit$sr*(1- env_fit$gr[n,]) )  + 
+						(1-sum( env_fit$sr * env_fit$Ni[n, ]) ) * 
+						(env_fit$fr[n,]* env_fit$gr[n,]/
+					(sum( env_fit$fr[n,]*  env_fit$gr[n,] * env_fit$Ni[n, ]) ) ) ) 
 
 }
 
@@ -136,16 +139,3 @@ for (n in 1:ngens){
 #Information theory
 #=============================================================================
 
-
-
-
-
-
-runif(ngens)
-
-#Species' response to a cue (germination or not?)
-#1. Perfect response 
-#2. Always the same fraction
-#3. 
-
-#Species' reproduction in response to environmental conditions following cue
