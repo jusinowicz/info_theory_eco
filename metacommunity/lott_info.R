@@ -126,7 +126,6 @@ env_fit$fr = env_fit$fr* env_fit$lambda_r
 #Population dynamics
 #=============================================================================
 for (n in 1:ngens){
-
 	#Lottery model with germination 
 	env_fit$Ni[n+1, ] = env_fit$Ni[n, ]*( ( env_fit$sr*(1- env_fit$gr[n,]) )  + 
 						(1-sum( env_fit$sr * env_fit$Ni[n, ]) ) * 
@@ -138,4 +137,5 @@ for (n in 1:ngens){
 #=============================================================================
 #Information theory
 #=============================================================================
+
 
