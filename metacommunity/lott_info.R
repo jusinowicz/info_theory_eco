@@ -64,6 +64,8 @@ Ni = matrix(0.1, ngens+1,nspp)
 ####1. Make env_fit, species-level properties:
 env_fit = NULL
 env_fit$Ni = Ni
+env_fit$Ni2 = Ni
+env_fit$Ni3 = Ni
 env_fit$opt = runif(nspp)
 env_fit$var = matrix( 0.1 ,nspp,1) #A generic variance
 env_fit$min_max = NULL
@@ -108,11 +110,11 @@ env_fit$g_corr = runif(nspp, min = 0.98, max=0.999)
 env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
 
 #Survival rates
-env_fit$sr = c(matrix(0.1,nspp,1)) #rnorm(nspp, 0.1, 0.1)
+env_fit$sr = c(matrix(0.9,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
 #Scale the intrinsic fitness: 
-env_fit$lambda_r = c(1,1)
-env_fit$fr = env_fit$fr* env_fit$lambda_r
+env_fit$lambda_r = c(5,5)
+env_fit$fr = env_fit$fr* env_fit$lambda_r+.01
 
 #####
 ####	Species population-level parameters.  
@@ -132,8 +134,26 @@ for (n in 1:ngens){
 						(env_fit$fr[n,]* env_fit$gr[n,]/
 					(sum( env_fit$fr[n,]*  env_fit$gr[n,] * env_fit$Ni[n, ]) ) ) ) 
 
+	#"Unscaled" lottery model -- without explicit competition for space
+	env_fit$Ni2[n+1, ] = env_fit$Ni2[n, ]*( ( env_fit$sr*(1- env_fit$gr[n,]) )  + 
+						(env_fit$fr[n,]* env_fit$gr[n,]/
+					(sum( env_fit$fr[n,]*  env_fit$gr[n,] * env_fit$Ni2[n, ]) ) ) ) 
+
+	env_fit$Ni3[n+1, ] = env_fit$Ni3[n, ]*( ( env_fit$sr*(1- env_fit$gr[n,]) )  + 
+						env_fit$fr[n,]* env_fit$gr[n,] ) 
+
 }
 
+#Plot the expected growth rate as a function of germination fraction
+H1 = seq(0,1,0.05) #Germination fraction
+H1_big= matrix(H1,ngens+1,length(H1),byrow=T) 
+fr_big = matrix(env_fit$fr[,1],ngens+1,length(H1))
+
+pl_H1 = colMeans(log(env_fit$fr[,1]%*%(t(H1))+(1-H1_big)*env_fit$sr[1]) )
+pl_dm1 = colMeans( (fr_big - env_fit$sr[1])/ (env_fit$fr[,1]%*%(t(H1))+(1-env_fit$sr[1])*H1_big ) )
+
+
+1-env_fit$sr*colMeans(1/(env_fit$fr) )
 #=============================================================================
 #Information theory
 #=============================================================================
