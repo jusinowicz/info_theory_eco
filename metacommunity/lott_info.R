@@ -99,7 +99,7 @@ env_fit$method = "nrand_each"
 #Get the environment:
 env_fit$env = get_env(env_fit, method = env_fit$method)
 
-####3. Fitness: Get species' fitness in response to the environment. 
+####3. Fitness: Get species' intrinsic fitness in response to the environment. 
 env_fit$fr = get_fitness(env_fit)
 
 ####4. Cue: Distribution of species' optimal germination environment 
@@ -114,7 +114,8 @@ env_fit$sr = c(matrix(0.9,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
 #Scale the intrinsic fitness: 
 env_fit$lambda_r = c(5,5)
-env_fit$fr = env_fit$fr* env_fit$lambda_r+.01
+#Adding a small amount to remove the 0s makes analysis way easier.
+env_fit$fr = env_fit$fr* env_fit$lambda_r+.01 
 
 #####
 ####	Species population-level parameters.  
@@ -139,19 +140,61 @@ for (n in 1:ngens){
 						(env_fit$fr[n,]* env_fit$gr[n,]/
 					(sum( env_fit$fr[n,]*  env_fit$gr[n,] * env_fit$Ni2[n, ]) ) ) ) 
 
-	env_fit$Ni3[n+1, ] = env_fit$Ni3[n, ]*( ( env_fit$sr*(1- env_fit$gr[n,]) )  + 
-						env_fit$fr[n,]* env_fit$gr[n,] ) 
+	env_fit$Ni3[n+1, ] = env_fit$Ni3[n, ] * ( ( env_fit$sr*(1- env_fit$gr[n,]) )  + 
+						env_fit$fr[n,] * env_fit$gr[n,] ) 
 
 }
 
-#Plot the expected growth rate as a function of germination fraction
+#Plot the expected growth rate as a function of germination fraction,
+#find the optimal constant germination fraction.
+
 H1 = seq(0,1,0.05) #Germination fraction
 H1_big= matrix(H1,ngens+1,length(H1),byrow=T) 
-fr_big = matrix(env_fit$fr[,1],ngens+1,length(H1))
+Hc = c(matrix("H1",nspp,1) )
 
-pl_H1 = colMeans(log(env_fit$fr[,1]%*%(t(H1))+(1-H1_big)*env_fit$sr[1]) )
+#All of the combinations of H1 across species
+Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
+
+env_fit$rho1 = array(0, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
+env_fit$rho2 = array(0, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 2
+env_fit$rho3 = array(0, dim = c(ngens+1, nspp,length(H1) ) ) #Single species
+
+for (s in 1:nspp) { 
+	
+	#Model 1
+	for(h in 1:dim(Hs_big)[1]) {
+
+		Hs = unlist(Hs_big[h,])
+		tot_comp = ( env_fit$fr *  env_fit$Ni2 ) %*% t(Hs)
+		env_fit$rho2[,s,h] = c(env_fit$sr[s]*(1- Hs[s])   + env_fit$fr[,s]*(Hs[s])/tot_comp )
+
+	}
+
+
+	#Model 2
+	for(h in 1:dim(Hs_big)[1]) {
+
+		Hs = unlist(Hs_big[h,])
+		tot_comp = ( env_fit$fr *  env_fit$Ni2 ) %*% t(Hs)
+		env_fit$rho2[,s,h] = c(env_fit$sr[s]*(1- Hs[s])   + env_fit$fr[,s]*(Hs[s])/tot_comp )
+
+	}
+
+	#Single-species model 
+	fr_big = matrix(env_fit$fr[,s],ngens+1,length(H1))
+	env_fit$rho3 = log(env_fit$fr[,s]%*%(t(H1))+(1-H1_big)*env_fit$sr[s])
+
+
+}
+
+eval(parse(paste("expand.grid(", paste(unlist(a2),collapse=","), ")" )))
+
+pl_H1 = colMeans( )
 pl_dm1 = colMeans( (fr_big - env_fit$sr[1])/ (env_fit$fr[,1]%*%(t(H1))+(1-env_fit$sr[1])*H1_big ) )
 
+( ( env_fit$sr[1]*(1- H1_big) )  + 
+						(env_fit$fr[,1]%*% (t(H1)))/
+					(sum( (env_fit$fr* env_fit$Ni2)%*% t(H1) ) ) ) ) 
 
 1-env_fit$sr*colMeans(1/(env_fit$fr) )
 #=============================================================================
