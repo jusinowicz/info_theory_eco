@@ -148,53 +148,98 @@ for (n in 1:ngens){
 #Plot the expected growth rate as a function of germination fraction,
 #find the optimal constant germination fraction.
 
-H1 = seq(0,1,0.05) #Germination fraction
+#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
+#which can be avoided. 
+H1 = seq(0.05,1,0.05) #Germination fraction.
 H1_big= matrix(H1,ngens+1,length(H1),byrow=T) 
 Hc = c(matrix("H1",nspp,1) )
-
-#All of the combinations of H1 across species
+#All of the combinations of H1 across species for multispecies competition
 Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
 
+#Compare these to (uniform) random germination:
+
+
+#For the average growth rate, rho
 env_fit$rho1 = array(0, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
 env_fit$rho2 = array(0, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 2
 env_fit$rho3 = array(0, dim = c(ngens+1, nspp,length(H1) ) ) #Single species
+
+env_fit$m1 = matrix (0, dim(Hs_big)[1],nspp)
+env_fit$m2 = matrix (0, dim(Hs_big)[1],nspp)
+env_fit$m3 =matrix (0, length(H1),nspp)
+
+#The probability distribution of rho:
+breaks = 15
+env_fit$pr1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+env_fit$pr2 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+env_fit$pr3 = array(0, dim = c(breaks-1, nspp,length(H1) ) )
+
+#The breaks, which correspond to the rhos/lambdas.
+env_fit$br1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+env_fit$br2 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+env_fit$br3 = array(0, dim = c(breaks-1, nspp,length(H1) ) )
+
+
 
 for (s in 1:nspp) { 
 	
 	#Model 1
 	for(h in 1:dim(Hs_big)[1]) {
 
-		Hs = unlist(Hs_big[h,])
-		tot_comp = ( env_fit$fr *  env_fit$Ni2 ) %*% t(Hs)
-		env_fit$rho2[,s,h] = c(env_fit$sr[s]*(1- Hs[s])   + env_fit$fr[,s]*(Hs[s])/tot_comp )
+		Hs = as.matrix(unlist(Hs_big[h,]))
+		tot_comp = ( env_fit$fr *  env_fit$Ni ) %*% (Hs)
+		env_fit$rho1[,s,h] = c(env_fit$sr[s]*(1- Hs[s])   + 
+			(1-rowSums( env_fit$sr * env_fit$Ni) ) * env_fit$fr[,s]*(Hs[s])/tot_comp )
+		
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho1[,s,h]),max(env_fit$rho1[,s,h]), length.out=breaks)
+		rho_dist = hist(env_fit$rho1[,s,h],breaks=b_use)
+		env_fit$pr1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$br1[,s,h] = rho_dist$mids
 
+		#Average growth rate:
+		env_fit$m1[h,s] = sum(env_fit$pr1[,s,h]*env_fit$br1[,s,h] )
 	}
 
 
 	#Model 2
 	for(h in 1:dim(Hs_big)[1]) {
 
-		Hs = unlist(Hs_big[h,])
-		tot_comp = ( env_fit$fr *  env_fit$Ni2 ) %*% t(Hs)
+		Hs = as.matrix(unlist(Hs_big[h,]))
+		tot_comp = ( env_fit$fr *  env_fit$Ni2 ) %*% (Hs)
 		env_fit$rho2[,s,h] = c(env_fit$sr[s]*(1- Hs[s])   + env_fit$fr[,s]*(Hs[s])/tot_comp )
+
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho2[,s,h]),max(env_fit$rho2[,s,h]), length.out=breaks)
+		rho_dist = hist(env_fit$rho2[,s,h],breaks=b_use)
+		env_fit$pr2[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$br2[,s,h] = rho_dist$mids
+
+		#Average growth rate:
+		env_fit$m2[h,s] = sum(env_fit$pr2[,s,h]*env_fit$br2[,s,h] )
 
 	}
 
-	#Single-species model 
+	#Model 3: Single-species model 
 	fr_big = matrix(env_fit$fr[,s],ngens+1,length(H1))
-	env_fit$rho3 = log(env_fit$fr[,s]%*%(t(H1))+(1-H1_big)*env_fit$sr[s])
+	env_fit$rho3[,s,] = log(env_fit$fr[,s]%*%(t(H1))+(1-H1_big)*env_fit$sr[s])
 
+	for(i in 1:length(H1)){ 
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho3[,s,i]),max(env_fit$rho3[,s,i]), length.out=breaks)
+		rho_dist = hist(env_fit$rho3[,s,i],breaks=b_use)
+		env_fit$pr3[,s,i] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$br3[,s,i] = rho_dist$mids
+	}
+
+	#Average growth rate:
+	env_fit$m3[,s] = colMeans(env_fit$rho3[,s,])
 
 }
 
-eval(parse(paste("expand.grid(", paste(unlist(a2),collapse=","), ")" )))
 
-pl_H1 = colMeans( )
 pl_dm1 = colMeans( (fr_big - env_fit$sr[1])/ (env_fit$fr[,1]%*%(t(H1))+(1-env_fit$sr[1])*H1_big ) )
 
-( ( env_fit$sr[1]*(1- H1_big) )  + 
-						(env_fit$fr[,1]%*% (t(H1)))/
-					(sum( (env_fit$fr* env_fit$Ni2)%*% t(H1) ) ) ) ) 
 
 1-env_fit$sr*colMeans(1/(env_fit$fr) )
 #=============================================================================
