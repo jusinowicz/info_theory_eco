@@ -282,10 +282,12 @@ plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="co
 
 #=============================================================================
 #Instead of solving for optimal germination, find random uniform solution 
+#Over a large enough sample space, this converges on the same answers above.
+#
 #=============================================================================
 #Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 #which can be avoided.
-nsamp = 2000 
+nsamp = 100 
 H_runif = matrix( runif(nsamp*nspp), nsamp, nspp) #Germination fraction.
 
 #For the average growth rate, rho
@@ -433,6 +435,7 @@ plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z3, type="m
 #
 plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
 
+which(data1$z3 == max(data1$z3))
 
 #=============================================================================
 #Information theory
