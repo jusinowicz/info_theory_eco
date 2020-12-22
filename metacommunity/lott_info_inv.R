@@ -1,11 +1,29 @@
 #=============================================================================
-# R code to create a vesion of lottery model where species have cue to respond
-# to environments. 
+# R code to measure the fitness value of information  for a 
+# a vesion of the lottery model where species have a cue to respond
+# to variable environments based on their fitness value.
 # 
-# 1. Create population dynamics based on lottery model
-# 2. Species germinate or not in response to a cue. 
-# 3. Species reproduction is determined by how well it matches with 
-#    environment following germination. 
+# The general equation is deltaG(E;C) = G(E|C) - G(E), where 
+# G corresponds to the fitness of a species under a particular setting:
+#	G(E|C)	Fitness when species sense the cue.
+#	G(E)	FItness when there is no cue. 
+#
+# This code produces fake species whith a distribution of traits for 
+# germination and fitness (two separate parameters), an environment
+# that varies, and species germination rates and fitness based on mapping 
+# traits to the environment in every generation. 
+#
+# G(E) is calculated in one of two ways: 
+# 1. When there is no cue, species assume a bet-hedging strategy for germination
+# 	rates that maximizes their fitness. In this case, the optimal constant
+#	germination rate is calculated numerically by sampling all germination 
+#	possibilities (as per Donaldson-Matasci). 
+# 2. When there is no cue, germination is uniform random form 0 to 1 for all 
+#   species simultaneously. 
+#
+# G(E|C) is calculated using the actual germination rates. The accuracy of 
+# cue/response can be tuned. 
+#
 #=============================================================================
 #=============================================================================
 #Load libraries
@@ -126,7 +144,7 @@ env_fit$fr = env_fit$fr* env_fit$lambda_r+.01
 #Annual intrinsic fitness
 
 #=============================================================================
-#Numerically solve optimal germination strategies
+#Numerically solve optimal germination strategies, invasion growth rates 
 #=============================================================================
 #Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 #which can be avoided. 
@@ -170,28 +188,24 @@ for(h in 1:dim(Hs_big)[1]) {
 		#=============================================================================
 		#Population dynamics
 		#=============================================================================		
-		for (n in 1:ngens){
+		for ( s in 1:nspp) { 
+			for (n in 1:ngens){
+				#Model 2: "Unscaled" lottery model -- without explicit competition for space
+				#Invader species: 
+				env_fit$Nj2[n+1,-s,h ] = env_fit$Nj2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
+									(env_fit$fr[n,-s]* Hs[-s]/
+								(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj2[n,-s,h ]) ) ) )
 
-			#Model 1: Lottery model with germination 
-			env_fit$rho1[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								(1-sum( env_fit$sr * env_fit$Nj1[n,,h ]) ) * 
-								(env_fit$fr[n,]*Hs/
-							(sum( env_fit$fr[n,]*  Hs * env_fit$Nj1[n,,h ]) ) ) ) 
+				env_fit$rho2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
+									(env_fit$fr[n,s]* Hs[s]/
+								(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj2[n, -s ,h ]) ) ) )
 
-			env_fit$Nj1[n+1,,h ] =  env_fit$Nj1[n,,h ]*env_fit$rho1[n,,h ]
+				#Model 3:
+				env_fit$rho3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
+									env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
-			#Model 2: "Unscaled" lottery model -- without explicit competition for space
-			env_fit$rho2[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								(env_fit$fr[n,]* Hs/
-							(sum( env_fit$fr[n,]*  Hs * env_fit$Nj2[n,,h ]) ) ) )
-
-			env_fit$Nj2[n+1,,h ] = env_fit$Nj2[n,,h ]*env_fit$rho2[n,,h ]
-
-			#Model 3:
-			env_fit$rho3[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								env_fit$fr[n,] * Hs) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
-
-			env_fit$Nj3[n+1,,h ] = env_fit$Nj3[n,,h ] * env_fit$rho3[n,,h ] 
+				env_fit$Nj3[n+1,,h ] = env_fit$Nj3[n,s,h ] * env_fit$rho3[n,s,h ] 
+			}
 		}
 
 		#=============================================================================
@@ -199,25 +213,15 @@ for(h in 1:dim(Hs_big)[1]) {
 		#=============================================================================
 		#Note: All of the probablity and histogram approaches below are more accurate 
 		#with the log being taken here:
-		env_fit$rho1[,,h] =log(env_fit$rho1[,,h]) 
 		env_fit$rho2[,,h] = log(env_fit$rho2[,,h]) 
 		env_fit$rho3[,,h] = log(env_fit$rho3[,,h])
 
-		env_fit$rho1[,,h][!is.finite(env_fit$rho1[,,h] )] = NA
 		env_fit$rho2[,,h][!is.finite(env_fit$rho2[,,h] )] = NA
 		env_fit$rho3[,,h][!is.finite(env_fit$rho3[,,h] )] = NA
 
 		for (s in 1:nspp) { 
 
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho1[,s,h],na.rm=T),max(env_fit$rho1[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho1[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$pr1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$br1[,s,h] = rho_dist$mids
-
-			#Average log growth rate:
-			env_fit$m1[h,s] = sum(env_fit$pr1[,s,h]*(env_fit$br1[,s,h] ) )
-
+		
 			#Probability distribution of growth rates
 			b_use = seq(min(env_fit$rho2[,s,h],na.rm=T),max(env_fit$rho2[,s,h],na.rm=T), length.out=breaks)
 			rho_dist = hist(env_fit$rho2[,s,h],breaks=b_use,plot = FALSE)
@@ -240,6 +244,9 @@ for(h in 1:dim(Hs_big)[1]) {
 
 }
 
+env_fit$m2[env_fit$m2<0] = NA
+env_fit$m3[env_fit$m3<0] = NA
+
 #=============================================================================
 #Some plots: 
 #=============================================================================
@@ -247,8 +254,22 @@ library(plotly)
 
 #A basic single-species plot: 
 data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m3[,1], z2=env_fit$m3[,2] )
-plot(data1$x, data1$z1)
-plot(data1$y, data1$z2)
+#For multi-species competition, 2 species at a time: 
+data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, sum)  )
+
+mspp1 =  which(data2$z3 == max(data2$z3,na.rm=T))
+mspp2 =  which(round(data2$z3,2) == max(round(data2$z3,2),na.rm=T))
+
+par(mfrow=c(2,1))
+plot(data1$x, data1$z1, ylim= c(-0.1,1.5) )
+points(data2$x, data2$z1,col="red")
+points(data2$x[mspp1], data2$z1[mspp1],col="blue")
+points(data2$x, data2$z3, col="green")
+
+plot(data1$y, data1$z2, ylim= c(-0.1,1.5) )
+points(data2$y, data2$z2,col="red")
+points(data2$y[mspp1], data2$z2[mspp1],col="blue")
+points(data2$y, data2$z3, col="green")
 
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
@@ -261,17 +282,11 @@ plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="m
 plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
 
 
-#For multi-species competition, 2 species at a time: 
-data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2] )
-par(mfrow=c(2,1))
-plot(data1$x, data1$z1)
-plot(data1$y, data1$z2)
-
 #A 3D plot for multispecies competition
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="mesh3d", intensity =data1$z1  ) 
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="mesh3d", intensity =data2$z1  ) 
 
 #
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1,type="contour" ) 
 
 #Consider intrinsic growth rates jointly: 
 # mtx = matrix(NA, nrow=length(unique(data1$x)), ncol=length(unique(data1$y)) )
@@ -289,8 +304,7 @@ plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="co
 #=============================================================================
 #Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 #which can be avoided.
-nsamp = 100 
-H_runif = matrix( runif(nsamp*nspp), nsamp, nspp) #Germination fraction.
+nsamp = 1000 
 
 #For the average growth rate, rho
 env_fit$rho_runif1 = array(1, dim = c(ngens+1, nspp, nsamp ) ) #Model 1
@@ -320,81 +334,80 @@ env_fit$brunif3 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 
 
 
-for (h in 1:nsamp) { 		
-		Hs = c(as.matrix(unlist(H_runif[h,])))
+for (h in 1:nsamp) { 
+	Hs = c(as.matrix(unlist(H_runif[h,])))
+	H_runif = matrix( runif(ngens*nspp), ngens, nspp) #Germination fraction.
 
-		#=============================================================================
-		#Population dynamics
-		#=============================================================================		
+	#=============================================================================
+	#Population dynamics
+	#=============================================================================		
+	for ( s in 1:nspp) { 
 		for (n in 1:ngens){
-
-			#Model 1: Lottery model with germination 
-			env_fit$rho_runif1[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								(1-sum( env_fit$sr * env_fit$Nj_runif1[n,,h ]) ) * 
-								(env_fit$fr[n,]*Hs/
-							(sum( env_fit$fr[n,]*  Hs * env_fit$Nj_runif1[n,,h ]) ) ) ) 
-
-			env_fit$Nj_runif1[n+1,,h ] =  env_fit$Nj_runif1[n,,h ]*env_fit$rho_runif1[n,,h ]
-
 			#Model 2: "Unscaled" lottery model -- without explicit competition for space
-			env_fit$rho_runif2[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								(env_fit$fr[n,]* Hs/
-							(sum( env_fit$fr[n,]*  Hs * env_fit$Nj_runif2[n,,h ]) ) ) )
+			#Invader species: 
+			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
+								(env_fit$fr[n,-s]* Hs[-s]/
+							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
 
-			env_fit$Nj_runif2[n+1,,h ] = env_fit$Nj_runif2[n,,h ]*env_fit$rho_runif2[n,,h ]
+			env_fit$rho_runif2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
+								(env_fit$fr[n,s]* Hs[s]/
+							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
 
 			#Model 3:
-			env_fit$rho_runif3[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								env_fit$fr[n,] * Hs) #/(env_fit$fr[n,]*Hs * env_fit$Nj_runif3[n,,h])  )  
+			env_fit$rho_runif3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
+								env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
-			env_fit$Nj_runif3[n+1,,h ] = env_fit$Nj_runif3[n,,h ] * env_fit$rho_runif3[n,,h ] 
+			env_fit$Nj_runif3[n+1,,h ] = env_fit$Nj_runif3[n,s,h ] * env_fit$rho_runif3[n,s,h ] 
 		}
+	}
 
-		#=============================================================================
-		#Numerically solve optimal germination strategies
-		#=============================================================================
-		#Note: All of the probablity and histogram approaches below are more accurate 
-		#with the log being taken here:
-		env_fit$rho_runif1[,,h] =log(env_fit$rho_runif1[,,h]) 
-		env_fit$rho_runif2[,,h] = log(env_fit$rho_runif2[,,h]) 
-		env_fit$rho_runif3[,,h] = log(env_fit$rho_runif3[,,h])
+	#=============================================================================
+	#Numerically solve optimal germination strategies
+	#=============================================================================
+	#Note: All of the probablity and histogram approaches below are more accurate 
+	#with the log being taken here:
+	env_fit$rho_runif1[,,h] =log(env_fit$rho_runif1[,,h]) 
+	env_fit$rho_runif2[,,h] = log(env_fit$rho_runif2[,,h]) 
+	env_fit$rho_runif3[,,h] = log(env_fit$rho_runif3[,,h])
 
-		env_fit$rho_runif1[,,h][!is.finite(env_fit$rho_runif1[,,h] )] = NA
-		env_fit$rho_runif2[,,h][!is.finite(env_fit$rho_runif2[,,h] )] = NA
-		env_fit$rho_runif3[,,h][!is.finite(env_fit$rho_runif3[,,h] )] = NA
+	env_fit$rho_runif1[,,h][!is.finite(env_fit$rho_runif1[,,h] )] = NA
+	env_fit$rho_runif2[,,h][!is.finite(env_fit$rho_runif2[,,h] )] = NA
+	env_fit$rho_runif3[,,h][!is.finite(env_fit$rho_runif3[,,h] )] = NA
 
-		for (s in 1:nspp) { 
+	for (s in 1:nspp) { 
 
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho_runif1[,s,h],na.rm=T),max(env_fit$rho_runif1[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho_runif1[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$prunif1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$brunif1[,s,h] = rho_dist$mids
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho_runif1[,s,h],na.rm=T),max(env_fit$rho_runif1[,s,h],na.rm=T), length.out=breaks)
+		rho_dist = hist(env_fit$rho_runif1[,s,h],breaks=b_use,plot = FALSE)
+		env_fit$prunif1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$brunif1[,s,h] = rho_dist$mids
 
-			#Average log growth rate:
-			env_fit$mr1[h,s] = sum(env_fit$prunif1[,s,h]*(env_fit$brunif1[,s,h] ) )
+		#Average log growth rate:
+		env_fit$mr1[h,s] = sum(env_fit$prunif1[,s,h]*(env_fit$brunif1[,s,h] ) )
 
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho_runif2[,s,h],na.rm=T),max(env_fit$rho_runif2[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho_runif2[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$prunif2[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$brunif2[,s,h] = rho_dist$mids
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho_runif2[,s,h],na.rm=T),max(env_fit$rho_runif2[,s,h],na.rm=T), length.out=breaks)
+		rho_dist = hist(env_fit$rho_runif2[,s,h],breaks=b_use,plot = FALSE)
+		env_fit$prunif2[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$brunif2[,s,h] = rho_dist$mids
 
-			#Average log  growth rate:
-			env_fit$mr2[h,s] = sum(env_fit$prunif2[,s,h]*(env_fit$brunif2[,s,h] ) )
+		#Average log  growth rate:
+		env_fit$mr2[h,s] = sum(env_fit$prunif2[,s,h]*(env_fit$brunif2[,s,h] ) )
 
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho_runif3[,s,h],na.rm=T),max(env_fit$rho_runif3[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho_runif3[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$prunif3[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$brunif3[,s,h] = rho_dist$mids
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho_runif3[,s,h],na.rm=T),max(env_fit$rho_runif3[,s,h],na.rm=T), length.out=breaks)
+		rho_dist = hist(env_fit$rho_runif3[,s,h],breaks=b_use,plot = FALSE)
+		env_fit$prunif3[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$brunif3[,s,h] = rho_dist$mids
 
-			#Average log growth rate:
-			env_fit$mr3[h,s] = sum(env_fit$prunif3[,s,h]*(env_fit$brunif3[,s,h] ) )
+		#Average log growth rate:
+		env_fit$mr3[h,s] = sum(env_fit$prunif3[,s,h]*(env_fit$brunif3[,s,h] ) )
 
-		}
+	}
 }
 
+env_fit$mr2[env_fit$mr2<0] = NA
+env_fit$mr3[env_fit$mr3<0] = NA
 
 #=============================================================================
 #Some plots: 
@@ -402,21 +415,23 @@ for (h in 1:nsamp) {
 library(plotly)
 
 #A basic single-species plot: 
-data1 = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr3[,1], z2=env_fit$mr3[,2] )
+data1b = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr3[,1], z2=env_fit$mr3[,2] )
 #For multi-species competition, 2 species at a time: 
-data2 = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr2[,1], z2=env_fit$mr2[,2], z3 = apply(env_fit$mr2,1, sum)  )
-mspp1 =  which(data2$z3 == max(data2$z3))
+data2b = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr2[,1], z2=env_fit$mr2[,2], z3 = apply(env_fit$mr2,1, sum)  )
+mspp1b =  which(data2b$z3 == max(data2b$z3,na.rm=T))
+mspp2b =  which(round(data2b$z3,2) == max(round(data2b$z3,2),na.rm=T))
+
 
 par(mfrow=c(2,1))
-plot(data1$x, data1$z1, ylim= c(-0.5,0.5) )
-points(data2$x, data2$z1,col="red")
-points(data2$x[mspp1], data2$z1[mspp1],col="blue")
-points(data2$x, data2$z3, col="green")
+plot(data1b$x, data1b$z1)#, ylim= c(-0.5,0.5) )
+points(data2b$x, data2b$z1,col="red")
+points(data2b$x[mspp1], data2b$z1[mspp1],col="blue")
+points(data2b$x, data2b$z3, col="green")
 
-plot(data1$y, data1$z2, ylim= c(-0.5,0.5) )
-points(data2$y, data2$z2,col="red")
-points(data2$y[mspp1], data2$z2[mspp1],col="blue")
-points(data2$y, data2$z3, col="green")
+plot(data1b$y, data1b$z2)#, ylim= c(-0.5,0.5) )
+points(data2b$y, data2b$z2,col="red")
+points(data2b$y[mspp1], data2b$z2[mspp1],col="blue")
+points(data2b$y, data2b$z3, col="green")
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
 1/colMeans(env_fit$fr)*env_fit$sr
@@ -429,15 +444,17 @@ plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="co
 
 
 #A 3D plot for multispecies competition
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="mesh3d", intensity =data2$z1  ) 
+plot_ly() %>% add_trace(data = data2b,  x=data2b$x, y=data2b$y, z=data2b$z1, type="mesh3d", intensity =data2b$z1  ) 
 
 #
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z3, type="mesh3d", intensity =data2$z3  ) 
+plot_ly() %>% add_trace(data = data2b,  x=data2b$x, y=data2b$y, z=data2b$z3, type="mesh3d", intensity =data2b$z3  ) 
 
 #
 plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
 
 which(data1$z3 == max(data1$z3))
+
+
 
 #=============================================================================
 #Information theory
