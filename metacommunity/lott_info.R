@@ -189,7 +189,7 @@ for(h in 1:dim(Hs_big)[1]) {
 
 			#Model 3:
 			env_fit$rho3[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								env_fit$fr[n,] * env_fit$gr[n,] )  
+								env_fit$fr[n,] * Hs/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
 			env_fit$Nj3[n+1,,h ] = env_fit$Nj3[n,,h ] * env_fit$rho3[n,,h ] 
 		}
@@ -248,6 +248,8 @@ library(plotly)
 #A basic single-species plot: 
 data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m3[,1], z2=env_fit$m3[,2] )
 plot(data1$x, data1$z1)
+plot(data1$y, data1$z2)
+
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
 1/colMeans(env_fit$fr)*env_fit$sr
@@ -345,7 +347,7 @@ for (h in 1:nsamp) {
 
 			#Model 3:
 			env_fit$rho_runif3[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								env_fit$fr[n,] * env_fit$gr[n,] )  
+								env_fit$fr[n,] * Hs/(env_fit$fr[n,]*Hs * env_fit$Nj_runif3[n,,h])  )  
 
 			env_fit$Nj_runif3[n+1,,h ] = env_fit$Nj_runif3[n,,h ] * env_fit$rho_runif3[n,,h ] 
 		}
@@ -405,9 +407,22 @@ library(plotly)
 
 #A basic single-species plot: 
 data1 = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr3[,1], z2=env_fit$mr3[,2] )
+#For multi-species competition, 2 species at a time: 
+data2 = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr2[,1], z2=env_fit$mr2[,2], z3 = apply(env_fit$mr2,1, sum)  )
+mspp1 =  which(data2$z3 == max(data2$z3))
+
+
 par(mfrow=c(2,1))
-plot(data1$x, data1$z1)
-plot(data1$y, data1$z2)
+plot(data1$x, data1$z1, ylim= c(-0.5,0.5) )
+points(data2$x, data2$z1,col="red")
+points(data2$x[mspp1], data2$z1[mspp1],col="blue")
+points(data2$x, data2$z3, col="green")
+
+plot(data1$y, data1$z2, ylim= c(-0.5,0.5) )
+points(data2$y, data2$z2,col="red")
+points(data2$y[mspp1], data2$z2[mspp1],col="blue")
+points(data2$y, data2$z3, col="green")
+
 
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
@@ -420,17 +435,11 @@ plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="m
 plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
 
 
-#For multi-species competition, 2 species at a time: 
-data1 = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr2[,1], z2=env_fit$mr2[,2], z3 = apply(env_fit$mr2,1, sum)  )
-par(mfrow=c(2,1))
-plot(data1$x, data1$z1)
-plot(data1$y, data1$z2)
-
 #A 3D plot for multispecies competition
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="mesh3d", intensity =data1$z1  ) 
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="mesh3d", intensity =data2$z1  ) 
 
 #
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z3, type="mesh3d", intensity =data1$z3  ) 
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z3, type="mesh3d", intensity =data2$z3  ) 
 
 #
 plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
