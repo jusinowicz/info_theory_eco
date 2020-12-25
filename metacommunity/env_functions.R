@@ -172,8 +172,8 @@ get_env_cue = function (env_fit, method = "g_corr" ){
 			chol2 = chol(cor_use) #Factor this 
 			ct_use = ct_new %*% chol2 
 
-			#3. standardize on the interval 0,1
-			ct_use[,2] = (ct_use[,2]-  min(ct_use[,2]))/( max(ct_use[,2]) - min(ct_use[,2]) )
+			#3. standardize on the interval 0.001, 0.999
+			ct_use[,2] = (0.999 - 0.001)*(ct_use[,2]-  min(ct_use[,2]))/( max(ct_use[,2]) - min(ct_use[,2]) )+0.001
 
 			cue_tmp[,s] = ct_use[,2]
 		}

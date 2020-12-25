@@ -131,7 +131,7 @@ env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
 env_fit$sr = c(matrix(0.9,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
 #Scale the intrinsic fitness: 
-env_fit$lambda_r = c(5,5)
+env_fit$lambda_r = c(10,10)
 #Adding a small amount to remove the 0s makes analysis way easier.
 env_fit$fr = env_fit$fr* env_fit$lambda_r+.01 
 
@@ -142,6 +142,84 @@ env_fit$fr = env_fit$fr* env_fit$lambda_r+.01
 #Annual germination rate: 
 
 #Annual intrinsic fitness
+
+#=============================================================================
+#Fitness with cue detection, invasion growth rates 
+#=============================================================================
+
+#For the average growth rate, rho
+env_fit$rho_c2 = Ni #Model 2
+env_fit$rho_c3 = Ni #Single species
+
+#Average of log rho
+env_fit$mc1 = matrix (0, 1,nspp)
+env_fit$mc2 = matrix (0, 1,nspp)
+env_fit$mc3 = matrix (0, 1,nspp)
+
+#The probability distribution of rho:
+breaks = 15
+env_fit$prc1 = matrix(0, breaks-1, nspp )
+env_fit$prc2 = matrix(0, breaks-1, nspp )
+env_fit$prc3 =matrix(0, breaks-1, nspp )
+
+#The breaks, which correspond to the rhos/lambdas.
+env_fit$brc1 = matrix(0, breaks-1, nspp )
+env_fit$brc2 = matrix(0, breaks-1, nspp )
+env_fit$brc3 = matrix(0, breaks-1, nspp )
+
+for (s in 1:nspp){ 
+	for (n in 1:ngens){
+		#Model 2: "Unscaled" lottery model -- without explicit competition for space
+		env_fit$Ni2[n+1, -s] = env_fit$Ni2[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr[n,-s])  + 
+							 env_fit$fr[n,-s]* env_fit$gr[n,-s]/
+						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) )
+
+		#IGR
+		env_fit$rho_c2[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr[n,s]) )  + 
+							(env_fit$fr[n,s]* env_fit$gr[n,s]/
+						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) ) ) 
+
+
+
+		#Model 3: 
+		env_fit$rho_c3[n,s ] = ( ( env_fit$sr[s]*(1- env_fit$gr[n,s]) )  + 
+							env_fit$fr[n,s] * env_fit$gr[n,s] ) 
+
+
+		env_fit$Ni3[n+1, ] = env_fit$Ni3[n, ] * env_fit$rho_c3[n,s ]
+
+	}
+}
+
+env_fit$rho_c2 = log(env_fit$rho_c2 ) 
+env_fit$rho_c3 = log(env_fit$rho_c3)
+
+env_fit$rho_c2[!is.finite(env_fit$rho_C2 )] = NA
+env_fit$rho_c3[!is.finite(env_fit$rho_c3 )] = NA
+
+for (s in 1:nspp) { 
+
+
+	#Probability distribution of growth rates
+	b_use = seq(min(env_fit$rho_c2[,s],na.rm=T),max(env_fit$rho_c2[,s],na.rm=T), length.out=breaks)
+	rho_dist = hist(env_fit$rho_c2[,s],breaks=b_use,plot = FALSE)
+	env_fit$prc2[,s] = rho_dist$counts/sum(rho_dist$counts)
+	env_fit$brc2[,s] = rho_dist$mids
+
+	#Average log  growth rate:
+	env_fit$mc2[,s] = sum(env_fit$prc2[,s]*(env_fit$brc2[,s] ) )
+
+	#Probability distribution of growth rates
+	b_use = seq(min(env_fit$rho_c3[,s],na.rm=T),max(env_fit$rho_c3[,s],na.rm=T), length.out=breaks)
+	rho_dist = hist(env_fit$rho_c3[,s],breaks=b_use,plot = FALSE)
+	env_fit$prc3[,s] = rho_dist$counts/sum(rho_dist$counts)
+	env_fit$brc3[,s] = rho_dist$mids
+
+	#Average log growth rate:
+	env_fit$mc3[,s] = sum(env_fit$prc3[,s]*(env_fit$brc3[,s] ) )
+
+}
+
 
 #=============================================================================
 #Numerically solve optimal germination strategies, invasion growth rates 
@@ -247,55 +325,6 @@ for(h in 1:dim(Hs_big)[1]) {
 env_fit$m2[env_fit$m2<0] = NA
 env_fit$m3[env_fit$m3<0] = NA
 
-#=============================================================================
-#Some plots: 
-#=============================================================================
-library(plotly)
-
-#A basic single-species plot: 
-data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m3[,1], z2=env_fit$m3[,2] )
-#For multi-species competition, 2 species at a time: 
-data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, sum)  )
-
-mspp1 =  which(data2$z3 == max(data2$z3,na.rm=T))
-mspp2 =  which(round(data2$z3,2) == max(round(data2$z3,2),na.rm=T))
-
-par(mfrow=c(2,1))
-plot(data1$x, data1$z1, ylim= c(-0.1,1.5) )
-points(data2$x, data2$z1,col="red")
-points(data2$x[mspp1], data2$z1[mspp1],col="blue")
-points(data2$x, data2$z3, col="green")
-
-plot(data1$y, data1$z2, ylim= c(-0.1,1.5) )
-points(data2$y, data2$z2,col="red")
-points(data2$y[mspp1], data2$z2[mspp1],col="blue")
-points(data2$y, data2$z3, col="green")
-
-
-#Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
-1/colMeans(env_fit$fr)*env_fit$sr
-
-#3D plot for single species:
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="mesh3d", intensity =data1$z1  ) 
-
-#
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
-
-
-#A 3D plot for multispecies competition
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="mesh3d", intensity =data2$z1  ) 
-
-#
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1,type="contour" ) 
-
-#Consider intrinsic growth rates jointly: 
-# mtx = matrix(NA, nrow=length(unique(data1$x)), ncol=length(unique(data1$y)) )
-# mtx[cbind(order(data1$x), order(data1$y))] = data1$z1
-# mtx1 = data1[order((data1$x)), ]
-# mtx2 = data1[order((data1$y)), ]
-# plot(mtx1$z1, mtx2$z2)
-# data2 =  data.frame(x = mtx1$z1, y = mtx2$z2, z3=mtx1$z1*mtx2$z2)
-# plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z = data2$z3, type="contour" ) 
 
 #=============================================================================
 #Instead of solving for optimal germination, find random uniform solution 
@@ -335,7 +364,6 @@ env_fit$brunif3 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 
 
 for (h in 1:nsamp) { 
-	Hs = c(as.matrix(unlist(H_runif[h,])))
 	H_runif = matrix( runif(ngens*nspp), ngens, nspp) #Germination fraction.
 
 	#=============================================================================
@@ -343,6 +371,7 @@ for (h in 1:nsamp) {
 	#=============================================================================		
 	for ( s in 1:nspp) { 
 		for (n in 1:ngens){
+			Hs = c(as.matrix(unlist(H_runif[n,])))
 			#Model 2: "Unscaled" lottery model -- without explicit competition for space
 			#Invader species: 
 			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
@@ -357,7 +386,9 @@ for (h in 1:nsamp) {
 			env_fit$rho_runif3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 								env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
-			env_fit$Nj_runif3[n+1,,h ] = env_fit$Nj_runif3[n,s,h ] * env_fit$rho_runif3[n,s,h ] 
+			env_fit$Nj_runif3[n+1,s,h ] = env_fit$Nj_runif3[n,s,h ] * env_fit$rho_runif3[n,s,h ] 
+
+
 		}
 	}
 
@@ -409,11 +440,72 @@ for (h in 1:nsamp) {
 env_fit$mr2[env_fit$mr2<0] = NA
 env_fit$mr3[env_fit$mr3<0] = NA
 
+
 #=============================================================================
-#Some plots: 
+#The fitness value of information, single species and with competition
+# 1. With random uniform cue
+# 2. With optimal (bet-hedging) constant cue
+#=============================================================================
+deltaG1_comp = env_fit$mc2-colMeans(env_fit$mr2,na.rm=T) 
+deltaG1_sing = env_fit$mc3-colMeans(env_fit$mr3,na.rm=T) 
+
+deltaG2_comp = env_fit$mc2 - apply(env_fit$m3, 2, max, na.rm=T) ###???? 
+deltaG2_sing = env_fit$mc3 - apply(env_fit$m3, 2, max, na.rm=T)
+#=============================================================================
+#Some plots for optimal bet-hedging, Section 2: 
 #=============================================================================
 library(plotly)
 
+#A basic single-species plot: 
+#data1 = data.frame(x = Hs_big[1:360,1], y = Hs_big[1:360,2], z1=diff(env_fit$m3[,1]), z2=diff(env_fit$m3[,2] ) )
+data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=(env_fit$m3[,1]), z2=(env_fit$m3[,2] ) )
+
+#For multi-species competition, 2 species at a time: 
+data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, sum)  )
+
+mspp1 =  which(data2$z3 == max(data2$z3,na.rm=T))
+mspp2 =  which(round(data2$z3,2) == max(round(data2$z3,2),na.rm=T))
+
+par(mfrow=c(2,1))
+plot(data1$x, data1$z1, ylim= c(-0.1,1.5) )
+points(data2$x, data2$z1,col="red")
+points(data2$x[mspp1], data2$z1[mspp1],col="blue")
+points(data2$x, data2$z3, col="green")
+
+plot(data1$y, data1$z2, ylim= c(-0.1,1.5) )
+points(data2$y, data2$z2,col="red")
+points(data2$y[mspp1], data2$z2[mspp1],col="blue")
+points(data2$y, data2$z3, col="green")
+
+
+#Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
+1/colMeans(env_fit$fr)*env_fit$sr
+
+#3D plot for single species:
+plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="mesh3d", intensity =data1$z1  ) 
+
+#
+plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
+
+
+#A 3D plot for multispecies competition
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="mesh3d", intensity =data2$z1  ) 
+
+#
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1,type="contour" ) 
+
+#Consider intrinsic growth rates jointly: 
+# mtx = matrix(NA, nrow=length(unique(data1$x)), ncol=length(unique(data1$y)) )
+# mtx[cbind(order(data1$x), order(data1$y))] = data1$z1
+# mtx1 = data1[order((data1$x)), ]
+# mtx2 = data1[order((data1$y)), ]
+# plot(mtx1$z1, mtx2$z2)
+# data2 =  data.frame(x = mtx1$z1, y = mtx2$z2, z3=mtx1$z1*mtx2$z2)
+# plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z = data2$z3, type="contour" ) 
+
+#=============================================================================
+#Some plots for random uniform germination, Section 3: 
+#=============================================================================
 #A basic single-species plot: 
 data1b = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr3[,1], z2=env_fit$mr3[,2] )
 #For multi-species competition, 2 species at a time: 
@@ -437,10 +529,10 @@ points(data2b$y, data2b$z3, col="green")
 1/colMeans(env_fit$fr)*env_fit$sr
 
 #3D plot for single species:
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="mesh3d", intensity =data1$z1  ) 
+plot_ly() %>% add_trace(data = data1b,  x=data1b$x, y=data1b$y, z=data1b$z1, type="mesh3d", intensity =data1b$z1  ) 
 
 #
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
+plot_ly() %>% add_trace(data = data1b,  x=data1b$x, y=data1b$y, z=data1b$z1,type="contour" ) 
 
 
 #A 3D plot for multispecies competition
@@ -450,9 +542,9 @@ plot_ly() %>% add_trace(data = data2b,  x=data2b$x, y=data2b$y, z=data2b$z1, typ
 plot_ly() %>% add_trace(data = data2b,  x=data2b$x, y=data2b$y, z=data2b$z3, type="mesh3d", intensity =data2b$z3  ) 
 
 #
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
+plot_ly() %>% add_trace(data = data1b,  x=data1b$x, y=data1$y, z=data1b$z1,type="contour" ) 
 
-which(data1$z3 == max(data1$z3))
+which(data1b$z3 == max(data1b$z3))
 
 
 
