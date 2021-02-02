@@ -79,7 +79,9 @@ Ni = matrix(0.1, ngens+1,nspp)
 #Be sure the optimum and variance are chosen with the environmental
 #distribution type in mind. 
 
+################################################
 ####1. Make env_fit, species-level properties:
+################################################
 env_fit = NULL
 env_fit$Ni = Ni
 env_fit$Ni2 = Ni
@@ -108,25 +110,34 @@ env_fit$g_var = NULL
 env_fit$g_mean = env_fit$opt 
 env_fit$g_var = matrix( 0.1 ,nspp,1)
 
-#Choose 1:
+###Choose 1:
 #Choose the way that the environment will be constructed: 
 #env_fit$method = "rnorm1"
 env_fit$method = "nrand_each"
 
+################################################
 ####2. Environment: Time series of environment. 
+################################################
 #Get the environment:
 env_fit$env = get_env(env_fit, method = env_fit$method)
 
+################################################
 ####3. Fitness: Get species' intrinsic fitness in response to the environment. 
+################################################
 env_fit$fr = get_fitness(env_fit)
 
+################################################
 ####4. Cue: Distribution of species' optimal germination environment 
+################################################
 env_fit$cue_method = "g_corr"
 #env_fit$cue_dist = "uniform"
 #Define how correlated each species' cue is with the environment:
 env_fit$g_corr = runif(nspp, min = 0.98, max=0.999)
 env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
 
+################################################
+####5. Misc
+################################################
 #Survival rates
 env_fit$sr = c(matrix(0.9,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
@@ -135,10 +146,11 @@ env_fit$lambda_r = c(10,10)
 #Adding a small amount to remove the 0s makes analysis way easier.
 env_fit$fr = env_fit$fr* env_fit$lambda_r+.01 
 
-#####
+#####################################################
 ####	Species population-level parameters.  
 ####	These are a function of the environment. 
-#####
+################################################
+
 #Annual germination rate: 
 
 #Annual intrinsic fitness
@@ -329,7 +341,6 @@ env_fit$m3[env_fit$m3<0] = NA
 #=============================================================================
 #Instead of solving for optimal germination, find random uniform solution 
 #Over a large enough sample space, this converges on the same answers above.
-#
 #=============================================================================
 #Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 #which can be avoided.
