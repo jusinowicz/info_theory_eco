@@ -193,7 +193,7 @@ for (s in 1:nspp){
 
 
 
-		#Model 3: 
+		#Model 3: Single species
 		env_fit$rho_c3[n,s ] = ( ( env_fit$sr[s]*(1- env_fit$gr[n,s]) )  + 
 							env_fit$fr[n,s] * env_fit$gr[n,s] ) 
 
@@ -238,7 +238,7 @@ for (s in 1:nspp) {
 #=============================================================================
 #Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 #which can be avoided. 
-H1 = seq(0.05,.99,0.05) #Germination fraction.
+H1 = round(seq(0.05,.99,0.05), 2) #Germination fraction.
 H1_big= matrix(H1,ngens+1,length(H1),byrow=T) 
 Hc = c(matrix("H1",nspp,1) )
 #All of the combinations of H1 across species for multispecies competition
@@ -290,7 +290,7 @@ for(h in 1:dim(Hs_big)[1]) {
 									(env_fit$fr[n,s]* Hs[s]/
 								(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj2[n, -s ,h ]) ) ) )
 
-				#Model 3:
+				#Model 3: Single species model
 				env_fit$rho3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 									env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
@@ -393,7 +393,7 @@ for (h in 1:nsamp) {
 								(env_fit$fr[n,s]* Hs[s]/
 							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
 
-			#Model 3:
+			#Model 3: Single species
 			env_fit$rho_runif3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 								env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
@@ -475,7 +475,8 @@ library(plotly)
 data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=(env_fit$m3[,1]), z2=(env_fit$m3[,2] ) )
 
 #For multi-species competition, 2 species at a time: 
-data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, sum)  )
+data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, prod)  )
+#data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, sum)  )
 
 mspp1 =  which(data2$z3 == max(data2$z3,na.rm=T))
 mspp2 =  which(round(data2$z3,2) == max(round(data2$z3,2),na.rm=T))
@@ -506,6 +507,12 @@ plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="m
 
 #
 plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1,type="contour" ) 
+
+# For the combined metric z3
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z3, type="mesh3d", intensity =data2$z3  ) 
+
+#
+plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z3,type="contour" ) 
 
 #Consider intrinsic growth rates jointly: 
 # mtx = matrix(NA, nrow=length(unique(data1$x)), ncol=length(unique(data1$y)) )
