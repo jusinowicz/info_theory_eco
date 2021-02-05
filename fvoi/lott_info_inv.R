@@ -13,13 +13,16 @@
 # that varies, and species germination rates and fitness based on mapping 
 # traits to the environment in every generation. 
 #
-# G(E) is calculated in one of two ways: 
-# 1. When there is no cue, species assume a bet-hedging strategy for germination
-# 	rates that maximizes their fitness. In this case, the optimal constant
-#	germination rate is calculated numerically by sampling all germination 
-#	possibilities (as per Donaldson-Matasci). 
-# 2. When there is no cue, germination is uniform random form 0 to 1 for all 
+# G(E) is calculated as: When there is no cue, germination is uniform random form 0 to 1 for all 
 #   species simultaneously. 
+# 	Note, this is different from the classic approach which assumes that G(E) 
+#	is an optimal bet-hedging strategy for germination that optimizes fitness
+#	in the absence of a cue. However, it is our argument that the ESS for 
+# 	this strategy is already making use of information -- i.e. that 
+#	selection for an ESS is use of information, 
+#   since natural selection reflects an information exchange between 
+#	the environment and the trait distribution in a population (as Steve 
+# 	Frank might say). 
 #
 # G(E|C) is calculated using the actual germination rates. The accuracy of 
 # cue/response can be tuned. 
@@ -181,7 +184,7 @@ env_fit$brc3 = matrix(0, breaks-1, nspp )
 
 for (s in 1:nspp){ 
 	for (n in 1:ngens){
-		#Model 2: "Unscaled" lottery model -- without explicit competition for space
+		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 		env_fit$Ni2[n+1, -s] = env_fit$Ni2[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr[n,-s])  + 
 							 env_fit$fr[n,-s]* env_fit$gr[n,-s]/
 						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) )
@@ -234,113 +237,8 @@ for (s in 1:nspp) {
 
 
 #=============================================================================
-#Numerically solve optimal germination strategies, invasion growth rates 
-#=============================================================================
-#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
-#which can be avoided. 
-H1 = round(seq(0.05,.99,0.05), 2) #Germination fraction.
-H1_big= matrix(H1,ngens+1,length(H1),byrow=T) 
-Hc = c(matrix("H1",nspp,1) )
-#All of the combinations of H1 across species for multispecies competition
-Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
-
-#For the average growth rate, rho
-env_fit$rho1 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
-env_fit$rho2 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 2
-env_fit$rho3 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Single species
-
-#Make the population time series match rho variables: 
-env_fit$Nj1 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
-env_fit$Nj2 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
-env_fit$Nj3 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
-
-#Average of log rho
-env_fit$m1 = matrix (0, dim(Hs_big)[1],nspp)
-env_fit$m2 = matrix (0, dim(Hs_big)[1],nspp)
-env_fit$m3 = matrix (0, dim(Hs_big)[1],nspp)
-
-#The probability distribution of rho:
-breaks = 15
-env_fit$pr1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-env_fit$pr2 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-env_fit$pr3 =array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-
-#The breaks, which correspond to the rhos/lambdas.
-env_fit$br1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-env_fit$br2 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-env_fit$br3 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-
-
-for(h in 1:dim(Hs_big)[1]) {
-
-		Hs = as.matrix(unlist(Hs_big[h,]))
-
-		#=============================================================================
-		#Population dynamics
-		#=============================================================================		
-		for ( s in 1:nspp) { 
-			for (n in 1:ngens){
-				#Model 2: "Unscaled" lottery model -- without explicit competition for space
-				#Invader species: 
-				env_fit$Nj2[n+1,-s,h ] = env_fit$Nj2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
-									(env_fit$fr[n,-s]* Hs[-s]/
-								(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj2[n,-s,h ]) ) ) )
-
-				env_fit$rho2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
-									(env_fit$fr[n,s]* Hs[s]/
-								(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj2[n, -s ,h ]) ) ) )
-
-				#Model 3: Single species model
-				env_fit$rho3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
-									env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
-
-				env_fit$Nj3[n+1,,h ] = env_fit$Nj3[n,s,h ] * env_fit$rho3[n,s,h ] 
-			}
-		}
-
-		#=============================================================================
-		#Numerically solve optimal germination strategies
-		#=============================================================================
-		#Note: All of the probablity and histogram approaches below are more accurate 
-		#with the log being taken here:
-		env_fit$rho2[,,h] = log(env_fit$rho2[,,h]) 
-		env_fit$rho3[,,h] = log(env_fit$rho3[,,h])
-
-		env_fit$rho2[,,h][!is.finite(env_fit$rho2[,,h] )] = NA
-		env_fit$rho3[,,h][!is.finite(env_fit$rho3[,,h] )] = NA
-
-		for (s in 1:nspp) { 
-
-		
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho2[,s,h],na.rm=T),max(env_fit$rho2[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho2[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$pr2[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$br2[,s,h] = rho_dist$mids
-
-			#Average log  growth rate:
-			env_fit$m2[h,s] = sum(env_fit$pr2[,s,h]*(env_fit$br2[,s,h] ) )
-
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho3[,s,h],na.rm=T),max(env_fit$rho3[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho3[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$pr3[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$br3[,s,h] = rho_dist$mids
-
-			#Average log growth rate:
-			env_fit$m3[h,s] = sum(env_fit$pr3[,s,h]*(env_fit$br3[,s,h] ) )
-
-		}
-
-}
-
-env_fit$m2[env_fit$m2<0] = NA
-env_fit$m3[env_fit$m3<0] = NA
-
-
-#=============================================================================
-#Instead of solving for optimal germination, find random uniform solution 
-#Over a large enough sample space, this converges on the same answers above.
+#Find random uniform solution -- i.e. germination varies uniformly between 
+#0 and 1 every generation. 
 #=============================================================================
 #Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 #which can be avoided.
@@ -383,7 +281,7 @@ for (h in 1:nsamp) {
 	for ( s in 1:nspp) { 
 		for (n in 1:ngens){
 			Hs = c(as.matrix(unlist(H_runif[n,])))
-			#Model 2: "Unscaled" lottery model -- without explicit competition for space
+			#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 			#Invader species: 
 			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
 								(env_fit$fr[n,-s]* Hs[-s]/
@@ -453,15 +351,11 @@ env_fit$mr3[env_fit$mr3<0] = NA
 
 
 #=============================================================================
-#The fitness value of information, single species and with competition
-# 1. With random uniform cue
-# 2. With optimal (bet-hedging) constant cue
+#The fitness value of information, single species and with competition.
+#With random uniform germination. 
 #=============================================================================
 deltaG1_comp = env_fit$mc2-colMeans(env_fit$mr2,na.rm=T) 
 deltaG1_sing = env_fit$mc3-colMeans(env_fit$mr3,na.rm=T) 
-
-deltaG2_comp = env_fit$mc2 - apply(env_fit$m3, 2, max, na.rm=T) ###???? 
-deltaG2_sing = env_fit$mc3 - apply(env_fit$m3, 2, max, na.rm=T)
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
 1/colMeans(env_fit$fr)*env_fit$sr
