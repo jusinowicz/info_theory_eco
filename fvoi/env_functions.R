@@ -1,5 +1,114 @@
 #=============================================================================
-# Functions to go with lott_info. 
+# Functions to go with simple_fvoi 
+# These work from the more classic setup of betting on on horse races 
+# and build from there. In the classic ecological example of desert annuals, 
+# the currency is in seeds, which a population uses to bet on environmental
+# states. The payoff is in terms of new seeds (offspring).
+# 
+#	horses = environmental states. When a horse wins, it is equivalent to 
+#			 a particular environment manifesting itself.
+#
+#	bet    = proportion of population invested in an environmental state. For
+#			 example, the number of seeds that germinate. 
+#
+#   payout = per-capita growth rate. For example, the number of new offspring
+#			 (i.e. seeds) produced by germinating individuals. 
+#
+#=============================================================================
+
+#=============================================================================
+# Environment: 
+#=============================================================================
+#=============================================================================
+#	Generate the probabilities for a binomial distribution for a number of 
+#	environmental states given by num_states. 
+#
+#	num_states		Number of discrete environmental states
+#=============================================================================
+make_env_states = function(num_states=10) {
+
+	counts = rbinom(num_states,10, 0.5)
+	probs = counts/sum(counts)
+	return(as.matrix(probs) )
+}
+
+#=============================================================================
+#	Generate a time series where each state has a chance of occurring (i.e.
+#	winning) based on generating the max value. 
+#
+#	num_states		Number of discrete environmental states
+#=============================================================================
+make_simple_env = function(env_states, ngens = 1000) {
+
+	env_states = as.matrix(env_states)
+	num_states = dim(env_states)[1]
+	es_fact = factor(1:num_states)
+
+	#Make the temporary environment 
+	env_tmp = matrix(0,ngens,num_states) 
+	#And this is the final environmental sequence
+	env = matrix(0,ngens,1) 
+
+	#Fill each time step from a binomial distribution
+	for(n in 1:ngens){ env_tmp[n,] = apply(env_states, 1, function(x) rbinom(1,100,x) ) }
+
+	#Find the winning state
+	env = apply(env_tmp,1, which.max )
+	env = factor(env,level=es_fact)
+
+	return((env) )
+}
+#=============================================================================
+# Species: 
+#=============================================================================
+#=============================================================================
+#
+#=============================================================================
+get_species_fraction = function(probs, gcor ) {
+
+	#This is standard code for generating correlated random sequences
+	corm = matrix(gcor, nrow = 2, ncol = 2)
+    diag(corm) = 1
+    corm = chol(corm)
+    
+    X2 = runif(length(probs))
+    X = cbind(probs,X2)
+
+    # induce correlation (does not change X1)
+    new_fraction = X %*% corm
+    #Just take column 2 and renormalize to 1
+    new_fraction = new_fraction[,2]/sum(new_fraction[,2])
+
+    return( as.matrix( new_fraction) )
+
+}
+
+#=============================================================================
+#
+#=============================================================================
+get_species_fit = function(probs, fcor, fm, method = "variable" ) {
+
+	if (method == "variable") {
+		#This is standard code for generating correlated random sequences
+		corm = matrix(fcor, nrow = 2, ncol = 2)
+	    diag(corm) = 1
+	    corm = chol(corm)
+	    
+	    X2 = runif(length(probs))
+	    X = cbind(probs,X2)
+
+	    # induce correlation (does not change X1)
+	    new_fraction = X %*% corm
+	    return( (new_fraction[,2]*fm) )
+
+	}else if(method == "constant"){
+		return(new_fraction = matrix(fm, length(probs),1))
+	}
+}
+
+
+#=============================================================================
+# Functions to go with lott_info and lott_info_inv. 
 #
 #	Making species fitness
 #	Making species germination (cue)
