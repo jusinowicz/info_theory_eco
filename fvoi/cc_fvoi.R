@@ -19,7 +19,7 @@ source("./env_functions.R")
 # Define the population dynamics through the following functions
 #=============================================================================
 #No information: 
-rc_noi = function(times,sp,parms){
+cc_noi = function(times,sp,parms){
 	with( as.list(c(parms, sp )),
 		{	
     P = matrix(sp[1:nPsp],nPsp, 1)
@@ -27,7 +27,7 @@ rc_noi = function(times,sp,parms){
 	###Resource (prey) dynamics: Logistic growth, reduced by consumption
 	dP = P
 	for( i in 1:nspp){
-	dP[i] = P[i]*( (rp[i]) * (1 - alphas[i,] %*%P/Kp[i]) - B[i])
+	dP[i] = P[i]*( rp[i]* ( (Kp[i] - (alphas[i,]%*%P ) )/Kp[i] ) - B[i] )
 	}
 	# ###Consumer dynamics: LV consumption
 	# dH = H 
@@ -38,7 +38,7 @@ rc_noi = function(times,sp,parms){
 }
   
 #With social information: 
-rc_i = function(times,sp,parms){
+cc_i = function(times,sp,parms){
 	with( as.list(c(parms, sp )),
 		{	
     P = matrix(sp[1:nPsp],nPsp, 1)
@@ -46,7 +46,7 @@ rc_i = function(times,sp,parms){
 	###Resource (prey) dynamics: Logistic growth, reduced by consumption
 	dP = P
 	for( i in 1:nspp){
-	dP[i] = P[i*( (rp[i]) * (1 - alphas[i,] %*%P/Kp[i]) - ps[i]*(exp( -(b[i,]%*%P) ) )-pm )
+	dP[i] = P[i]*( rp[i] *( (Kp[i]- (alphas[i,] %*%P) )/Kp[i] )- (ps[i]*exp( -(b[i,]%*%P) )+pm[i]) )
 	}
 
 	# ###Consumer dynamics: LV consumption
@@ -67,73 +67,74 @@ tl = length(times)
 
 ####No information 
 spp_prms_noi = NULL
-spp_prms_noi$nPsp = 1 # number of species 
-spp_prms_noi$rp = 8 #intrinsic growth
-spp_prms_noi$Kp = 100 #carrying capacity
-spp_prms_noi$B = 5 #predation rate
+spp_prms_noi$nPsp = 2 # number of species 
+spp_prms_noi$rp = c(5,5) #intrinsic growth
+spp_prms_noi$Kp = c(100,100) #carrying capacity
+spp_prms_noi$B = c(4,4) #predation rate
+spp_prms_noi$alphas = 
+		matrix( c(1,1.5,1.5,1),
+		spp_prms_noi$nPsp,spp_prms_noi$nPsp) #competition
+
 
 ####With social information
 spp_prms_i = NULL
-spp_prms_i$nPsp = 1 # number of species 
-spp_prms_i$rp = 8 #intrinsic growth
-spp_prms_i$Kp = 100 #carrying capacity
-spp_prms_i$ps = 3 #effect of social information
-spp_prms_i$pm = 2 #min predation rate
-spp_prms_i$b = 0.1 #social information rate
+spp_prms_i$nPsp = 2 # number of species 
+spp_prms_i$rp = c(5,5) #intrinsic growth
+spp_prms_i$Kp = c(100,100) #carrying capacity
+spp_prms_i$ps = c(2,2) #effect of social information
+spp_prms_i$pm = c(2,2) #min predation rate
+spp_prms_i$alphas = 
+		matrix( c(1,1.5,1.5,1),
+		spp_prms_i$nPsp,spp_prms_i$nPsp) #competition
+spp_prms_i$b = 
+		matrix( c(0,0.1,0.1,0),
+		spp_prms_i$nPsp,spp_prms_i$nPsp) #information rate
 
 
 parms_noi = list(nPsp=spp_prms_noi$nPsp, rp = spp_prms_noi$rp,
-	Kp =spp_prms_noi$Kp, B = spp_prms_noi$B 
+	Kp =spp_prms_noi$Kp, B = spp_prms_noi$B, alphas = spp_prms_noi$alphas
  )
 
 parms_i = list(nPsp=spp_prms_i$nPsp, rp = spp_prms_i$rp,
 	Kp =spp_prms_i$Kp, ps = spp_prms_i$ps, pm = spp_prms_i$pm, 
-	b = spp_prms_i$b 
+	b = spp_prms_i$b, alphas = spp_prms_i$alphas
  )
+
 #=============================================================================
 # Run the model with initial conditions
 #=============================================================================
-minit = c( matrix(25,spp_prms$nPsp,1) )
+minit = c( matrix( c(1,20),spp_prms$nPsp,2) )
 ####No information 
-rc_noi_out = ode(y=minit, times=times, func=rc_noi, parms=parms_noi, atol = 1e-9)
-rc_noi_out = as.data.frame(rc_noi_out)
+cc_noi_out = ode(y=minit, times=times, func=cc_noi, parms=parms_noi, atol = 1e-9)
+cc_noi_out = as.data.frame(cc_noi_out)
 
 ####With social information
-rc_i_out = ode(y=minit, times=times, func=rc_i, parms=parms_i, atol = 1e-9)
-rc_i_out = as.data.frame(rc_i_out)
+cc_i_out = ode(y=minit, times=times, func=cc_i, parms=parms_i, atol = 1e-9)
+cc_i_out = as.data.frame(cc_i_out)
 
 #=============================================================================
 # Plot
 #=============================================================================
 #Change to long format: 
-rc_noi_long =rc_noi_out %>% gather( species, N, 2:(spp_prms$nPsp+1) )
-rc_i_long =rc_i_out %>% gather( species, N, 2:(spp_prms$nPsp+1) )
+cc_noi_long =cc_noi_out %>% gather( species, N, 2:(spp_prms_noi$nPsp+1) )
+cc_i_long =cc_i_out %>% gather( species, N, 2:(spp_prms_i$nPsp+1) )
 
 #Merge data frames: 
-rc_i_long$species[rc_i_long$species=="1"] = "2"
-both_long = rbind(rc_noi_long ,rc_i_long ) #inner join
+cc_i_long$species[cc_i_long$species=="1"] = "3"
+cc_i_long$species[cc_i_long$species=="2"] = "4"
+both_long = rbind(cc_noi_long ,cc_i_long ) #inner join
 
 #Each species' time trajectory
 p0 = ggplot()+ geom_line( data = both_long, aes ( x = time, y = N, color = species)  )+ 
 ylab("Population")+
-theme(axis.text.x=element_blank(), axis.title.x=element_blank(), legend.position = "none") 
+theme(axis.text.x=element_blank(), axis.title.x=element_blank()) #, legend.position = "none") 
+
+#=============================================================================
+# Calculate the fitness value of information
+#	This is done by subtracting the instantaneous boundary growth rate 
+#	(invasion growth rate) of the no-info from that of the info model. 
+#=============================================================================
 
 
 
-####
-#Each species' time trajectory
-p1=ggplot()+ geom_line( data = rc_noi_long, aes ( x = time, y = N, color = species)  )+ 
-ylab("Population")+
-theme(axis.text.x=element_blank(), axis.title.x=element_blank(), legend.position = "none") 
-
-#########
-rc_i_long =rc_i_out %>% gather( species, N, 2:(spp_prms$nPsp+1) )
-
-#Each species' time trajectory
-p2=ggplot()+ geom_line( data = rc_i_long, aes ( x = time, y = N, color = species)  )+ 
-ylab("Population")+
-theme(axis.text.x=element_blank(), axis.title.x=element_blank(), legend.position = "none") 
-
-
-#p4 = grid.arrange(p1,p2 nrow = 2 )
 
