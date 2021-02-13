@@ -128,12 +128,36 @@ both_long = rbind(cc_noi_long ,cc_i_long ) #inner join
 p0 = ggplot()+ geom_line( data = both_long, aes ( x = time, y = N, color = species)  )+ 
 ylab("Population")+
 theme(axis.text.x=element_blank(), axis.title.x=element_blank()) #, legend.position = "none") 
-
+p0
 #=============================================================================
 # Calculate the fitness value of information
 #	This is done by subtracting the instantaneous boundary growth rate 
 #	(invasion growth rate) of the no-info from that of the info model. 
 #=============================================================================
+
+####No information
+Pi = matrix(c(0,20,20,0),nPsp,nPsp) #Resident equilibrium population
+igr_noi = spp_prms_noi$rp* ( (spp_prms_noi$Kp - 
+			rowSums(spp_prms_noi$alphas*Pi ) )/spp_prms_noi$Kp) - 
+			spp_prms_noi$B
+
+####With social information
+Pi2 = matrix( c(0,20,20,0 ),nPsp,nPsp)#Resident equilibrium population
+igr_i =  spp_prms_i$rp*( (spp_prms_i$Kp- 
+			rowSums(spp_prms_i$alphas*Pi2 ) )/spp_prms_i$Kp ) - 
+			(spp_prms_i$ps*exp( -(rowSums(spp_prms_i$b*Pi2)) )+
+			 spp_prms_i$pm)
+
+####Fitness value of information 
+fvoi = igr_i-igr_noi
+
+#Which is analytically equivalent to: 
+social_info = (spp_prms_i$ps*exp( -(rowSums(spp_prms_i$b*Pi2)) )+
+			 spp_prms_i$pm)
+
+fvoi2 = spp_prms_noi$B - social_info
+
+
 
 
 
