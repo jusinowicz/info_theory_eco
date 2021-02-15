@@ -103,7 +103,7 @@ parms_i = list(nPsp=spp_prms_i$nPsp, rp = spp_prms_i$rp,
 #=============================================================================
 # Run the model with initial conditions
 #=============================================================================
-minit = c( matrix( c(1,20),spp_prms$nPsp,2) )
+minit = c( matrix( c(1,20),spp_prms_i$nPsp,1) )
 ####No information 
 cc_noi_out = ode(y=minit, times=times, func=cc_noi, parms=parms_noi, atol = 1e-9)
 cc_noi_out = as.data.frame(cc_noi_out)
@@ -134,7 +134,7 @@ p0
 #	This is done by subtracting the instantaneous boundary growth rate 
 #	(invasion growth rate) of the no-info from that of the info model. 
 #=============================================================================
-
+nPsp = spp_prms_noi$nPsp
 ####No information
 Pi = matrix(c(0,20,20,0),nPsp,nPsp) #Resident equilibrium population
 igr_noi = spp_prms_noi$rp* ( (spp_prms_noi$Kp - 
@@ -157,8 +157,8 @@ social_info = (spp_prms_i$ps*exp( -(rowSums(spp_prms_i$b*Pi2)) )+
 
 fvoi2 = spp_prms_noi$B - social_info
 
-
-
-
+#=============================================================================
+# Paper plots
+#=============================================================================
 
 
