@@ -13,6 +13,8 @@ library(tidyverse)
 library(RandomFields)
 library(vegan)
 library(deSolve)
+library(gridExtra)
+library(viridis)
 source("./env_functions.R")
 
 #=============================================================================
@@ -72,7 +74,7 @@ spp_prms_noi$rp = c(5,5) #intrinsic growth
 spp_prms_noi$Kp = c(100,100) #carrying capacity
 spp_prms_noi$B = c(4,4) #predation rate
 spp_prms_noi$alphas = 
-		matrix( c(1,1.5,1.5,1),
+		matrix( c(1,.8,.8,1), #c(1,1.5,1.5,1)
 		spp_prms_noi$nPsp,spp_prms_noi$nPsp) #competition
 
 
@@ -84,7 +86,7 @@ spp_prms_i$Kp = c(100,100) #carrying capacity
 spp_prms_i$ps = c(2,2) #effect of social information
 spp_prms_i$pm = c(2,2) #min predation rate
 spp_prms_i$alphas = 
-		matrix( c(1,1.5,1.5,1),
+		matrix( c(1,.8,.8,1), #c(1,1.5,1.5,1)
 		spp_prms_i$nPsp,spp_prms_i$nPsp) #competition
 spp_prms_i$b = 
 		matrix( c(0,0.1,0.1,0),
@@ -103,7 +105,7 @@ parms_i = list(nPsp=spp_prms_i$nPsp, rp = spp_prms_i$rp,
 #=============================================================================
 # Run the model with initial conditions
 #=============================================================================
-minit = c( matrix( c(1,20),spp_prms_i$nPsp,1) )
+minit = c( matrix( c(.1,0.5),spp_prms_i$nPsp,1) )
 ####No information 
 cc_noi_out = ode(y=minit, times=times, func=cc_noi, parms=parms_noi, atol = 1e-9)
 cc_noi_out = as.data.frame(cc_noi_out)
@@ -158,7 +160,6 @@ social_info = (spp_prms_i$ps*exp( -(rowSums(spp_prms_i$b*Pi2)) )+
 fvoi2 = spp_prms_noi$B - social_info
 
 #=============================================================================
-# Paper plots
+# Paper plots: See figures.R
 #=============================================================================
-
 
