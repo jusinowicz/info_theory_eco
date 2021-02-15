@@ -3,23 +3,19 @@
 # germination, made to match the simple examples of proportionate betting
 # and bet-hedging
 # 
-# The general equation for FVOI is deltaG(E;C) = G(E|C) - G(E), where 
-# G corresponds to the fitness of a species under a particular setting:
-#	G(E|C)	Fitness when species sense the cue (have information).
-#	G(E)	Fitness when there is no cue (no information). 
+# This is the simplest example, which doesn't really map on to the biology
+# yet, but is a good starting place to test code and conceptual relations. 
 #
-# Variability is drawn from a binomial distribution. 
+# Each time-step, all of the population/money is bet on the entire list 
+# of possible environmental states. Translated into a population model, 
+# it would look something like this: 
 #
-# G(E) is calculated as either the optimal rate when there is no cue
-# Or, when there is no cue, germination is uniform random form 0 to 1 for all 
-#
-# G(E|C) is calculated using the actual germination rates. The accuracy of 
-# cue/response can be tuned. 
-#
-# The model is: Ni[t+1] = Ni[t](1+ sum( g_i * f_i )
-#	Where g_i is the germination rate (this is b_i in Cover and Thomas) and
-#	f_i is the fitness (this is o_i in Cover and Thomas)
-#
+# 	Ni[t+1] = Ni[t](1+ sum( g_i * f_i )
+#	
+# Where g_i is the germination rate (this is b_i in Cover and Thomas) and
+# f_i is the fitness (this is o_i in Cover and Thomas)
+# The sum is over possible environmental states. Thus the product g_i*f_i
+# will contain negative values for incorrect guesses/bets. 
 # 
 #=============================================================================
 #=============================================================================
@@ -41,7 +37,7 @@ nspp = 2
 #Stored values, i.e. population dynamics, information metrics
 #=============================================================================
 Ni = matrix(1, ngens+1,nspp) #Population
-Gi = matrix(1, ngens+1,nspp) #Growth rate
+env_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 
 #=============================================================================
 #Make environment
@@ -106,7 +102,8 @@ for (t in 1:ngens){
 	#Simulate the environment:  
 	env_current = apply(env_states, 1, function(x) rbinom(1,100,x) )
 	ec = max(env_current)
-	
+	env_act[t] = which.max(env_current)
+
 	#Identify species' payoff: 
 	sp_fit = matrix(env_current,num_states,nspp)
 	sp_fit[sp_fit!=ec] = -1 #Identify losers
