@@ -64,23 +64,26 @@ make_simple_env = function(env_states, ngens = 1000) {
 #=============================================================================
 #
 #=============================================================================
-get_species_fraction = function(probs, gcor ) {
+get_species_fraction = function(probs, gcor, gc = 0.5, method = "variable"  ) {
 
-	#This is standard code for generating correlated random sequences
-	corm = matrix(gcor, nrow = 2, ncol = 2)
-    diag(corm) = 1
-    corm = chol(corm)
-    
-    X2 = runif(length(probs))
-    X = cbind(probs,X2)
+	if (method == "variable") {
+		#This is standard code for generating correlated random sequences
+		corm = matrix(gcor, nrow = 2, ncol = 2)
+	    diag(corm) = 1
+	    corm = chol(corm)
+	    
+	    X2 = runif(length(probs))
+	    X = cbind(probs,X2)
 
-    # induce correlation (does not change X1)
-    new_fraction = X %*% corm
-    #Just take column 2 and renormalize to 1
-    new_fraction = new_fraction[,2]/sum(new_fraction[,2])
+	    # induce correlation (does not change X1)
+	    new_fraction = X %*% corm
+	    #Just take column 2 and renormalize to 1
+	    new_fraction = new_fraction[,2]/sum(new_fraction[,2])
 
-    return( as.matrix( new_fraction) )
-
+	    return( as.matrix( new_fraction) )
+	} else if(method == "constant"){
+		return(new_fraction = matrix(gc, length(probs),1))
+	}
 }
 
 #=============================================================================

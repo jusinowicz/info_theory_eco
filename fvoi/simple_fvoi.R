@@ -1,5 +1,5 @@
 #=============================================================================
-# R code to measure the fitness value of information  for a simple model of 
+# R code to measure the fitness value of information for a simple model of 
 # germination, made to match the simple examples of proportionate betting
 # and bet-hedging
 # 
@@ -43,7 +43,6 @@ nspp = 2
 Ni = matrix(1, ngens+1,nspp) #Population
 Gi = matrix(1, ngens+1,nspp) #Growth rate
 
-
 #=============================================================================
 #Make environment
 # 	The environment consists of discrete bins or states, each with some 
@@ -72,22 +71,35 @@ env_prob = prop.table(table(env))
 #simulates increasingly poor or mismatched information. cor = 0 
 #is no information. 
 gs_cor = 0.9999
-gs = matrix(0,num_states,nspp)
-for (s in 1:nspp) { gs[,s] = get_species_fraction(env_prob, gs_cor )}
-#for (s in 1:nspp) { gs[,s] = env_prob}
 
+##################################
+###There are two ways to run this, one of which matches the betting example and 
+#the other matches the dormancy model example.
+#1. With gf_method = variable and fm_method = either variable or  constant: this 
+#	matches betting example
+#2. With gf_method = constant and fm_method = variable: this matches the dormancy
+#	model.
+
+####Germination fraction
+gc = matrix(0.5,nspp,1) #For a constant germination fraction -- matches dormancy model
+gs = matrix(0,num_states,nspp)
+gf_method = "variable"
+for (s in 1:nspp) { gs[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor, gc = gc[s], 
+	method=gf_method  )}
+
+####Fitness
 #With fs_cor = 1, the fitness matches the optimal germination scheme. 
 #Rare events could be weighted to be more valuable instaed by making
 #this negative.
+fs_cor = 0.999 
 #With method = "constant", this is just a constant value per state. 
 #With method = "variable," matches based on fs_cor
-fs_cor = 0.999 
+fm_method = "constant"
 fm = matrix(num_states-1,nspp,1) # When this is a constant = num_states, fair odds
 #fm = matrix(10,nspp,1) # When this is a constant = num_states, fair odds
 fs = matrix(0,num_states,nspp)
-for (s in 1:nspp) { fs[,s] = get_species_fit(env_prob, fs_cor, fm=fm[s], method="constant" )}
-#for (s in 1:nspp) { fs[,s] = get_species_fit(probs = env_prob, fcor = fs_cor, fm=fm[s], method="variable" )}
-
+for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
+	method=fm_method )}
 
 #Simulate annual time-steps
 for (t in 1:ngens){
