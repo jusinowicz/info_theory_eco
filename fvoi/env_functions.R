@@ -109,6 +109,117 @@ get_species_fit = function(probs, fcor, fm, method = "variable" ) {
 	}
 }
 
+#=============================================================================
+#
+#=============================================================================
+get_fit_one = function(env_states, fs ){
+	
+	num_states = length(env_states)
+	nspp =dim(fs)[2]
+
+	#Simulate the environment:  
+	env_current = apply(env_states, 1, function(x) rbinom(1,100,x) )
+	ec = max(env_current)
+	env_act = which.max(env_current)
+
+	#Identify species' payoff: 
+	sp_fit = matrix(env_current,num_states,nspp)
+	sp_fit[sp_fit!=ec] = -1 #Identify losers
+	sp_fit[sp_fit==ec] = fs[sp_fit==ec] #Set winning state to its payout
+
+	fs_env = list( env_act=env_act, sp_fit=sp_fit)
+
+	return(fs_env)
+}
+
+#=============================================================================
+#Numerically solve optimal germination strategies for the single-species,
+#dormancy model: 
+#	Ni[t+1] = Ni[t]( (1-g_i)*s_i + g_i * f_i )
+#
+#	Ni 			The population vectors (matrix) from the main code
+#	env			The vector of environmental states, length must match dim[1] 
+#				of Ni. 
+#	sr 			Species survival rates, size needs to match dim[2] of Ni.  
+#=============================================================================
+
+get_single_opt = function ( env, nspp, sr, incr=0.05) {
+	
+	ngens = dim(env)[1]
+	env = as.matrix(env)
+
+	env_fit = NULL
+	env_fit$sr =sr
+	env_fit$fr = env
+	#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
+	#which can be avoided. 
+	H1 = seq(0.05,.99,incr) #Germination fraction.
+	Hc = c(matrix("H1",nspp,1) )
+	
+	#Combinations are independent for singl-species model
+	Hs_big = cbind(H1,H1)
+	#Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
+
+	#For the average growth rate, rho
+	env_fit$rho1 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
+
+	#Make the population time series match rho variables: 
+	env_fit$Nj1 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
+
+	#Average of log rho
+	env_fit$m1 = matrix (0, dim(Hs_big)[1],nspp)
+
+	#The probability distribution of rho:
+	breaks = 15
+	env_fit$pr1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+	
+	#The breaks, which correspond to the rhos/lambdas.
+	env_fit$br1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+
+	for(h in 1:dim(Hs_big)[1]) {
+
+		Hs = as.matrix(unlist(Hs_big[h,]))
+
+		#=============================================================================
+		#Population dynamics
+		#=============================================================================		
+		for (n in 1:ngens){
+			#Model 3:
+			env_fit$rho1[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
+								env_fit$fr[n,] * Hs) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
+
+			env_fit$Nj1[n+1,,h ] = env_fit$Nj1[n,,h ] * env_fit$rho1[n,,h ] 
+		}
+
+		#=============================================================================		
+		#Get the optimum
+		#=============================================================================		
+		env_fit$rho1[,,h] =log(env_fit$rho1[,,h]) 
+		env_fit$rho1[,,h][!is.finite(env_fit$rho1[,,h] )] = NA
+
+		for (s in 1:nspp) { 
+
+			#Probability distribution of growth rates
+			b_use = seq(min(env_fit$rho1[,s,h],na.rm=T),max(env_fit$rho1[,s,h],na.rm=T), length.out=breaks)
+			rho_dist = hist(env_fit$rho1[,s,h],breaks=b_use,plot = FALSE)
+			env_fit$pr1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+			env_fit$br1[,s,h] = rho_dist$mids
+
+			#Average log growth rate:
+			env_fit$m1[h,s] = sum(env_fit$pr1[,s,h]*(env_fit$br1[,s,h] ) )
+		}
+
+
+
+	}
+
+	#Which is the max value of the log growth rate in each column? 
+	opts = Hs_big[ apply(env_fit$m1, 2 ,which.max) ] 
+
+	return(opts)
+
+}
+
 
 #=============================================================================
 # Functions to go with lott_info and lott_info_inv. 

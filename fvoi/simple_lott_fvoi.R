@@ -45,11 +45,14 @@ ngens = 200 #Time steps
 num_states = 10 #Environmental bins or states
 nspp = 2
 
+#Survival rates: 
+sr = c(0.5,0.5)
+
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
 #=============================================================================
 Ni = matrix(1, ngens+1,nspp) #Population
-env_act = matrix(1, ngens+1,nspp) #Realized environments from sim
+env_act = matrix(1, ngens+1,1) #Realized environments from sim
 
 #=============================================================================
 #Make environment
@@ -72,6 +75,12 @@ env_prob = prop.table(table(env))
 #	to germinate. 
 #   Each state is also assigned a value as the payoff/per-capita growth rate
 #	(fitness). 
+# 	We explore 3 scenarios here:
+#	1. No information -- betting proportions drawn from uniform distribution.
+#	2. Optimal germination -- solve for the optimal singl-species proportion
+#	3. With information -- species respond to a cue that helps them predict
+#	   the environmentc (g_i is conditional, g_i(E|C)
+#		
 #=============================================================================
 
 #With gs_cor = 1, the germination fraction is optimal, i.e. fractions 
@@ -79,7 +88,7 @@ env_prob = prop.table(table(env))
 #simulates increasingly poor or mismatched information. cor = 0 
 #is no information. 
 gs_cor = 0.9999
-
+gs_cor_no = 0
 ##################################
 ###There are two ways to run this, one of which matches the betting example and 
 #the other matches the dormancy model example.
@@ -88,13 +97,6 @@ gs_cor = 0.9999
 #2. With gf_method = constant and fm_method = variable: this matches the dormancy
 #	model.
 
-####Germination fraction
-gc = matrix(0.5,nspp,1) #For a constant germination fraction -- matches dormancy model
-gs = matrix(0,num_states,nspp)
-gf_method = "variable"
-for (s in 1:nspp) { gs[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor, gc = gc[s], 
-	method=gf_method  )}
-
 ####Fitness
 #With fs_cor = 1, the fitness matches the optimal germination scheme. 
 #Rare events could be weighted to be more valuable instaed by making
@@ -102,24 +104,44 @@ for (s in 1:nspp) { gs[,s] = get_species_fraction(probs = env_prob, gcor = gs_co
 fs_cor = 0.999 
 #With method = "constant", this is just a constant value per state. 
 #With method = "variable," matches based on fs_cor
-fm_method = "constant"
+fm_method = "variable"
 fm = matrix(num_states-1,nspp,1) # When this is a constant = num_states, fair odds
 #fm = matrix(10,nspp,1) # When this is a constant = num_states, fair odds
 fs = matrix(0,num_states,nspp)
 for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
 	method=fm_method )}
 
-#Simulate annual time-steps
-for (t in 1:ngens){
-	#Simulate the environment:  
-	env_current = apply(env_states, 1, function(x) rbinom(1,100,x) )
-	ec = max(env_current)
-	env_act[t] = which.max(env_current)
+####Germination fraction
+gc = matrix(0.5,nspp,1) #For a constant germination fraction -- matches dormancy model
+gs_noi = matrix(0,num_states,nspp) #No info
+gs_i = matrix(0,num_states,nspp) #With information
+gf_method = "variable"
 
-	#Identify species' payoff: 
-	sp_fit = matrix(env_current,num_states,nspp)
-	sp_fit[sp_fit!=ec] = -1 #Identify losers
-	sp_fit[sp_fit==ec] = fs[sp_fit==ec] #Set winning state to its payout
+for (s in 1:nspp) { 
+	gs_i[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor,  
+	method=gf_method  )
+
+	gs_noi[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor, gc = gc[s], 
+	method="constant" )
+}
+
+#For the optimum single-species constant rate: 
+tsize = 1e4
+fr_opt =  matrix(1, tsize,nspp)
+env_opt =  matrix(1, tsize,1)
+for (t in 1:tsize){
+	sp_fit = get_fit_one(env_states, fs)
+	env_opt[t] = sp_fit$env_act
+	fr_opt[t,] = apply( sp_fit$sp_fit,2,max)}
+
+gs_o =  matrix( c(get_single_opt( env=fr_opt, nspp=nspp, sr = sr )),num_states,nspp) #Optimal 
+
+
+####Simulate annual time-steps
+for (t in 1:ngens){
+	sp_fit = get_fit_one(env_states, fs)
+	env_act[t] = sp_fit$env_act
+	sp_fit = sp_fit$sp_fit 
 
 	#New total pop: Betting/germinating proportion * total pop * payout/losses
 	#Gi[t+1,] = colSums(gs*Ni[t,]*sp_fit)
