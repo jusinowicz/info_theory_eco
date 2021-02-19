@@ -1,4 +1,8 @@
 #=============================================================================
+# IGNORE THIS ONE FOR NOW
+# This one ends up being a weird case the way it is implemented. Not sure yet
+# how it fits in.
+#
 # R code to measure the fitness value of information for a simple model of 
 # germination and dormancy from Cohen 1967, e.g. Ellner 1997. This builds
 # from the basic example of Kelly betting on horses (where horses = environments
@@ -60,9 +64,7 @@ rho_noi = matrix(1, ngens+1,nspp) #Growth rate, no information
 rho_o = matrix(1, ngens+1,nspp) #Growth rate, optimal germination
 
 env_act = matrix(1, ngens+1,1) #Realized environments from sim
-sp_act = matrix(1, ngens+1,nspp) #Realized environments from sim
-
-sp_fit = array( matrix(1, ngens+1,nspp), dim = c(ngens+1,num_states,nspp) ) #Realized fitness from sim
+sp_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 gi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 go_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 gnoi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
@@ -78,20 +80,9 @@ gnoi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 #		generated in step 1, but differs slightly. 
 #	3. Count the probability of seeing a state from the simulated sequence
 #=============================================================================
-#1. 
-#env_states = make_env_states(num_states)
-
-#1b.
-#env_states[env_states<0.02] = 0 ; env_states = env_states/sum(env_states)
-
-#2. 
-env_states = rbinom(ngens,num_states, 0.1)
-env_states = hist(env_states,0:(num_states))$counts
-env_states = env_states/sum(env_states)
-
-env = sample(x=(0:(num_states-1)), size=ngens, prob = env_states, replace=T)
-#env = make_simple_env(env_states,ngens)
-env_prob = prop.table(table(factor(env, levels = 0:(num_states-1))))
+env_states = make_env_states(num_states)
+env = make_simple_env(env_states,ngens)
+env_prob = prop.table(table(env))
 
 #=============================================================================
 #Make species' responses
@@ -124,7 +115,7 @@ fm_method = "variable"
 #The conditions for fair/subfair odds are different with this model. Ellner and 
 #others have shown that the optimal germination fraction is only <1 when 
 #      sr*colMeans(1/fs) > 1
-fm = matrix(num_states^2,nspp,1) # When this is a constant = num_states, fair odds
+fm = matrix(5,nspp,1) # When this is a constant = num_states, fair odds
 
 fs = matrix(0,num_states,nspp)
 for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
@@ -139,11 +130,11 @@ gs_cor = 0.9999
 gs_cor_no = 0
 gc = matrix(0.5,nspp,1) #For a constant germination fraction -- matches dormancy model
 gs_noi = matrix(0,num_states,nspp) #No info
-gs_o = matrix(0,num_states,nspp) #Optimal betting (i.e. proportionate)
+gs_i = matrix(0,num_states,nspp) #With information
 gf_method = "variable"
 
 for (s in 1:nspp) { 
-	gs_o[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor,  
+	gs_i[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor,  
 	method=gf_method  )
 
 	gs_noi[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor, gc = gc[s], 
@@ -152,17 +143,14 @@ for (s in 1:nspp) {
 
 #For the optimum single-species constant rate: 
 tsize = 1e4
-fr_opt = matrix(1, tsize,nspp)
-#fr_opt = array( matrix(1, tsize,nspp), dim = c(tsize,num_states,nspp) ) 
+fr_opt =  matrix(1, tsize,nspp)
 env_opt =  matrix(1, tsize,1)
 for (t in 1:tsize){
 	fit_tmp = get_fit_one(env_states, fs)
 	env_opt[t] = fit_tmp$env_act
-	fr_opt[t,] = apply(fit_tmp$sp_fit,2,max)
-	# fr_opt[t,,] = fit_tmp$sp_fit
-}
+	fr_opt[t,] = apply( fit_tmp$sp_fit,2,max)}
 
-gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )),num_states,nspp,byrow=T) #Optimal 
+gs_o =  matrix( c(get_single_opt( env=fr_opt, nspp=nspp, sr = sr )),num_states,nspp,byrow=T) #Optimal 
 
 
 #=============================================================================
@@ -171,20 +159,9 @@ gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )),num_states,ns
 for (t in 1:ngens){
 	fit_tmp = get_fit_one(env_states, fs)
 	env_act[t] = fit_tmp$env_act #Store the env state
-	
-	#Optimal betting, no information
-	rho_o[t, ] = ( sr*(1-go_fit[t,])   + sp_fit[t,] * go_fit[t,]  ) 
-	No[t+1,] = No[t, ] * rho_o[t, ] 
-	No[t+1,][No[t+1,]<0] = 0
-
-	sp_act[t,] =apply(fit_tmp$sp_fit,2,max)
-	gi_fit[t,] = gs_i[c(which_env)]
-
-	which_env = apply(fit_tmp$sp_fit, 2, which.max) #[1:nspp] #Which environment was it
-	sp_fit[t,,] = fit_tmp$sp_fit #Get the fitness for this env
-
-	#With information, only the appropriate type germinates:
-	gi_fit[t,] = gs_i*as.numeric(sp_fit[t,,]>0)
+	which_env = apply(fit_tmp$sp_fit, 2, which.max)#[1:nspp] #Which environment was it
+	sp_fit[t,] = apply(fit_tmp$sp_fit,2,max) #Get the fitness for this env
+	gi_fit[t,] = gs_i[c(which_env)] 
 	go_fit[t,] = gs_o[c(which_env)] 
 
 	#Population growth rates:

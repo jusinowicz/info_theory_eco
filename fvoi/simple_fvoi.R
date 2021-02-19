@@ -36,7 +36,7 @@ nspp = 2
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
 #=============================================================================
-Ni = matrix(1, ngens+1,nspp) #Population
+Ni = matrix(10, ngens+1,nspp) #Population
 env_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 
 #=============================================================================
@@ -50,8 +50,13 @@ env_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 #		generated in step 1, but differs slightly. 
 #	3. Count the probability of seeing a state from the simulated sequence
 #=============================================================================
+#These are to check numbers and theory: 
+# num_states = 3
+# env_states = c(0.5,.25,.25)
+
 env_states = make_env_states(num_states)
-env = make_simple_env(env_states,ngens)
+env = sample(x=(1:num_states), size=ngens, prob =env_states, replace=T)
+#env = make_simple_env(env_states,ngens)
 env_prob = prop.table(table(env))
 
 #=============================================================================
@@ -91,7 +96,7 @@ fs_cor = 0.999
 #With method = "constant", this is just a constant value per state. 
 #With method = "variable," matches based on fs_cor
 fm_method = "constant"
-fm = matrix(num_states-1,nspp,1) # When this is a constant = num_states, fair odds
+fm = matrix(num_states,nspp,1) # When this is a constant = num_states, fair odds
 #fm = matrix(10,nspp,1) # When this is a constant = num_states, fair odds
 fs = matrix(0,num_states,nspp)
 for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
@@ -100,19 +105,18 @@ for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=f
 #Simulate annual time-steps
 for (t in 1:ngens){
 	#Simulate the environment:  
-	env_current = apply(env_states, 1, function(x) rbinom(1,100,x) )
+	#env_current = apply(env_states, 1, function(x) rbinom(1,100,x) )
+	env_current = sample(x=(1:num_states), size=1, prob =env_states, replace=T)
 	ec = max(env_current)
-	env_act[t] = which.max(env_current)
+	env_act[t] = ec# which.max(env_current)
 
 	#Identify species' payoff: 
-	sp_fit = matrix(env_current,num_states,nspp)
-	sp_fit[sp_fit!=ec] = -1 #Identify losers
+	sp_fit = matrix((1:num_states),num_states,nspp)
+	sp_fit[sp_fit!=ec] = 0 #Identify losers
 	sp_fit[sp_fit==ec] = fs[sp_fit==ec] #Set winning state to its payout
 
 	#New total pop: Betting/germinating proportion * total pop * payout/losses
-	#Gi[t+1,] = colSums(gs*Ni[t,]*sp_fit)
-	Ni[t+1,] = Ni[t,]*(1+colSums(gs*sp_fit))
-	Ni[t+1,][Ni[t+1,]<0] = 0
+	Ni[t+1,] = (colSums(matrix(Ni[t,],num_states, nspp,byrow=T)*gs*sp_fit))
 
 }
 
@@ -120,11 +124,11 @@ for (t in 1:ngens){
 nn=1:ngens
 plot(log(Ni[,1]),t="l", ylim = c(0,300))
 #Theoretical prediction based on optimal germination/betting strategy (gs)
-lines(log(2^(nn*sum(env_prob*log2(gs[,1]*fs[,1])))),col="red")
+lines(log(2^(nn*sum(env_states*log(env_states*fs[,1]) ) ) ),col="red")
 #Theoretical prediction when optimal germination matches actual probs
-Wbp = log2(env_prob*fs[,1])
+Wbp = log(env_prob*fs[,1])
 Wbp[!is.finite(Wbp)] = 0
-lines(log(2^(nn*sum(env_prob*Wbp))),col="blue" )
+lines(log(exp(nn*sum(env_prob*Wbp))),col="blue" )
 
 #The theoretical population growth rate:
 #log-Rate: 

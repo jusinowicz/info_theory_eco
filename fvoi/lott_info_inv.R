@@ -201,7 +201,7 @@ for (s in 1:nspp){
 							env_fit$fr[n,s] * env_fit$gr[n,s] ) 
 
 
-		env_fit$Ni3[n+1, ] = env_fit$Ni3[n, ] * env_fit$rho_c3[n,s ]
+		env_fit$Ni3[n+1,s ] = env_fit$Ni3[n, s] * env_fit$rho_c3[n,s ]
 
 	}
 }
@@ -358,7 +358,7 @@ deltaG1_comp = env_fit$mc2-colMeans(env_fit$mr2,na.rm=T)
 deltaG1_sing = env_fit$mc3-colMeans(env_fit$mr3,na.rm=T) 
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
-1/colMeans(env_fit$fr)*env_fit$sr
+colMeans(1/env_fit$fr)*env_fit$sr
 #=============================================================================
 #Some plots for optimal bet-hedging, Section 2: 
 #=============================================================================
