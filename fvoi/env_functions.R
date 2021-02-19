@@ -125,8 +125,9 @@ get_fit_one = function(env_states, fs ){
 
 	#Identify species' payoff: 
 	sp_fit = matrix((0:(num_states-1)),num_states,nspp)
-	sp_fit[sp_fit!=ec] = 0 #Identify losers
+	sp_fit[sp_fit!=ec] = -1 #Identify losers
 	sp_fit[sp_fit==ec] = fs[sp_fit==ec] #Set winning state to its payout
+	sp_fit[sp_fit<0] = 0 
 
 	fs_env = list( env_act=env_act, sp_fit=sp_fit)
 
