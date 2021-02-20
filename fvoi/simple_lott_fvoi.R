@@ -84,9 +84,18 @@ gnoi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 #1b.
 #env_states[env_states<0.02] = 0 ; env_states = env_states/sum(env_states)
 
-#2. 
+#2. Binomial
 env_states = rbinom(ngens,num_states, 0.1)
 env_states = hist(env_states,0:(num_states))$counts
+
+#3.Poisson
+# env_states = rpois(ngens,num_states)
+# num_states = max(env_states)
+# env_states = hist(env_states,0:(num_states))$counts
+
+#4.Uniform
+env_states = runif(num_states)
+
 env_states = env_states/sum(env_states)
 
 env = sample(x=(0:(num_states-1)), size=ngens, prob = env_states, replace=T)
@@ -120,15 +129,20 @@ env_prob = prop.table(table(factor(env, levels = 0:(num_states-1))))
 #this negative.
 fs_cor = 0.999 
 fm_method = "variable"
+#fm_method = "constant"
+
 
 #The conditions for fair/subfair odds are different with this model. Ellner and 
 #others have shown that the optimal germination fraction is only <1 when 
 #      sr*colMeans(1/fs) > 1
-fm = matrix(num_states^2,nspp,1) # When this is a constant = num_states, fair odds
+fm = matrix(10,nspp,1) # When this is a constant = num_states, fair odds
 
 fs = matrix(0,num_states,nspp)
 for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
 	method=fm_method )}
+
+mstates=floor(num_states/2)
+fs = get_species_fit_pois(mstates, num_states, nspp,fm )
 
 ####Germination fraction
 #With gs_cor = 1, the germination fraction is optimal, i.e. fractions 
@@ -161,7 +175,7 @@ for (t in 1:tsize){
 	fr_opt[t,] = apply(fit_tmp$sp_fit,2,max)
 	# fr_opt[t,,] = fit_tmp$sp_fit
 }
-
+	
 gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )),num_states,nspp,byrow=T) #Optimal 
 
 

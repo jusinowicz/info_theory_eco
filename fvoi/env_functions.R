@@ -109,6 +109,33 @@ get_species_fit = function(probs, fcor, fm, method = "variable" ) {
 	}
 }
 
+
+#=============================================================================
+# Generate a species fitness distribution that is not correlated with the 
+# distribution of environmental states. 
+# Use the Poisson distribution, centered on state "mstate", and distributed
+# between the min/max environmental state values. 
+#=============================================================================
+get_species_fit_pois = function(mstates, num_states, nspp,fm ) {
+	nsamps = 1e4
+	fr_states = matrix(0, nsamps, nspp) 
+	new_fraction = matrix(0,num_states,nspp)
+	for(s in 1:nspp){
+		fr_states[,s] = rpois(nsamps,mstates)
+		#renormalize over interval 0, max num_states
+		b= num_states-1;a = 0
+		fr_states[,s] = (b-a)*(fr_states[,s]-min(fr_states[,s]))/
+						(max(fr_states[,s])-min(fr_states[,s])) + 
+						a
+		new_fraction[,s] = hist(fr_states[,s],breaks = 0:(num_states) )$counts
+		new_fraction[,s] = fm[s]* new_fraction[,s]/(max(new_fraction[,s]))
+	}
+
+	return(new_fraction)
+
+	# env_states = hist(env_states,0:(num_states))$counts
+}
+
 #=============================================================================
 #
 #=============================================================================
