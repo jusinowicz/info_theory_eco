@@ -29,7 +29,7 @@ source("./env_functions.R")
 #=============================================================================
 #Declare variables 
 #=============================================================================
-ngens = 200 #Time steps
+ngens = 1000 #Time steps
 num_states = 10 #Environmental bins or states
 nspp = 2
 
@@ -37,7 +37,8 @@ nspp = 2
 #Stored values, i.e. population dynamics, information metrics
 #=============================================================================
 Ni = matrix(10, ngens+1,nspp) #Population
-env_act = matrix(1, ngens+1,nspp) #Realized environments from sim
+Ni2 = matrix(10, ngens+1,nspp) #Population
+env_act = matrix(1, ngens+1,1) #Realized environments from sim
 
 #=============================================================================
 #Make environment
@@ -51,8 +52,8 @@ env_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 #	3. Count the probability of seeing a state from the simulated sequence
 #=============================================================================
 #These are to check numbers and theory: 
-# num_states = 3
-# env_states = c(0.5,.25,.25)
+num_states = 3
+env_states = c(0.5,.25,.25)
 
 env_states = make_env_states(num_states)
 env = sample(x=(1:num_states), size=ngens, prob =env_states, replace=T)
@@ -117,6 +118,11 @@ for (t in 1:ngens){
 
 	#New total pop: Betting/germinating proportion * total pop * payout/losses
 	Ni[t+1,] = (colSums(matrix(Ni[t,],num_states, nspp,byrow=T)*gs*sp_fit))
+	
+	#This should be exactly the same: 
+	sp_fit2 = sp_fit[sp_fit>0 ]
+	gs2 = gs[ec,]
+	Ni2[t+1,] =  ( Ni2[t,]*gs2*sp_fit2)
 
 }
 
@@ -124,7 +130,7 @@ for (t in 1:ngens){
 nn=1:ngens
 plot(log(Ni[,1]),t="l", ylim = c(0,300))
 #Theoretical prediction based on optimal germination/betting strategy (gs)
-lines(log(2^(nn*sum(env_states*log(env_states*fs[,1]) ) ) ),col="red")
+lines(log(exp(nn*sum(env_states*log(env_states*fs[,1]) ) ) ),col="red")
 #Theoretical prediction when optimal germination matches actual probs
 Wbp = log(env_prob*fs[,1])
 Wbp[!is.finite(Wbp)] = 0
