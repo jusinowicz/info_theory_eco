@@ -85,7 +85,7 @@ gnoi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 #env_states[env_states<0.02] = 0 ; env_states = env_states/sum(env_states)
 
 #2. Binomial
-env_states = rbinom(ngens,num_states, 0.1)
+env_states = rbinom(ngens,num_states, 0.4)
 env_states = hist(env_states,0:(num_states))$counts
 
 #3.Poisson
@@ -94,7 +94,7 @@ env_states = hist(env_states,0:(num_states))$counts
 # env_states = hist(env_states,0:(num_states))$counts
 
 #4.Uniform
-env_states = runif(num_states)
+# env_states = runif(num_states)
 
 env_states = env_states/sum(env_states)
 
