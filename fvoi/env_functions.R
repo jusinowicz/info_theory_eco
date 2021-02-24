@@ -169,46 +169,51 @@ get_fit_one = function(env_states, fs ){
 #		the variable acc = [0:1]. When acc = 1, information is perfect and 
 #		there is no spread. When acc = 0 there is no information and all 
 #		outcomes are equally likely (i.e. uniform). For values in between, 
-#		error is generated via a Gaussian distribution around the target or true
+#		error is generated with exponential decay from the target or true
 #		value with more spread as acc -> 0.  
 #		acc needs one entry per species 
 #=============================================================================
 
 get_cp = function(env_states, acc){ 
 
-	nout = 1e4
+	tol = 1e-3
 	num_states = length(env_states)
 	nspp =length(acc)
-	cp_out = matrix(0,num_states,num_states)
-	xx0=matrix(seq(0:num_states))
+	cp_out = array( matrix(0,num_states,num_states), dim = c(num_states,num_states,nspp) )
+	xx0=matrix((0:num_states))
  
-
-	#Exponential kernel
-	# kd=matrix(0,np,nspp)
-	# fkd=matrix(0,np,nspp)
-
-	# for( s in 1:nspp){ 
-	# 	kd[,s] = a_rr[s]/2*exp(-a_rr[s]*abs(xx0))
-	# 	kd[,s]=kd[,s]/(sum(kd[,s]))
-	# 	fkd[,s]=fft(kd[,s])#/(np+1)
-	# 	fkd.yes = TRUE #Pass the transformed kd to functions later for speed
-
-	# }
 	for( s in 1:nspp){ 
-		kd=matrix(0,np,nspp)
-		a_rr = exp((1-acc)^2)-1
+
+		#Make an exponential dispersal kernel to show how probability of 
+		#error in the conditional probability decays with distance from the
+		#env state that matches the cue. With perfect match between cue and 
+		#environment (acc =1 ) then there is a single value where e = c. 
+		#With no informative cue, this gives a uniform distribution by making
+		#a_rr really small (giving kd a large variance). 
+		kd=xx0
+		a_rr = acc[s]
+		if(a_rr == 0 ){a_rr = tol}
 		kd = a_rr/2*exp(-a_rr*abs(xx0))
 		kd=kd/(sum(kd))
-		fkd=fft(kd)
 
 		for (n in 1:num_states){
-			r1 = rnorm (nout, mean=env_states[n], sd = exp((1-acc)^2)-1 ) 
-			r1 = r1[r1 >=0 & r1 <=1]
-			breaks = seq(from =min(r1),to = max(r1),length.out=num_states+1)
-			cp_tmp = hist (r1,breaks=breaks)$counts
-			cp_out[,n] = cp_tmp/sum(cp_tmp)
+			cp_tmp = matrix(0,num_states,1)
+			cp_er = 1- acc[s] #This is the error, the cp of getting the wrong env
+			ll = (num_states+1) - (n) #Distance from the left 
+			lr = n   #Distance from the right
+			#Get the right side of the kernel 
+			cp_tmp[(n+1):num_states] = cp_er/2*kd[2:ll ]
+			#Get the left side of the kernel 
+			cp_tmp[1:(n-1)] = cp_er/2 * kd[2:lr][(lr-1):1]
+			#This is the conditional probability of the match
+			cp_tmp[n] = acc[s] 
+			if(a_rr == tol ){cp_tmp[n] = mean(cp_tmp); cp_tmp = cp_tmp/sum(cp_tmp) }
+
+			cp_out[,n,s] = cp_tmp[1:num_states]
 		}
 	}
+
+	return(cp_out)
 }
 
 #=============================================================================
