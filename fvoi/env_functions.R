@@ -179,14 +179,35 @@ get_cp = function(env_states, acc){
 	nout = 1e4
 	num_states = length(env_states)
 	nspp =length(acc)
+	cp_out = matrix(0,num_states,num_states)
+	xx0=matrix(seq(0:num_states))
+ 
 
-	#This is one way that I made up to continuously vary between a uniform
-	#and arbitrarily distributed variable. First, scale the variance as 
-	#an exponential. Then, zoom in on the interval 0,1. With wider variance, 
-	#the distribution looks increasingly uniform over this interval.  
-	for (n in 1:num_states){
-		r1 = rnorm (nout, mean=env_states[n], sd = exp((1-acc)^2)-1 ) 
-		r1 = r1[r1 >=0 & r1 <=1]
+	#Exponential kernel
+	# kd=matrix(0,np,nspp)
+	# fkd=matrix(0,np,nspp)
+
+	# for( s in 1:nspp){ 
+	# 	kd[,s] = a_rr[s]/2*exp(-a_rr[s]*abs(xx0))
+	# 	kd[,s]=kd[,s]/(sum(kd[,s]))
+	# 	fkd[,s]=fft(kd[,s])#/(np+1)
+	# 	fkd.yes = TRUE #Pass the transformed kd to functions later for speed
+
+	# }
+	for( s in 1:nspp){ 
+		kd=matrix(0,np,nspp)
+		a_rr = exp((1-acc)^2)-1
+		kd = a_rr/2*exp(-a_rr*abs(xx0))
+		kd=kd/(sum(kd))
+		fkd=fft(kd)
+
+		for (n in 1:num_states){
+			r1 = rnorm (nout, mean=env_states[n], sd = exp((1-acc)^2)-1 ) 
+			r1 = r1[r1 >=0 & r1 <=1]
+			breaks = seq(from =min(r1),to = max(r1),length.out=num_states+1)
+			cp_tmp = hist (r1,breaks=breaks)$counts
+			cp_out[,n] = cp_tmp/sum(cp_tmp)
+		}
 	}
 }
 
