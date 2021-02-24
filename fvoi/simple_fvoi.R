@@ -55,7 +55,9 @@ env_act = matrix(1, ngens+1,1) #Realized environments from sim
 num_states = 3
 env_states = c(0.5,.25,.25)
 
-env_states = make_env_states(num_states)
+#env_states = make_env_states(num_states)
+env_states = rbinom(ngens,num_states, 0.4)
+env_states = hist(env_states,0:(num_states))$counts
 env = sample(x=(1:num_states), size=ngens, prob =env_states, replace=T)
 #env = make_simple_env(env_states,ngens)
 env_prob = prop.table(table(env))
@@ -72,7 +74,7 @@ env_prob = prop.table(table(env))
 #match the probability of a state occurring. Decreasing this 
 #simulates increasingly poor or mismatched information. cor = 0 
 #is no information. 
-gs_cor = 0.9999
+gs_cor = 0.99999
 
 ##################################
 ###There are two ways to run this, one of which matches the betting example and 
@@ -102,6 +104,13 @@ fm = matrix(num_states,nspp,1) # When this is a constant = num_states, fair odds
 fs = matrix(0,num_states,nspp)
 for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
 	method=fm_method )}
+
+####Conditional germination fraction i.e. germination with information
+#This function creates a table of conditional probabilities based on the
+#
+gi = get_cp(env_states, acc=c(1,1) )
+#
+
 
 #Simulate annual time-steps
 for (t in 1:ngens){

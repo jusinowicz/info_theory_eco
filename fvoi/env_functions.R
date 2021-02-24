@@ -162,6 +162,33 @@ get_fit_one = function(env_states, fs ){
 }
 
 #=============================================================================
+#get_cp returns the conditional betting proportions of a win based on 
+#		having information: b(w|i). Ecologically, this is the "bet" (e.g.
+#		germination) on an environment based on a cue: g(e|c). 
+#		This function decides the spread of error in information with 
+#		the variable acc = [0:1]. When acc = 1, information is perfect and 
+#		there is no spread. When acc = 0 there is no information and all 
+#		outcomes are equally likely (i.e. uniform). For values in between, 
+#		error is generated via a Gaussian distribution around the target or true
+#		value with more spread as acc -> 0.  
+#		acc needs one entry per species 
+#=============================================================================
+
+get_cp = function(env_states, acc){ 
+
+	num_states = length(env_states)
+	nspp =length(acc)
+
+	#This is one way that I made up to continuously vary between a uniform
+	#and arbitrarily distributed variable. First, scale the variance as 
+	#an exponential. Then, zoom in on the interval 0,1. With wider variance, 
+	#the distribution looks increasingly uniform over this interval.  
+	r1 = rnorm (env_states, exp((1-acc)^2)-1 ) 
+	r1 = r1[r1 >=0 & r1 <=1]
+
+}
+
+#=============================================================================
 #Numerically solve optimal germination strategies for the single-species,
 #dormancy model: 
 #	Ni[t+1] = Ni[t]( (1-g_i)*s_i + g_i * f_i )
