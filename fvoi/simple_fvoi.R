@@ -38,7 +38,10 @@ nspp = 2
 #=============================================================================
 Ni = matrix(10, ngens+1,nspp) #Population
 Ni2 = matrix(10, ngens+1,nspp) #Population
+Ni_i = matrix(10, ngens+1,nspp) #Population with information
 env_act = matrix(1, ngens+1,1) #Realized environments from sim
+env_sensed = matrix(1, ngens+1,nspp) #Realized environments from sim
+
 
 #=============================================================================
 #Make environment
@@ -52,15 +55,17 @@ env_act = matrix(1, ngens+1,1) #Realized environments from sim
 #	3. Count the probability of seeing a state from the simulated sequence
 #=============================================================================
 #These are to check numbers and theory: 
-num_states = 3
-env_states = c(0.5,.25,.25)
+# num_states = 3
+# env_states = c(0.5,.25,.25)
 
 #env_states = make_env_states(num_states)
 env_states = rbinom(ngens,num_states, 0.4)
-env_states = hist(env_states,0:(num_states))$counts
-env = sample(x=(1:num_states), size=ngens, prob =env_states, replace=T)
+env_states = hist(env_states,0:(num_states))$counts + 1e-4
+env_states = env_states/sum(env_states)
+
+env = sample(x=(0:(num_states-1)), size=ngens, prob =env_states, replace=T)
 #env = make_simple_env(env_states,ngens)
-env_prob = prop.table(table(env))
+env_prob = prop.table(table(factor(env, levels = 0:(num_states-1))))
 
 #=============================================================================
 #Make species' responses
@@ -107,31 +112,55 @@ for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=f
 
 ####Conditional germination fraction i.e. germination with information
 #This function creates a table of conditional probabilities based on the
-#
-gi = get_cp(env_states, acc=c(1,1) )
-#
-
+#G(E|C)
+gec = get_cp(env_states, acc=c(1,1) )
+#Make G(C|E) from G(E|C) to simulate population dynamics later:
+gj = gec 
+gce = gec
+for(s in 1:nspp){
+	#Joint probability distribution: G(E|C) * G(C)
+	gj[,,s] = gec[,,s]*matrix(gs[,s], num_states,num_states,byrow=T ) 
+	#G(C|E) = G(C,E)/G(E)
+	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
+}
 
 #Simulate annual time-steps
 for (t in 1:ngens){
 	#Simulate the environment:  
 	#env_current = apply(env_states, 1, function(x) rbinom(1,100,x) )
-	env_current = sample(x=(1:num_states), size=1, prob =env_states, replace=T)
+	env_current = sample(x=(0:(num_states-1)), size=1, prob =env_states, replace=T)
 	ec = max(env_current)
 	env_act[t] = ec# which.max(env_current)
 
 	#Identify species' payoff: 
-	sp_fit = matrix((1:num_states),num_states,nspp)
-	sp_fit[sp_fit!=ec] = 0 #Identify losers
+	sp_fit = matrix((0:(num_states-1)),num_states,nspp)
+	sp_fit[sp_fit!=ec] = -1 #Identify losers
 	sp_fit[sp_fit==ec] = fs[sp_fit==ec] #Set winning state to its payout
+	sp_fit[sp_fit<0] = 0
 
+	####Without information
 	#New total pop: Betting/germinating proportion * total pop * payout/losses
 	Ni[t+1,] = (colSums(matrix(Ni[t,],num_states, nspp,byrow=T)*gs*sp_fit))
 	
 	#This should be exactly the same: 
 	sp_fit2 = sp_fit[sp_fit>0 ]
-	gs2 = gs[ec,]
+	gs2 = gs[(ec+1),]
 	Ni2[t+1,] =  ( Ni2[t,]*gs2*sp_fit2)
+
+	####With information, as determined by conditional probabilities
+	#The environment that species sensed (i.e. the cue they got), based on G(C|E)
+	sp_fit_i = matrix((0:(num_states-1)),num_states,nspp)
+	for( s in 1:nspp){ 
+		env_sensed[t,s] = sample(x=(0:(num_states-1)), size=1, prob =gce[ (env_act[t]+1),,s], replace=T)
+		ec = env_sensed[t,s]
+		sp_fit_i[,s][sp_fit_i[,s]!=ec] = 0 #Identify losers
+		sp_fit_i[,s][sp_fit_i[,s]==ec] = fs[,s][sp_fit_i[,s]==ec] #Set winning state to its payout
+	}
+
+	Ni_i[t+1,] = (colSums(matrix(Ni_i[t,],num_states, nspp,byrow=T)*
+					gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]*
+					sp_fit_i))
+
 
 }
 
@@ -141,9 +170,12 @@ plot(log(Ni[,1]),t="l", ylim = c(0,300))
 #Theoretical prediction based on optimal germination/betting strategy (gs)
 lines(log(exp(nn*sum(env_states*log(env_states*fs[,1]) ) ) ),col="red")
 #Theoretical prediction when optimal germination matches actual probs
-Wbp = log(env_prob*fs[,1])
-Wbp[!is.finite(Wbp)] = 0
-lines(log(exp(nn*sum(env_prob*Wbp))),col="blue" )
+# Wbp = log(env_prob*fs[,1])
+# Wbp[!is.finite(Wbp)] = 0
+# lines(log(exp(nn*sum(env_prob*Wbp))),col="blue" )
+
+#Add in concditional population growth (growth with cue/information)
+lines(log(Ni_i[,1]),t="l", col="blue")
 
 #The theoretical population growth rate:
 #log-Rate: 
