@@ -176,6 +176,7 @@ get_fit_one = function(env_states, fs ){
 
 get_cp = function(env_states, acc){ 
 
+	nout = 1e4
 	num_states = length(env_states)
 	nspp =length(acc)
 
@@ -183,9 +184,10 @@ get_cp = function(env_states, acc){
 	#and arbitrarily distributed variable. First, scale the variance as 
 	#an exponential. Then, zoom in on the interval 0,1. With wider variance, 
 	#the distribution looks increasingly uniform over this interval.  
-	r1 = rnorm (env_states, exp((1-acc)^2)-1 ) 
-	r1 = r1[r1 >=0 & r1 <=1]
-
+	for (n in 1:num_states){
+		r1 = rnorm (nout, mean=env_states[n], sd = exp((1-acc)^2)-1 ) 
+		r1 = r1[r1 >=0 & r1 <=1]
+	}
 }
 
 #=============================================================================
