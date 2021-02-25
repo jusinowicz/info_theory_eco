@@ -153,9 +153,10 @@ for (t in 1:ngens){
 	for( s in 1:nspp){ 
 		env_sensed[t,s] = sample(x=(0:(num_states-1)), size=1, prob =gce[ (env_act[t]+1),,s], replace=T)
 		ec = env_sensed[t,s]
-		sp_fit_i[,s][sp_fit_i[,s]!=ec] = 0 #Identify losers
+		sp_fit_i[,s][sp_fit_i[,s]!=ec] = -1 #Identify losers
 		sp_fit_i[,s][sp_fit_i[,s]==ec] = fs[,s][sp_fit_i[,s]==ec] #Set winning state to its payout
 	}
+	sp_fit_i[sp_fit_i<0] = 0 
 
 	Ni_i[t+1,] = (colSums(matrix(Ni_i[t,],num_states, nspp,byrow=T)*
 					gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]*

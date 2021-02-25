@@ -41,7 +41,7 @@ source("./env_functions.R")
 #=============================================================================
 #Declare variables 
 #=============================================================================
-ngens = 200 #Time steps
+ngens = 1000 #Time steps
 num_states = 10 #Environmental bins or states
 nspp = 2
 
@@ -60,9 +60,15 @@ rho_noi = matrix(1, ngens+1,nspp) #Growth rate, no information
 rho_o = matrix(1, ngens+1,nspp) #Growth rate, optimal germination
 
 env_act = matrix(1, ngens+1,1) #Realized environments from sim
+env_sensed = matrix(1, ngens+1,nspp) #Realized environments from sim
+
+sp_fit_i = matrix(1, ngens+1,nspp)
+sp_fit_o = matrix(1, ngens+1,nspp)
+
+
 sp_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 
-sp_fit_o = matrix(1, ngens+1,nspp)
+
 #array( matrix(1, ngens+1,nspp), dim = c(ngens+1,num_states,nspp) ) #Realized fitness from sim
 gi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 go_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
@@ -162,7 +168,7 @@ for (s in 1:nspp) {
 	method="constant" )
 }
 
-#For the optimum single-species constant rate: 
+#####For the optimum single-species constant rate: 
 tsize = 1e4
 fr_opt = matrix(1, tsize,nspp)
 #fr_opt = array( matrix(1, tsize,nspp), dim = c(tsize,num_states,nspp) ) 
@@ -176,6 +182,20 @@ for (t in 1:tsize){
 	
 gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )),num_states,nspp,byrow=T) #Optimal 
 
+
+####Conditional germination fraction i.e. germination with information
+#This function creates a table of conditional probabilities based on the
+#G(E|C)
+gec = get_cp(env_states, acc=c(1,1) )
+#Make G(C|E) from G(E|C) to simulate population dynamics later:
+gj = gec 
+gce = gec
+for(s in 1:nspp){
+	#Joint probability distribution: G(E|C) * G(C)
+	gj[,,s] = gec[,,s]*matrix(gs[,s], num_states,num_states,byrow=T ) 
+	#G(C|E) = G(C,E)/G(E)
+	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
+}
 
 #=============================================================================
 #Population dynamics
@@ -198,15 +218,37 @@ for (t in 1:ngens){
 	No[t+1,] = No[t, ] * rho_o[t, ] 
 	No[t+1,][No[t+1,]<0] = 0
 
+	#With information, conditional germination rates
+	#The environment that species sensed (i.e. the cue they got), based on G(C|E)
+	sp_fit_tmp = matrix((0:(num_states-1)),num_states,nspp)
+	for( s in 1:nspp){ 
+		env_sensed[t,s] = sample(x=(0:(num_states-1)), size=1, prob =gce[ (env_act[t]+1),,s], replace=T)
+		ec = env_sensed[t,s]
+		sp_fit_tmp[,s][sp_fit_tmp[,s]!=ec] = -1 #Identify losers
+		sp_fit_tmp[,s][sp_fit_tmp[,s]==ec] = fs[,s][sp_fit_tmp[,s]==ec] #Set winning state to its payout
+	}
+	sp_fit_i[t,] = sp_fit_tmp[sp_fit_tmp>=0]
 
+	#This version is the most similar to the kelly betting example, but does not 
+	#make a lot of ecological sense. In particular, it never makes sense to bet
+	#everything on a really crappy year under conditions of sub-fair odds. 
+	# rho_i[t, ] = ( sr*(1-gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ] )   + 
+	# 			sp_fit_i[t,] * gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]  )
+
+	#This version uses the germination rate that matches the sensed environment
+	rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1),] )   + 
+	 			sp_fit_i[t,] * gs[(env_sensed[t,]+1),] )
+
+	Ni[t+1,] = Ni[t, ] * rho_i[t, ] 
+	Ni[t+1,][Ni[t+1,]<0] = 0
 }
 
 
 #Plot the population growth
 nn=1:ngens
-plot(log(Ni[,1]),t="l", ylim = c(0,300))
+plot(log(No[,1]),t="l", ylim = c(0,300))
 lines(log(N_noi[,1]), col="red")
-lines(log(No[,1]),col="blue")
+lines(log(Ni[,1]),col="blue")
 
 #Theoretical prediction based on optimal germination/betting strategy (gs)
 lines(log(2^(nn*sum(env_prob*log2(gs[,1]*fs[,1])))),col="red")
