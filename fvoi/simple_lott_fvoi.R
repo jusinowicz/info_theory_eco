@@ -62,7 +62,8 @@ rho_o = matrix(1, ngens+1,nspp) #Growth rate, optimal germination
 env_act = matrix(1, ngens+1,1) #Realized environments from sim
 sp_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 
-sp_fit = array( matrix(1, ngens+1,nspp), dim = c(ngens+1,num_states,nspp) ) #Realized fitness from sim
+sp_fit_o = matrix(1, ngens+1,nspp)
+#array( matrix(1, ngens+1,nspp), dim = c(ngens+1,num_states,nspp) ) #Realized fitness from sim
 gi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 go_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 gnoi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
@@ -135,11 +136,11 @@ fm_method = "variable"
 #The conditions for fair/subfair odds are different with this model. Ellner and 
 #others have shown that the optimal germination fraction is only <1 when 
 #      sr*colMeans(1/fs) > 1
-fm = matrix(10,nspp,1) # When this is a constant = num_states, fair odds
+fm = matrix(3,nspp,1) # When this is a constant = num_states, fair odds
 
 fs = matrix(0,num_states,nspp)
-for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
-	method=fm_method )}
+# for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
+# 	method=fm_method )}
 
 mstates=floor(num_states/2)
 fs = get_species_fit_pois(mstates, num_states, nspp,fm )
@@ -157,9 +158,6 @@ gs_o = matrix(0,num_states,nspp) #Optimal betting (i.e. proportionate)
 gf_method = "variable"
 
 for (s in 1:nspp) { 
-	gs_o[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor,  
-	method=gf_method  )
-
 	gs_noi[,s] = get_species_fraction(probs = env_prob, gcor = gs_cor, gc = gc[s], 
 	method="constant" )
 }
@@ -185,38 +183,18 @@ gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )),num_states,ns
 for (t in 1:ngens){
 	fit_tmp = get_fit_one(env_states, fs)
 	env_act[t] = fit_tmp$env_act #Store the env state
-	
-	#Optimal betting, no information
-	rho_o[t, ] = ( sr*(1-go_fit[t,])   + sp_fit[t,] * go_fit[t,]  ) 
-	No[t+1,] = No[t, ] * rho_o[t, ] 
-	No[t+1,][No[t+1,]<0] = 0
-
-	sp_act[t,] =apply(fit_tmp$sp_fit,2,max)
-	gi_fit[t,] = gs_i[c(which_env)]
-
-	which_env = apply(fit_tmp$sp_fit, 2, which.max) #[1:nspp] #Which environment was it
-	sp_fit[t,,] = fit_tmp$sp_fit #Get the fitness for this env
-
-	#With information, only the appropriate type germinates:
-	gi_fit[t,] = gs_i*as.numeric(sp_fit[t,,]>0)
-	go_fit[t,] = gs_o[c(which_env)] 
-
-	#Population growth rates:
-	#Information
-	rho_i[t, ] = ( sr*(1-gi_fit[t,] )   + sp_fit[t,] * gi_fit[t,]  ) 
-	Ni[t+1,] = Ni[t, ] * rho_i[t, ] 
-	Ni[t+1,][Ni[t+1,]<0] = 0
+	sp_fit_o[t,] = fs[(env_act[t]+1), ]
 
 	#No information
 	#rho_noi[t+1, ] = ( sr*(1-gs_noi[c(which_env)])   + sp_fit * gs_noi[c(which_env)]  ) 
 	gs_noi = runif(nspp)
 	gnoi_fit[t,] = gs_noi 
-	rho_noi[t, ] = ( sr*(1-gnoi_fit[t,])   + sp_fit[t,] * gnoi_fit[t,] ) 
+	rho_noi[t, ] = ( sr*(1-gnoi_fit[t,])   + sp_fit_o[t,]  * gnoi_fit[t,] ) 
 	N_noi[t+1,] = N_noi[t, ] * rho_noi[t, ] 
 	N_noi[t+1,][N_noi[t+1,]<0] = 0
-
-	#Optimal 
-	rho_o[t, ] = ( sr*(1-go_fit[t,])   + sp_fit[t,] * go_fit[t,]  ) 
+	
+	#Optimal constant betting
+	rho_o[t, ] = ( sr*(1-gs_o[(env_act[t]+1),] )   + sp_fit_o[t,] * gs_o[(env_act[t]+1),]  ) 
 	No[t+1,] = No[t, ] * rho_o[t, ] 
 	No[t+1,][No[t+1,]<0] = 0
 
