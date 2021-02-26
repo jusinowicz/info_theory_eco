@@ -181,7 +181,7 @@ for (t in 1:tsize){
 }
 	
 gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )$opts),num_states,nspp,byrow=T) #Optimal 
-gs_io = matrix(c(get_multi_opt(fr=fr_opt, nspp=nspp, sr = sr ) ),num_states,nspp,byrow=T )
+gs_io = matrix(c(get_multi_opt(fr=fr_opt, gs=gs nspp=nspp, sr = sr ) ),num_states,nspp,byrow=T )
 
 ####Conditional germination fraction i.e. germination with information
 #This function creates a table of conditional probabilities based on the

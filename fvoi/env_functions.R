@@ -338,8 +338,15 @@ get_multi_opt= function ( fr, gs, sr, incr=0.01) {
 		print( paste("State number:", g) )
 		gout = get_single_opt( fr, nspp, sr, gw = gs[g,], incr=0.01)
 		gs_io[g,] = gout$opts
-		grs[]
+		grs[g,] = gout$gr
 	}
+
+	gs_out= list(gs_io = gs_io, grs=grs)
+	return(gs_out)
+}
+
+
+
 
 	#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
 	#which can be avoided. 
