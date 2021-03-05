@@ -184,7 +184,7 @@ get_cp = function(env_states, acc){
  
 	for( s in 1:nspp){ 
 
-		#Make an exponential dispersal kernel to show how probability of 
+		#Make an exponential dispersal kernel to model how probability of 
 		#error in the conditional probability decays with distance from the
 		#env state that matches the cue. With perfect match between cue and 
 		#environment (acc =1 ) then there is a single value where e = c. 
