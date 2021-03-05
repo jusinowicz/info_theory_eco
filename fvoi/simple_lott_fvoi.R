@@ -194,9 +194,10 @@ gj = gec
 gce = gec
 for(s in 1:nspp){
 	#Joint probability distribution G(E,C) = G(C,E) = G(E|C) * G(C)
-	gj[,,s] = gec[,,s]*matrix(gs[,s], num_states,num_states,byrow=T ) 
+	gj[,,s] = gec[,,s]*matrix(env_states, num_states,num_states,byrow=T ) 
 	#G(C|E) = G(C,E)/G(E)
 	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
+	gce[,,s][!is.finite(gce[,,s])] = 0
 }
 
 #This is key somehow:
@@ -204,7 +205,8 @@ a1=(1-matrix(H1,length(H1),10))+kronecker(H1,t(fs[,1]))
 g_in_e = H1[apply(a1,2,which.max)]
 #=============================================================================
 #Population dynamics
-#=============================================================================		
+#=============================================================================	
+gs = cbind(env_states,env_states)	
 for (t in 1:ngens){
 	fit_tmp = get_fit_one(env_states, fs)
 	env_act[t] = fit_tmp$env_act #Store the env state
@@ -241,8 +243,8 @@ for (t in 1:ngens){
 	# 			sp_fit_i[t,] * gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]  )
 
 	#This version uses the germination rate that matches the sensed environment
-	rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1),] )   + 
-	 			sp_fit_i[t,] * gs[(env_sensed[t,]+1),] )
+	rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1)] )   + 
+	 			sp_fit_i[t,] * gs[(env_sensed[t,]+1)] )
 
 	Ni[t+1,] = Ni[t, ] * rho_i[t, ] 
 	Ni[t+1,][Ni[t+1,]<0] = 0
