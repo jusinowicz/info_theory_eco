@@ -201,8 +201,13 @@ for(s in 1:nspp){
 }
 
 #This is key somehow:
+incr=0.01
+H1 = seq(0.01,.99,incr)
 a1=(1-matrix(H1,length(H1),10))+kronecker(H1,t(fs[,1]))
 g_in_e = H1[apply(a1,2,which.max)]
+g_in_e = matrix(g_in_e,ennv)
+g_in_e2 = g_in_e
+g_in_e = env_states*g_in_e/(sum(env_states*g_in_e)) 
 #=============================================================================
 #Population dynamics
 #=============================================================================	
@@ -242,9 +247,19 @@ for (t in 1:ngens){
 	# rho_i[t, ] = ( sr*(1-gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ] )   + 
 	# 			sp_fit_i[t,] * gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]  )
 
-	#This version uses the germination rate that matches the sensed environment
-	rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1)] )   + 
-	 			sp_fit_i[t,] * gs[(env_sensed[t,]+1)] )
+	# #This version uses the germination rate that matches the sensed environment
+	# rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1)] )   + 
+	#  			sp_fit_i[t,] * gs[(env_sensed[t,]+1)] )
+
+	# #This version uses the germination rate that matches the sensed environment
+	# #and assumes that species are selective as to what donditions they germinate
+	# rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1)]*g_in_e[(env_sensed[t,]+1)] )   + 
+	#  			sp_fit_i[t,] * gs[(env_sensed[t,]+1)]*g_in_e[(env_sensed[t,]+1)] )
+
+	#This version uses the ideal germination rate that matches the sensed environment
+	rho_i[t, ] = ( sr*(1-g_in_e[(env_sensed[t,]+1)] )   + 
+	 			sp_fit_i[t,] * g_in_e[(env_sensed[t,]+1)] )
+
 
 	Ni[t+1,] = Ni[t, ] * rho_i[t, ] 
 	Ni[t+1,][Ni[t+1,]<0] = 0
