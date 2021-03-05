@@ -345,77 +345,10 @@ get_multi_opt= function ( fr, gs, sr, incr=0.01) {
 	return(gs_out)
 }
 
+#=============================================================================
+# 
+#=============================================================================
 
-
-
-	#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
-	#which can be avoided. 
-	H1 = seq(0.01,.99,incr) #Germination fraction.
-	Hc = c(matrix("H1",nspp,1) )
-	
-	#Combinations are independent for singl-species model
-	Hs_big = cbind(H1,H1)
-	#Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
-
-	#For the average growth rate, rho
-	env_fit$rho1 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
-
-	#Make the population time series match rho variables: 
-	env_fit$Nj1 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
-
-	#Average of log rho
-	env_fit$m1 = matrix (0, dim(Hs_big)[1],nspp)
-
-	#The probability distribution of rho:
-	breaks = 15
-	env_fit$pr1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-	
-	#The breaks, which correspond to the rhos/lambdas.
-	env_fit$br1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
-
-	for(h in 1:dim(Hs_big)[1]) {
-
-		Hs = as.matrix(unlist(Hs_big[h,]))
-
-		#=============================================================================
-		#Population dynamics
-		#=============================================================================		
-		for (n in 1:ngens){
-			#Model 3:
-			env_fit$rho1[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								env_fit$fr[n,] * Hs) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
-
-			env_fit$Nj1[n+1,,h ] = env_fit$Nj1[n,,h ] * env_fit$rho1[n,,h ] 
-		}
-
-		#=============================================================================		
-		#Get the optimum
-		#=============================================================================		
-		env_fit$rho1[,,h] =log(env_fit$rho1[,,h]) 
-		env_fit$rho1[,,h][!is.finite(env_fit$rho1[,,h] )] = NA
-
-		for (s in 1:nspp) { 
-
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho1[,s,h],na.rm=T),max(env_fit$rho1[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho1[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$pr1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$br1[,s,h] = rho_dist$mids
-
-			#Average log growth rate:
-			env_fit$m1[h,s] = sum(env_fit$pr1[,s,h]*(env_fit$br1[,s,h] ) )
-		}
-
-
-
-	}
-
-	#Which is the max value of the log growth rate in each column? 
-	opts = Hs_big[ apply(env_fit$m1, 2 ,which.max) ] 
-
-	return(opts)
-
-}
 
 
 #=============================================================================
@@ -430,82 +363,82 @@ get_multi_opt= function ( fr, gs, sr, incr=0.01) {
 #	sr 			Species survival rates, size needs to match dim[2] of Ni.  
 #=============================================================================
 
-get_single_opt_bad = function ( env, nspp, sr, incr=0.05) {
+# get_single_opt_bad = function ( env, nspp, sr, incr=0.05) {
 	
-	ngens = dim(env)[1]
-	env = as.matrix(env)
+# 	ngens = dim(env)[1]
+# 	env = as.matrix(env)
 
-	env_fit = NULL
-	env_fit$sr =sr
-	env_fit$fr = env
-	#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
-	#which can be avoided. 
-	H1 = seq(0.01,.99,incr) #Germination fraction.
-	Hc = c(matrix("H1",nspp,1) )
+# 	env_fit = NULL
+# 	env_fit$sr =sr
+# 	env_fit$fr = env
+# 	#Germination fraction, in sequence. The endpoints 0 and 1 are special cases 
+# 	#which can be avoided. 
+# 	H1 = seq(0.01,.99,incr) #Germination fraction.
+# 	Hc = c(matrix("H1",nspp,1) )
 	
-	#Combinations are independent for singl-species model
-	Hs_big = cbind(H1,H1)
-	#Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
+# 	#Combinations are independent for singl-species model
+# 	Hs_big = cbind(H1,H1)
+# 	#Hs_big= eval(parse(text=paste("expand.grid(", paste(unlist(Hc),collapse=","), ")" )))
 
-	#For the average growth rate, rho
-	env_fit$rho1 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
+# 	#For the average growth rate, rho
+# 	env_fit$rho1 = array(1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) ) #Model 1
 
-	#Make the population time series match rho variables: 
-	env_fit$Nj1 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
+# 	#Make the population time series match rho variables: 
+# 	env_fit$Nj1 = array(0.1, dim = c(ngens+1, nspp, dim(Hs_big)[1] ) )
 
-	#Average of log rho
-	env_fit$m1 = matrix (0, dim(Hs_big)[1],nspp)
+# 	#Average of log rho
+# 	env_fit$m1 = matrix (0, dim(Hs_big)[1],nspp)
 
-	#The probability distribution of rho:
-	breaks = 15
-	env_fit$pr1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+# 	#The probability distribution of rho:
+# 	breaks = 15
+# 	env_fit$pr1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
 	
-	#The breaks, which correspond to the rhos/lambdas.
-	env_fit$br1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
+# 	#The breaks, which correspond to the rhos/lambdas.
+# 	env_fit$br1 = array(0, dim = c(breaks-1, nspp, dim(Hs_big)[1] ) )
 
-	for(h in 1:dim(Hs_big)[1]) {
+# 	for(h in 1:dim(Hs_big)[1]) {
 
-		Hs = as.matrix(unlist(Hs_big[h,]))
+# 		Hs = as.matrix(unlist(Hs_big[h,]))
 
-		#=============================================================================
-		#Population dynamics
-		#=============================================================================		
-		for (n in 1:ngens){
-			#Model 3:
-			env_fit$rho1[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
-								env_fit$fr[n,] * Hs) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
+# 		#=============================================================================
+# 		#Population dynamics
+# 		#=============================================================================		
+# 		for (n in 1:ngens){
+# 			#Model 3:
+# 			env_fit$rho1[n,,h ] = ( ( env_fit$sr*(1- Hs) )  + 
+# 								env_fit$fr[n,] * Hs) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
 
-			env_fit$Nj1[n+1,,h ] = env_fit$Nj1[n,,h ] * env_fit$rho1[n,,h ] 
-		}
+# 			env_fit$Nj1[n+1,,h ] = env_fit$Nj1[n,,h ] * env_fit$rho1[n,,h ] 
+# 		}
 
-		#=============================================================================		
-		#Get the optimum
-		#=============================================================================		
-		env_fit$rho1[,,h] =log(env_fit$rho1[,,h]) 
-		env_fit$rho1[,,h][!is.finite(env_fit$rho1[,,h] )] = NA
+# 		#=============================================================================		
+# 		#Get the optimum
+# 		#=============================================================================		
+# 		env_fit$rho1[,,h] =log(env_fit$rho1[,,h]) 
+# 		env_fit$rho1[,,h][!is.finite(env_fit$rho1[,,h] )] = NA
 
-		for (s in 1:nspp) { 
+# 		for (s in 1:nspp) { 
 
-			#Probability distribution of growth rates
-			b_use = seq(min(env_fit$rho1[,s,h],na.rm=T),max(env_fit$rho1[,s,h],na.rm=T), length.out=breaks)
-			rho_dist = hist(env_fit$rho1[,s,h],breaks=b_use,plot = FALSE)
-			env_fit$pr1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-			env_fit$br1[,s,h] = rho_dist$mids
+# 			#Probability distribution of growth rates
+# 			b_use = seq(min(env_fit$rho1[,s,h],na.rm=T),max(env_fit$rho1[,s,h],na.rm=T), length.out=breaks)
+# 			rho_dist = hist(env_fit$rho1[,s,h],breaks=b_use,plot = FALSE)
+# 			env_fit$pr1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+# 			env_fit$br1[,s,h] = rho_dist$mids
 
-			#Average log growth rate:
-			env_fit$m1[h,s] = sum(env_fit$pr1[,s,h]*(env_fit$br1[,s,h] ) )
-		}
+# 			#Average log growth rate:
+# 			env_fit$m1[h,s] = sum(env_fit$pr1[,s,h]*(env_fit$br1[,s,h] ) )
+# 		}
 
 
 
-	}
+# 	}
 
-	#Which is the max value of the log growth rate in each column? 
-	opts = Hs_big[ apply(env_fit$m1, 2 ,which.max) ] 
+# 	#Which is the max value of the log growth rate in each column? 
+# 	opts = Hs_big[ apply(env_fit$m1, 2 ,which.max) ] 
 
-	return(opts)
+# 	return(opts)
 
-}
+# }
 
 
 #=============================================================================
@@ -601,10 +534,16 @@ return(sample(env_tmp) )
 
 
 #=============================================================================
+#	get_fitness  
+#	Simulates species intrinsic (i.e. in the absence of competition) 
+#	reproduction rates according to an underlying environmental distribution, 
+#	and an assumption about the distributional shape of species response:
+#
 #	Fitness:  
 #	1. no_var		species have a single environmental value
 #	2. uni_var		variance around an optimum that is uniform (runif)
 #	3. norm_var		Gaussian around the optimum
+#	
 #=============================================================================
 
 

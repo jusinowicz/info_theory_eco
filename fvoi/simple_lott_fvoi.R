@@ -181,22 +181,27 @@ for (t in 1:tsize){
 }
 	
 gs_o =  matrix( c(get_single_opt( fr=fr_opt, nspp=nspp, sr = sr )$opts),num_states,nspp,byrow=T) #Optimal 
-gs_io = matrix(c(get_multi_opt(fr=fr_opt, gs=gs nspp=nspp, sr = sr ) ),num_states,nspp,byrow=T )
+#gs_io = matrix(c(get_multi_opt(fr=fr_opt, gs=gs nspp=nspp, sr = sr ) ),num_states,nspp,byrow=T )
 
 ####Conditional germination fraction i.e. germination with information
 #This function creates a table of conditional probabilities based on the
-#G(E|C)
+#G(E|C). Needs acc, which is a number between 0 and 1 describing how accurate
+#the cue is on average (1 is perfect accuracy, 0 is none)
 gec = get_cp(env_states, acc=c(1,1) )
+
 #Make G(C|E) from G(E|C) to simulate population dynamics later:
 gj = gec 
 gce = gec
 for(s in 1:nspp){
-	#Joint probability distribution: G(E|C) * G(C)
+	#Joint probability distribution G(E,C) = G(C,E) = G(E|C) * G(C)
 	gj[,,s] = gec[,,s]*matrix(gs[,s], num_states,num_states,byrow=T ) 
 	#G(C|E) = G(C,E)/G(E)
 	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
 }
 
+#This is key somehow:
+a1=(1-matrix(H1,length(H1),10))+kronecker(H1,t(fs[,1]))
+g_in_e = H1[apply(a1,2,which.max)]
 #=============================================================================
 #Population dynamics
 #=============================================================================		
