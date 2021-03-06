@@ -203,9 +203,11 @@ for(s in 1:nspp){
 #This is key somehow:
 incr=0.01
 H1 = seq(0.01,.99,incr)
-a1=(1-matrix(H1,length(H1),10))+kronecker(H1,t(fs[,1]))
+a1=sr[1]*(1-matrix(H1,length(H1),10))+kronecker(H1,t(fs[,1]))
+a1=matrix(sr*(1-H1), length(sr), dim(fs)[1] )+matrix(H1*fs[,1], length(sr),dim(fs)[1],byrow=T)
+
 g_in_e = H1[apply(a1,2,which.max)]
-g_in_e = matrix(g_in_e,ennv)
+g_in_e = matrix(g_in_e,env)
 g_in_e2 = g_in_e
 g_in_e = env_states*g_in_e/(sum(env_states*g_in_e)) 
 #=============================================================================
