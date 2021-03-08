@@ -2,6 +2,8 @@
 #Combined plots for FVOI paper
 #=============================================================================
 load("fvoi_plot1.var")
+library(gridExtra)
+require(grid)
 #=============================================================================
 # Paper plots
 #=============================================================================
@@ -20,7 +22,7 @@ suse = unique(both_long_use$species)
 
 p0 =ggplot()+ geom_line( data = both_long_use, aes ( x = time, y = N, color = species)  )+ 
 	geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
-	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+
+	ylab("Population")+ xlab("")+   scale_colour_viridis_d()+
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -38,15 +40,15 @@ ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
 ll_sub$species[ll_sub$species=="4"] = "species 2, no cue"
 
 #For text plotting
-xpos = c(matrix(10,4,1))
-ypos = c(ll_sub$N[ll_sub$time == 1])
-ypos = ypos + (c(0.2,-0.05,-0.1,0.5))
-suse = unique(ll_sub$species)
+xpos2 = c(matrix(10,4,1))
+ypos2 = c(ll_sub$N[ll_sub$time == 1])
+ypos2 = ypos2 + (c(0.2,-0.05,-0.1,0.5))
+suse2 = unique(ll_sub$species)
 
 
 p1 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
-	geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
-	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+ 
+	geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
+	ylab("")+ xlab("")+   scale_colour_viridis_d()+ 
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -56,6 +58,11 @@ p1 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species) 
 
 p1
 
+g=grid.arrange(p0, p1, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
+					 heights=unit(0.5, "npc"), ncol = 2,
+					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
+
+ggsave(file="fvoi_box1.pdf", g)
 
 #=============================================================================
 #Base R plots: 
