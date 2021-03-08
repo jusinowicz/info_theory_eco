@@ -4,6 +4,7 @@
 #=============================================================================
 # Paper plots
 #=============================================================================
+###Social info model
 both_long_use = subset(both_long, time <= 60 )
 both_long_use$species[both_long_use$species=="1"] = "species 1, no info"
 both_long_use$species[both_long_use$species=="2"] = "species 2, no info"
@@ -28,6 +29,36 @@ p0 =ggplot()+ geom_line( data = both_long_use, aes ( x = time, y = N, color = sp
 
 p0
 
+###Lottery model
+ll_sub = subset(lott_long, time <= 60)
+ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
+ll_sub$species[ll_sub$species=="2"] = "species 2, cue"
+ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
+ll_sub$species[ll_sub$species=="4"] = "species 2, no cue"
+
+#For text plotting
+xpos = c(matrix(10,4,1))
+ypos = c(ll_sub$N[ll_sub$time == 1])
+ypos = ypos + (c(0.2,-0.05,-0.1,0.5))
+suse = unique(ll_sub$species)
+
+
+p1 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
+	geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
+	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+ 
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+
+p1
+
+
+#=============================================================================
+#Base R plots: 
+#=============================================================================
 
 n_plot = 6000
 col_use = c("black", "#440154FF")

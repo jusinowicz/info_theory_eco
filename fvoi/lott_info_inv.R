@@ -34,7 +34,8 @@
 library(tidyverse)
 library(RandomFields)
 library(vegan)
-source("./env_functions.R")
+#source("./env_functions.R")
+source("./../fvoi/env_functions.R")
 
 #=============================================================================
 #Declare variables 
@@ -86,10 +87,10 @@ Ni = matrix(0.1, ngens+1,nspp)
 ####1. Make env_fit, species-level properties:
 ################################################
 env_fit = NULL
-env_fit$Ni = Ni
-env_fit$Ni2 = Ni
-env_fit$Ni3 = Ni
-env_fit$opt = runif(nspp)
+env_fit$Ni = Ni #Simple population dynamics
+env_fit$Ni2 = Ni #Population dynamics of residents only! 
+env_fit$Ni3 = Ni #Dormancy model (no competition)
+env_fit$opt = c(0.4,0.5) #runif(nspp)
 env_fit$var = matrix( 0.1 ,nspp,1) #A generic variance
 env_fit$min_max = NULL
 env_fit$g_mean = NULL
@@ -182,8 +183,12 @@ env_fit$brc1 = matrix(0, breaks-1, nspp )
 env_fit$brc2 = matrix(0, breaks-1, nspp )
 env_fit$brc3 = matrix(0, breaks-1, nspp )
 
+#For plots of invader vs. resident: 
+env_fit$Ni[,1] = 0.01; env_fit$Ni[,-1] = 1
+
 for (s in 1:nspp){ 
 	for (n in 1:ngens){
+
 		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 		env_fit$Ni2[n+1, -s] = env_fit$Ni2[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr[n,-s])  + 
 							 env_fit$fr[n,-s]* env_fit$gr[n,-s]/
@@ -194,6 +199,12 @@ for (s in 1:nspp){
 							(env_fit$fr[n,s]* env_fit$gr[n,s]/
 						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) ) ) 
 
+		if (s == 1){ 
+			#Model 1: "Unscaled" lottery model for all species
+			env_fit$Ni[n+1, ] =  env_fit$Ni[n, ]*( env_fit$sr*(1- env_fit$gr[n, ])  + 
+								 env_fit$fr[n,]* env_fit$gr[n, ]/
+							(sum( env_fit$fr[n, ]*  env_fit$gr[n, ] * env_fit$Ni[n, ]) ) )
+		}
 
 
 		#Model 3: Single species
@@ -270,6 +281,7 @@ env_fit$brunif1 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 env_fit$brunif2 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 env_fit$brunif3 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 
+env_fit$Nj_runif1[,1,] = 0.01; env_fit$Nj_runif1[,-1,] = 1
 
 
 for (h in 1:nsamp) { 
@@ -281,6 +293,8 @@ for (h in 1:nsamp) {
 	for ( s in 1:nspp) { 
 		for (n in 1:ngens){
 			Hs = c(as.matrix(unlist(H_runif[n,])))
+		
+
 			#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 			#Invader species: 
 			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
@@ -290,6 +304,14 @@ for (h in 1:nsamp) {
 			env_fit$rho_runif2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 								(env_fit$fr[n,s]* Hs[s]/
 							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
+
+			if (s == 1){ 
+			#Model 1: "Unscaled" lottery model for all species
+			env_fit$Nj_runif1[n+1, ,h] = env_fit$Nj_runif1[n,,h]*( env_fit$sr*(1- Hs)  + 
+							 env_fit$fr[n, ]* Hs/
+						(sum( env_fit$fr[n, ]* Hs * env_fit$Nj_runif1[n,,h ]) ) )
+			}
+
 
 			#Model 3: Single species
 			env_fit$rho_runif3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
@@ -316,14 +338,14 @@ for (h in 1:nsamp) {
 
 	for (s in 1:nspp) { 
 
-		#Probability distribution of growth rates
-		b_use = seq(min(env_fit$rho_runif1[,s,h],na.rm=T),max(env_fit$rho_runif1[,s,h],na.rm=T), length.out=breaks)
-		rho_dist = hist(env_fit$rho_runif1[,s,h],breaks=b_use,plot = FALSE)
-		env_fit$prunif1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-		env_fit$brunif1[,s,h] = rho_dist$mids
+		# #Probability distribution of growth rates
+		# b_use = seq(min(env_fit$rho_runif1[,s,h],na.rm=T),max(env_fit$rho_runif1[,s,h],na.rm=T), length.out=breaks)
+		# rho_dist = hist(env_fit$rho_runif1[,s,h],breaks=b_use,plot = FALSE)
+		# env_fit$prunif1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		# env_fit$brunif1[,s,h] = rho_dist$mids
 
-		#Average log growth rate:
-		env_fit$mr1[h,s] = sum(env_fit$prunif1[,s,h]*(env_fit$brunif1[,s,h] ) )
+		# #Average log growth rate:
+		# env_fit$mr1[h,s] = sum(env_fit$prunif1[,s,h]*(env_fit$brunif1[,s,h] ) )
 
 		#Probability distribution of growth rates
 		b_use = seq(min(env_fit$rho_runif2[,s,h],na.rm=T),max(env_fit$rho_runif2[,s,h],na.rm=T), length.out=breaks)
@@ -359,6 +381,26 @@ deltaG1_sing = env_fit$mc3-colMeans(env_fit$mr3,na.rm=T)
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
 colMeans(1/env_fit$fr)*env_fit$sr
+
+#=============================================================================
+# Plot
+#=============================================================================
+#Change to long format: 
+#Get the runif data in the right format: 
+llt_r = apply(env_fit$Nj_runif1,c(1,2),mean)
+llt_r = env_fit$Nj_runif1[,,6]
+llt = data.frame( cbind(1:(ngens+1), env_fit$Ni, llt_r)); names(llt) = c("time", 1:(2*nspp) )
+lott_long =llt %>% gather( species, N, 2:(2*nspp+1))
+
+#Each species' time trajectory
+ll_sub = subset(lott_long, time < 50)
+p0 = ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
+ylab("Population")+  scale_y_log10()+
+theme(axis.text.x=element_blank(), axis.title.x=element_blank()) #, legend.position = "none") 
+p0
+
+
+
 #=============================================================================
 #Some plots for optimal bet-hedging, Section 2: 
 #=============================================================================
