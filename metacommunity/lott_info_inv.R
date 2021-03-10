@@ -1,7 +1,8 @@
 #=============================================================================
 # R code to measure the fitness value of information  for a 
 # a vesion of the lottery model where species have a cue to respond
-# to variable environments based on their fitness value.
+# to variable environments that corresponds to the fitness value over the range
+# of possible environments.
 # 
 # The general equation is deltaG(E;C) = G(E|C) - G(E), where 
 # G corresponds to the fitness of a species under a particular setting:
