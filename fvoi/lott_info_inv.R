@@ -91,7 +91,7 @@ env_fit = NULL
 env_fit$Ni = Ni #Simple population dynamics
 env_fit$Ni2 = Ni #Population dynamics of residents only! 
 env_fit$Ni3 = Ni #Dormancy model (no competition)
-env_fit$opt = c(0.4,0.5) #runif(nspp)
+env_fit$opt = c(0.5,0.5) #runif(nspp)
 env_fit$var = matrix( 0.1 ,nspp,1) #A generic variance
 env_fit$min_max = NULL
 env_fit$g_mean = NULL
@@ -193,18 +193,18 @@ for (s in 1:nspp){
 		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 		env_fit$Ni2[n+1, -s] = env_fit$Ni2[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr[n,-s])  + 
 							 env_fit$fr[n,-s]* env_fit$gr[n,-s]/
-						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) )
+						(1+sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) )
 
 		#IGR
 		env_fit$rho_c2[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr[n,s]) )  + 
 							(env_fit$fr[n,s]* env_fit$gr[n,s]/
-						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) ) ) 
+						(1+sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) ) ) 
 
 		if (s == 1){ 
 			#Model 1: "Unscaled" lottery model for all species
 			env_fit$Ni[n+1, ] =  env_fit$Ni[n, ]*( env_fit$sr*(1- env_fit$gr[n, ])  + 
 								 env_fit$fr[n,]* env_fit$gr[n, ]/
-							(sum( env_fit$fr[n, ]*  env_fit$gr[n, ] * env_fit$Ni[n, ]) ) )
+							(1+sum( env_fit$fr[n, ]*  env_fit$gr[n, ] * env_fit$Ni[n, ]) ) )
 		}
 
 
@@ -300,17 +300,17 @@ for (h in 1:nsamp) {
 			#Invader species: 
 			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
 								(env_fit$fr[n,-s]* Hs[-s]/
-							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
+							(1+sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
 
 			env_fit$rho_runif2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 								(env_fit$fr[n,s]* Hs[s]/
-							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
+							(1+sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
 
 			if (s == 1){ 
 			#Model 1: "Unscaled" lottery model for all species
 			env_fit$Nj_runif1[n+1, ,h] = env_fit$Nj_runif1[n,,h]*( env_fit$sr*(1- Hs)  + 
 							 env_fit$fr[n, ]* Hs/
-						(sum( env_fit$fr[n, ]* Hs * env_fit$Nj_runif1[n,,h ]) ) )
+						(1+sum( env_fit$fr[n, ]* Hs * env_fit$Nj_runif1[n,,h ]) ) )
 			}
 
 

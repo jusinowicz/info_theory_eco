@@ -208,35 +208,35 @@ for (s in 1:nspp){
 		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 		env_fit$Ni2_comp[n+1, -s] = env_fit$Ni2_comp[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr_comp[n,-s])  + 
 							 env_fit$fr_comp[n,-s]* env_fit$gr_comp[n,-s]/
-						(sum( env_fit$fr_comp[n,-s]*  env_fit$gr_comp[n,-s] * env_fit$Ni2_comp[n,-s ]) ) )
+						(1+sum( env_fit$fr_comp[n,-s]*  env_fit$gr_comp[n,-s] * env_fit$Ni2_comp[n,-s ]) ) )
 
 		#IGR
 		env_fit$rho_c2[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr_comp[n,s]) )  + 
 							(env_fit$fr_comp[n,s]* env_fit$gr_comp[n,s]/
-						(sum( env_fit$fr_comp[n,-s]*  env_fit$gr_comp[n,-s] * env_fit$Ni2_comp[n,-s ]) ) ) ) 
+						(1+sum( env_fit$fr_comp[n,-s]*  env_fit$gr_comp[n,-s] * env_fit$Ni2_comp[n,-s ]) ) ) ) 
 
 
 		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 		env_fit$Ni2_niche[n+1, -s] = env_fit$Ni2_niche[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr_niche[n,-s])  + 
 							 env_fit$fr_niche[n,-s]* env_fit$gr_niche[n,-s]/
-						(sum( env_fit$fr_niche[n,-s]*  env_fit$gr_niche[n,-s] * env_fit$Ni2_niche[n,-s ]) ) )
+						(1+sum( env_fit$fr_niche[n,-s]*  env_fit$gr_niche[n,-s] * env_fit$Ni2_niche[n,-s ]) ) )
 
 		#IGR
 		env_fit$rho_c3[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr_niche[n,s]) )  + 
 							(env_fit$fr_niche[n,s]* env_fit$gr_niche[n,s]/
-						(sum( env_fit$fr_niche[n,-s]*  env_fit$gr_niche[n,-s] * env_fit$Ni2_niche[n,-s ]) ) ) ) 
+						(1+sum( env_fit$fr_niche[n,-s]*  env_fit$gr_niche[n,-s] * env_fit$Ni2_niche[n,-s ]) ) ) ) 
 
 
 		if (s == 1){ 
 			#Model 1: "Unscaled" lottery model for all species
 			env_fit$Ni_comp[n+1, ] =  env_fit$Ni_comp[n, ]*( env_fit$sr*(1- env_fit$gr_comp[n, ])  + 
 								 env_fit$fr_comp[n,]* env_fit$gr_comp[n, ]/
-							(sum( env_fit$fr_comp[n, ]*  env_fit$gr_comp[n, ] * env_fit$Ni_comp[n, ]) ) )
+							(1+sum( env_fit$fr_comp[n, ]*  env_fit$gr_comp[n, ] * env_fit$Ni_comp[n, ]) ) )
 
 			#Model 1: "Unscaled" lottery model for all species
 			env_fit$Ni_niche[n+1, ] =  env_fit$Ni_niche[n, ]*( env_fit$sr*(1- env_fit$gr_niche[n, ])  + 
 								 env_fit$fr_niche[n,]* env_fit$gr_niche[n, ]/
-							(sum( env_fit$fr_niche[n, ]*  env_fit$gr_niche[n, ] * env_fit$Ni_niche[n, ]) ) )
+							(1+sum( env_fit$fr_niche[n, ]*  env_fit$gr_niche[n, ] * env_fit$Ni_niche[n, ]) ) )
 		}
 	}
 }
@@ -321,33 +321,33 @@ for (h in 1:nsamp) {
 			#Invader species: 
 			env_fit$Nj_runif1[n+1,-s,h ] = env_fit$Nj_runif1[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
 								(env_fit$fr_comp[n,-s]* Hs[-s]/
-							(sum( env_fit$fr_comp[n,-s]*  Hs[-s] * env_fit$Nj_runif1[n,-s,h ]) ) ) )
+							(1+sum( env_fit$fr_comp[n,-s]*  Hs[-s] * env_fit$Nj_runif1[n,-s,h ]) ) ) )
 
 			env_fit$rho_runif1[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 								(env_fit$fr_comp[n,s]* Hs[s]/
-							(sum( env_fit$fr_comp[n,-s]*  Hs[-s] * env_fit$Nj_runif1[n, -s ,h ]) ) ) )
+							(1+sum( env_fit$fr_comp[n,-s]*  Hs[-s] * env_fit$Nj_runif1[n, -s ,h ]) ) ) )
 
 
 			#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 			#Invader species: 
 			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
 								(env_fit$fr_niche[n,-s]* Hs[-s]/
-							(sum( env_fit$fr_niche[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
+							(1+sum( env_fit$fr_niche[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
 
 			env_fit$rho_runif2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
 								(env_fit$fr_niche[n,s]* Hs[s]/
-							(sum( env_fit$fr_niche[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
+							(1+sum( env_fit$fr_niche[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
 
 			if (s == 1){ 
 				#Model 1: "Unscaled" lottery model for all species
 				env_fit$Nj_runif3[n+1, ,h] = env_fit$Nj_runif3[n,,h]*( env_fit$sr*(1- Hs)  + 
 							 env_fit$fr_comp[n, ]* Hs/
-						(sum( env_fit$fr_comp[n, ]* Hs * env_fit$Nj_runif3[n,,h ]) ) )
+						(1+sum( env_fit$fr_comp[n, ]* Hs * env_fit$Nj_runif3[n,,h ]) ) )
 
 				#Model 1: "Unscaled" lottery model for all species
 				env_fit$Nj_runif4[n+1, ,h] = env_fit$Nj_runif4[n,,h]*( env_fit$sr*(1- Hs)  + 
 							 env_fit$fr_niche[n, ]* Hs/
-						(sum( env_fit$fr_niche[n, ]* Hs * env_fit$Nj_runif4[n,,h ]) ) )
+						(1+sum( env_fit$fr_niche[n, ]* Hs * env_fit$Nj_runif4[n,,h ]) ) )
 			}
 
 		}
@@ -404,8 +404,11 @@ env_fit$mr2[env_fit$mr2<0] = NA
 #The fitness value of information, single species and with competition.
 #With random uniform germination. 
 #=============================================================================
-deltaG1_comp = env_fit$mc2-colMeans(env_fit$mr2,na.rm=T) 
-deltaG1_sing = env_fit$mc3-colMeans(env_fit$mr3,na.rm=T) 
+deltaR =  colMeans(env_fit$mr2,na.rm=T)-colMeans(env_fit$mr1,na.rm=T) 
+deltaG =  env_fit$mc3-env_fit$mc2 
+
+deltaGR_comp = env_fit$mc2 - colMeans(env_fit$mr1,na.rm=T)
+deltaGR_niche = env_fit$mc3 - colMeans(env_fit$mr2,na.rm=T)
 
 #Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
 colMeans(1/env_fit$fr)*env_fit$sr
