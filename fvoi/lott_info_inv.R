@@ -137,7 +137,7 @@ env_fit$fr = get_fitness(env_fit)
 env_fit$cue_method = "g_corr"
 #env_fit$cue_dist = "uniform"
 #Define how correlated each species' cue is with the environment:
-env_fit$g_corr = runif(nspp, min = 0.98, max=0.999)
+env_fit$g_corr = runif(nspp, min = 0.99, max=0.999)
 env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
 
 ################################################

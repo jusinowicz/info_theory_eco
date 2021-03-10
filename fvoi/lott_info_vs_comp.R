@@ -160,7 +160,7 @@ env_fit$gr_niche = get_env_cue2(env_fit$Ni, env_fit$fr_niche, g_corr=env_fit$g_c
 env_fit$sr = c(matrix(0.9,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
 #Scale the intrinsic fitness: 
-env_fit$lambda_r = c(1,1)
+env_fit$lambda_r = c(10,10)
 #Adding a small amount to remove the 0s makes analysis way easier.
 env_fit$fr_comp = env_fit$fr_comp* env_fit$lambda_r+.01 
 env_fit$fr_niche = env_fit$fr_niche* env_fit$lambda_r+.01 
