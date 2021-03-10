@@ -702,10 +702,10 @@ get_env2 = function (Ni, min_max =NULL, opt=NULL, var=NULL, g_mean =NULL, g_var 
 		
 		for(s in 1:nspp) {
 			
-			weights = (1/nspp)
+			weights = c(matrix( (1/nspp),nspp,1))
 			m_use = mean(opt)
 			v_use = max(var)
-			if(!is.nullg_mean)) { m_use = g_mean[s]}
+			if(!is.null(g_mean)) { m_use = g_mean[s]}
 			if(!is.null(g_var)) {v_use = g_var[s]}
 			if(!is.null(weights) ) {weights = weights[s]}
 
@@ -716,10 +716,8 @@ get_env2 = function (Ni, min_max =NULL, opt=NULL, var=NULL, g_mean =NULL, g_var 
 		if(lc > 0 ) {env_tmp = c(env_tmp,matrix(mean(env_tmp),abs(lc),1) ) }
 		if(lc < 0 ) {env_tmp = env_tmp[-(1:lc)] }
 
+		return(sample(env_tmp) )
 	}
-
-return(sample(env_tmp) )
-
 }
 
 

@@ -133,12 +133,16 @@ env_fit$method = "nrand_each"
 ################################################
 #Get the environment:
 env_fit$env = get_env2(env_fit$Ni,opt=env_fit$opt_comp , var=env_fit$var, 
-	g_mean =NULL, g_var = NULL method = env_fit$method)
+	g_mean =env_fit$opt_comp, g_var = env_fit$var, method = env_fit$method)
 
 ################################################
 ####3. Fitness: Get species' intrinsic fitness in response to the environment. 
 ################################################
-env_fit$fr = get_fitness(env_fit)
+env_fit$fr_comp = get_fitness2(env_fit$Ni, env_fit$env, opt=env_fit$opt_comp , var=env_fit$var, 
+	g_mean =env_fit$opt_comp, g_var = env_fit$var, method = env_fit$method)
+
+env_fit$fr_niche = get_fitness2(env_fit$Ni, env_fit$env, opt=env_fit$opt_niche , var=env_fit$var, 
+	g_mean =env_fit$opt_niche, g_var = env_fit$var, method = env_fit$method)
 
 ################################################
 ####4. Cue: Distribution of species' optimal germination environment 
@@ -146,9 +150,9 @@ env_fit$fr = get_fitness(env_fit)
 env_fit$cue_method = "g_corr"
 #env_fit$cue_dist = "uniform"
 #Define how correlated each species' cue is with the environment:
-env_fit$g_corr = runif(nspp, min = 0.98, max=0.999)
-env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
-
+env_fit$g_corr = runif(nspp, min = 0.99, max=0.99)
+env_fit$gr_comp= get_env_cue2(env_fit$Ni, env_fit$fr_comp, g_corr=env_fit$g_corr)
+env_fit$gr_niche = get_env_cue2(env_fit$Ni, env_fit$fr_niche, g_corr=env_fit$g_corr)
 ################################################
 ####5. Misc
 ################################################
@@ -156,9 +160,10 @@ env_fit$gr= get_env_cue(env_fit, method = env_fit$cue_method)
 env_fit$sr = c(matrix(0.9,nspp,1)) #rnorm(nspp, 0.1, 0.1)
 
 #Scale the intrinsic fitness: 
-env_fit$lambda_r = c(10,10)
+env_fit$lambda_r = c(1,1)
 #Adding a small amount to remove the 0s makes analysis way easier.
-env_fit$fr = env_fit$fr* env_fit$lambda_r+.01 
+env_fit$fr_comp = env_fit$fr_comp* env_fit$lambda_r+.01 
+env_fit$fr_niche = env_fit$fr_niche* env_fit$lambda_r+.01 
 
 #####################################################
 ####	Species population-level parameters.  
@@ -174,8 +179,8 @@ env_fit$fr = env_fit$fr* env_fit$lambda_r+.01
 #=============================================================================
 
 #For the average growth rate, rho
-env_fit$rho_c2 = Ni #Model 2
-env_fit$rho_c3 = Ni #Single species
+env_fit$rho_c2 = Ni #No niche
+env_fit$rho_c3 = Ni #Niches
 
 #Average of log rho
 env_fit$mc1 = matrix (0, 1,nspp)
@@ -194,36 +199,45 @@ env_fit$brc2 = matrix(0, breaks-1, nspp )
 env_fit$brc3 = matrix(0, breaks-1, nspp )
 
 #For plots of invader vs. resident: 
-env_fit$Ni[,1] = 0.01; env_fit$Ni[,-1] = 1
+env_fit$Ni_comp[,1] = 0.01; env_fit$Ni_comp[,-1] = 1
+env_fit$Ni_niche = env_fit$Ni_comp
 
 for (s in 1:nspp){ 
 	for (n in 1:ngens){
 
 		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
-		env_fit$Ni2[n+1, -s] = env_fit$Ni2[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr[n,-s])  + 
-							 env_fit$fr[n,-s]* env_fit$gr[n,-s]/
-						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) )
+		env_fit$Ni2_comp[n+1, -s] = env_fit$Ni2_comp[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr_comp[n,-s])  + 
+							 env_fit$fr_comp[n,-s]* env_fit$gr_comp[n,-s]/
+						(sum( env_fit$fr_comp[n,-s]*  env_fit$gr_comp[n,-s] * env_fit$Ni2_comp[n,-s ]) ) )
 
 		#IGR
-		env_fit$rho_c2[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr[n,s]) )  + 
-							(env_fit$fr[n,s]* env_fit$gr[n,s]/
-						(sum( env_fit$fr[n,-s]*  env_fit$gr[n,-s] * env_fit$Ni2[n,-s ]) ) ) ) 
+		env_fit$rho_c2[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr_comp[n,s]) )  + 
+							(env_fit$fr_comp[n,s]* env_fit$gr_comp[n,s]/
+						(sum( env_fit$fr_comp[n,-s]*  env_fit$gr_comp[n,-s] * env_fit$Ni2_comp[n,-s ]) ) ) ) 
+
+
+		#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
+		env_fit$Ni2_niche[n+1, -s] = env_fit$Ni2_niche[n,-s ]*( env_fit$sr[-s]*(1- env_fit$gr_niche[n,-s])  + 
+							 env_fit$fr_niche[n,-s]* env_fit$gr_niche[n,-s]/
+						(sum( env_fit$fr_niche[n,-s]*  env_fit$gr_niche[n,-s] * env_fit$Ni2_niche[n,-s ]) ) )
+
+		#IGR
+		env_fit$rho_c3[n,s] = ( ( env_fit$sr[s]*(1- env_fit$gr_niche[n,s]) )  + 
+							(env_fit$fr_niche[n,s]* env_fit$gr_niche[n,s]/
+						(sum( env_fit$fr_niche[n,-s]*  env_fit$gr_niche[n,-s] * env_fit$Ni2_niche[n,-s ]) ) ) ) 
+
 
 		if (s == 1){ 
 			#Model 1: "Unscaled" lottery model for all species
-			env_fit$Ni[n+1, ] =  env_fit$Ni[n, ]*( env_fit$sr*(1- env_fit$gr[n, ])  + 
-								 env_fit$fr[n,]* env_fit$gr[n, ]/
-							(sum( env_fit$fr[n, ]*  env_fit$gr[n, ] * env_fit$Ni[n, ]) ) )
+			env_fit$Ni_comp[n+1, ] =  env_fit$Ni_comp[n, ]*( env_fit$sr*(1- env_fit$gr_comp[n, ])  + 
+								 env_fit$fr_comp[n,]* env_fit$gr_comp[n, ]/
+							(sum( env_fit$fr_comp[n, ]*  env_fit$gr_comp[n, ] * env_fit$Ni_comp[n, ]) ) )
+
+			#Model 1: "Unscaled" lottery model for all species
+			env_fit$Ni_niche[n+1, ] =  env_fit$Ni_niche[n, ]*( env_fit$sr*(1- env_fit$gr_niche[n, ])  + 
+								 env_fit$fr_niche[n,]* env_fit$gr_niche[n, ]/
+							(sum( env_fit$fr_niche[n, ]*  env_fit$gr_niche[n, ] * env_fit$Ni_niche[n, ]) ) )
 		}
-
-
-		#Model 3: Single species
-		env_fit$rho_c3[n,s ] = ( ( env_fit$sr[s]*(1- env_fit$gr[n,s]) )  + 
-							env_fit$fr[n,s] * env_fit$gr[n,s] ) 
-
-
-		env_fit$Ni3[n+1,s ] = env_fit$Ni3[n, s] * env_fit$rho_c3[n,s ]
-
 	}
 }
 
@@ -266,33 +280,31 @@ for (s in 1:nspp) {
 nsamp = 1000 
 
 #For the average growth rate, rho
-env_fit$rho_runif1 = array(1, dim = c(ngens+1, nspp, nsamp ) ) #Model 1
-env_fit$rho_runif2 = array(1, dim = c(ngens+1, nspp, nsamp ) ) #Model 2
-env_fit$rho_runif3 = array(1, dim = c(ngens+1, nspp, nsamp ) ) #Single species
+env_fit$rho_runif1 = array(1, dim = c(ngens+1, nspp, nsamp ) ) #No niches
+env_fit$rho_runif2 = array(1, dim = c(ngens+1, nspp, nsamp ) ) #Niches
 
 #Make the population time series match rho variables: 
-env_fit$Nj_runif1 = array(0.1, dim = c(ngens+1, nspp, nsamp ) )
-env_fit$Nj_runif2 = array(0.1, dim = c(ngens+1, nspp, nsamp ) )
-env_fit$Nj_runif3 = array(0.1, dim = c(ngens+1, nspp, nsamp ) )
+env_fit$Nj_runif1 = array(0.1, dim = c(ngens+1, nspp, nsamp ) ) #No niches
+env_fit$Nj_runif2 = array(0.1, dim = c(ngens+1, nspp, nsamp ) ) #Niches
+env_fit$Nj_runif3 = array(0.1, dim = c(ngens+1, nspp, nsamp ) ) #No niches, both spp
+env_fit$Nj_runif4 = array(0.1, dim = c(ngens+1, nspp, nsamp ) ) #NIches, both spp
+
 
 #Average log growth rate
 env_fit$mr1 = matrix (0, nsamp,nspp)
 env_fit$mr2 = matrix (0, nsamp,nspp)
-env_fit$mr3 =matrix (0, nsamp,nspp)
 
 #The probability distribution of rho:
 breaks = 15
 env_fit$prunif1 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 env_fit$prunif2 = array(0, dim = c(breaks-1, nspp, nsamp ) )
-env_fit$prunif3 = array(0, dim = c(breaks-1, nspp, nsamp) )
 
 #The breaks, which correspond to the rhos/lambdas.
 env_fit$brunif1 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 env_fit$brunif2 = array(0, dim = c(breaks-1, nspp, nsamp ) )
-env_fit$brunif3 = array(0, dim = c(breaks-1, nspp, nsamp ) )
 
-env_fit$Nj_runif1[,1,] = 0.01; env_fit$Nj_runif1[,-1,] = 1
-
+env_fit$Nj_runif3[,1,] = 0.01; env_fit$Nj_runif3[,-1,] = 1
+env_fit$Nj_runif4 = env_fit$Nj_runif3
 
 for (h in 1:nsamp) { 
 	H_runif = matrix( runif(ngens*nspp), ngens, nspp) #Germination fraction.
@@ -307,28 +319,36 @@ for (h in 1:nsamp) {
 
 			#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
 			#Invader species: 
+			env_fit$Nj_runif1[n+1,-s,h ] = env_fit$Nj_runif1[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
+								(env_fit$fr_comp[n,-s]* Hs[-s]/
+							(sum( env_fit$fr_comp[n,-s]*  Hs[-s] * env_fit$Nj_runif1[n,-s,h ]) ) ) )
+
+			env_fit$rho_runif1[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
+								(env_fit$fr_comp[n,s]* Hs[s]/
+							(sum( env_fit$fr_comp[n,-s]*  Hs[-s] * env_fit$Nj_runif1[n, -s ,h ]) ) ) )
+
+
+			#Model 2: "Unscaled" lottery model for the residents -- without explicit competition for space
+			#Invader species: 
 			env_fit$Nj_runif2[n+1,-s,h ] = env_fit$Nj_runif2[n,-s,h ]* ( ( env_fit$sr[-s]*(1- Hs[-s]) )  + 
-								(env_fit$fr[n,-s]* Hs[-s]/
-							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
+								(env_fit$fr_niche[n,-s]* Hs[-s]/
+							(sum( env_fit$fr_niche[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n,-s,h ]) ) ) )
 
 			env_fit$rho_runif2[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
-								(env_fit$fr[n,s]* Hs[s]/
-							(sum( env_fit$fr[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
+								(env_fit$fr_niche[n,s]* Hs[s]/
+							(sum( env_fit$fr_niche[n,-s]*  Hs[-s] * env_fit$Nj_runif2[n, -s ,h ]) ) ) )
 
 			if (s == 1){ 
-			#Model 1: "Unscaled" lottery model for all species
-			env_fit$Nj_runif1[n+1, ,h] = env_fit$Nj_runif1[n,,h]*( env_fit$sr*(1- Hs)  + 
-							 env_fit$fr[n, ]* Hs/
-						(sum( env_fit$fr[n, ]* Hs * env_fit$Nj_runif1[n,,h ]) ) )
+				#Model 1: "Unscaled" lottery model for all species
+				env_fit$Nj_runif3[n+1, ,h] = env_fit$Nj_runif3[n,,h]*( env_fit$sr*(1- Hs)  + 
+							 env_fit$fr_comp[n, ]* Hs/
+						(sum( env_fit$fr_comp[n, ]* Hs * env_fit$Nj_runif3[n,,h ]) ) )
+
+				#Model 1: "Unscaled" lottery model for all species
+				env_fit$Nj_runif4[n+1, ,h] = env_fit$Nj_runif4[n,,h]*( env_fit$sr*(1- Hs)  + 
+							 env_fit$fr_niche[n, ]* Hs/
+						(sum( env_fit$fr_niche[n, ]* Hs * env_fit$Nj_runif4[n,,h ]) ) )
 			}
-
-
-			#Model 3: Single species
-			env_fit$rho_runif3[n,s,h ] = ( ( env_fit$sr[s]*(1- Hs[s]) )  + 
-								env_fit$fr[n,s] * Hs[s]) #/(env_fit$fr[n,]*Hs * env_fit$Nj3[n,,h]) )  
-
-			env_fit$Nj_runif3[n+1,s,h ] = env_fit$Nj_runif3[n,s,h ] * env_fit$rho_runif3[n,s,h ] 
-
 
 		}
 	}
@@ -340,22 +360,20 @@ for (h in 1:nsamp) {
 	#with the log being taken here:
 	env_fit$rho_runif1[,,h] =log(env_fit$rho_runif1[,,h]) 
 	env_fit$rho_runif2[,,h] = log(env_fit$rho_runif2[,,h]) 
-	env_fit$rho_runif3[,,h] = log(env_fit$rho_runif3[,,h])
-
+	
 	env_fit$rho_runif1[,,h][!is.finite(env_fit$rho_runif1[,,h] )] = NA
 	env_fit$rho_runif2[,,h][!is.finite(env_fit$rho_runif2[,,h] )] = NA
-	env_fit$rho_runif3[,,h][!is.finite(env_fit$rho_runif3[,,h] )] = NA
-
+	
 	for (s in 1:nspp) { 
 
-		# #Probability distribution of growth rates
-		# b_use = seq(min(env_fit$rho_runif1[,s,h],na.rm=T),max(env_fit$rho_runif1[,s,h],na.rm=T), length.out=breaks)
-		# rho_dist = hist(env_fit$rho_runif1[,s,h],breaks=b_use,plot = FALSE)
-		# env_fit$prunif1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-		# env_fit$brunif1[,s,h] = rho_dist$mids
+		#Probability distribution of growth rates
+		b_use = seq(min(env_fit$rho_runif1[,s,h],na.rm=T),max(env_fit$rho_runif1[,s,h],na.rm=T), length.out=breaks)
+		rho_dist = hist(env_fit$rho_runif1[,s,h],breaks=b_use,plot = FALSE)
+		env_fit$prunif1[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		env_fit$brunif1[,s,h] = rho_dist$mids
 
-		# #Average log growth rate:
-		# env_fit$mr1[h,s] = sum(env_fit$prunif1[,s,h]*(env_fit$brunif1[,s,h] ) )
+		#Average log growth rate:
+		env_fit$mr1[h,s] = sum(env_fit$prunif1[,s,h]*(env_fit$brunif1[,s,h] ) )
 
 		#Probability distribution of growth rates
 		b_use = seq(min(env_fit$rho_runif2[,s,h],na.rm=T),max(env_fit$rho_runif2[,s,h],na.rm=T), length.out=breaks)
@@ -367,19 +385,19 @@ for (h in 1:nsamp) {
 		env_fit$mr2[h,s] = sum(env_fit$prunif2[,s,h]*(env_fit$brunif2[,s,h] ) )
 
 		#Probability distribution of growth rates
-		b_use = seq(min(env_fit$rho_runif3[,s,h],na.rm=T),max(env_fit$rho_runif3[,s,h],na.rm=T), length.out=breaks)
-		rho_dist = hist(env_fit$rho_runif3[,s,h],breaks=b_use,plot = FALSE)
-		env_fit$prunif3[,s,h] = rho_dist$counts/sum(rho_dist$counts)
-		env_fit$brunif3[,s,h] = rho_dist$mids
+		# b_use = seq(min(env_fit$rho_runif3[,s,h],na.rm=T),max(env_fit$rho_runif3[,s,h],na.rm=T), length.out=breaks)
+		# rho_dist = hist(env_fit$rho_runif3[,s,h],breaks=b_use,plot = FALSE)
+		# env_fit$prunif3[,s,h] = rho_dist$counts/sum(rho_dist$counts)
+		# env_fit$brunif3[,s,h] = rho_dist$mids
 
-		#Average log growth rate:
-		env_fit$mr3[h,s] = sum(env_fit$prunif3[,s,h]*(env_fit$brunif3[,s,h] ) )
+		# #Average log growth rate:
+		# env_fit$mr3[h,s] = sum(env_fit$prunif3[,s,h]*(env_fit$brunif3[,s,h] ) )
 
 	}
 }
 
+env_fit$mr1[env_fit$mr1<0] = NA
 env_fit$mr2[env_fit$mr2<0] = NA
-env_fit$mr3[env_fit$mr3<0] = NA
 
 
 #=============================================================================
