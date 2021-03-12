@@ -73,6 +73,7 @@ env_fit$mr3_all =matrix (0, nincs,nspp)
 #=============================================================================
 
 for(o in 1:nincs){ 
+	print(o)
 	######################################
 	###Information, conditional germination probabilities
 	env_fit$Ni = Ni
@@ -127,6 +128,7 @@ for(o in 1:nincs){
 	env_fit$Nj_runif1[,1,] = 0.01; env_fit$Nj_runif1[,-1,] = 1
 
 	for (h in 1:nsamp) { 
+		if(h%%50 ==0 ) {print(paste("This is sample", h))}
 		#=============================================================================
 		#Make environment and species
 		#
