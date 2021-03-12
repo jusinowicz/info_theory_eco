@@ -545,14 +545,16 @@ get_env = function (env_fit, method = "runif1" ){
 			env_tmp = c(env_tmp, rnorm(ngens*weights, m_use, v_use ) )
 		}
 
-		m_use = c(0, 1)
+		# m_use = env_fit$g_mean - c(0.1, -0.1)
+		min1 = min(env_tmp)
+		max1 = max(env_tmp)
 
 		for(s in 1:2) {
 			
 			weights = (1/nspp)*0.5
-			v_use = max(env_fit$var)
-
-			env_tmp = c(env_tmp, rnorm(ngens*weights, m_use[s], v_use ) )
+			# v_use = max(env_fit$var)
+			# env_tmp = c(env_tmp, rnorm(ngens*weights, m_use[s], v_use ) )
+			env_tmp = c(env_tmp, runif(ngens*weights, min=min1, max=max1) )
 		}
 
 

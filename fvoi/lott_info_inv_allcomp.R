@@ -46,7 +46,7 @@ source("./../fvoi/env_functions.R")
 #=============================================================================
 ngens = 2000 #Time steps
 nspp = 2 #Species
-nsamp = 500
+nsamp = 10
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
 #=============================================================================
@@ -373,10 +373,10 @@ for(o in 1:nincs){
 		}
 
 		#Remove negative growth rates
-		env_fit$mc2[env_fit$mc2<0] = NA
-		env_fit$mc3[env_fit$mc3<0] = NA
-		env_fit$mr2[env_fit$mr2<0] = NA
-		env_fit$mr3[env_fit$mr3<0] = NA
+		# env_fit$mc2[env_fit$mc2<0] = NA
+		# env_fit$mc3[env_fit$mc3<0] = NA
+		# env_fit$mr2[env_fit$mr2<0] = NA
+		# env_fit$mr3[env_fit$mr3<0] = NA
 
 		#Average log growth rate:
 		env_fit$mc2_all[o,] = colMeans(env_fit$mc2,na.rm=T) 
