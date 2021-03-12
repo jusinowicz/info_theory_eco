@@ -528,6 +528,41 @@ get_env = function (env_fit, method = "runif1" ){
 
 	}
 
+	#Add in environments that are bad to both species 
+	if( method == "nrand_each_bad") {
+		
+		env_tmp = NULL
+		
+		for(s in 1:nspp) {
+			
+			weights = (1/nspp)*0.5
+			m_use = mean(env_fit$opt)
+			v_use = max(env_fit$var)
+			if(!is.null(env_fit$g_mean)) { m_use = env_fit$g_mean[s]}
+			if(!is.null(env_fit$g_var)) {v_use = env_fit$g_var[s]}
+			if(!is.null(env_fit$weights) ) {weights = env_fit$weights[s]}
+
+			env_tmp = c(env_tmp, rnorm(ngens*weights, m_use, v_use ) )
+		}
+
+		m_use = c(0, 1)
+
+		for(s in 1:2) {
+			
+			weights = (1/nspp)*0.5
+			v_use = max(env_fit$var)
+
+			env_tmp = c(env_tmp, rnorm(ngens*weights, m_use[s], v_use ) )
+		}
+
+
+		
+		lc = ngens - length(env_tmp) 
+		if(lc > 0 ) {env_tmp = c(env_tmp,matrix(mean(env_tmp),abs(lc),1) ) }
+		if(lc < 0 ) {env_tmp = env_tmp[-(1:lc)] }
+
+	}
+
 return(sample(env_tmp) )
 
 }
@@ -556,7 +591,7 @@ get_fitness = function (env_fit) {
 
 	for (s in 1:nspp) { 
 
-		if( env_fit$method == "nrand_each" | env_fit$method == "rnorm1" ) {
+		if( env_fit$method == "nrand_each" | env_fit$method == "rnorm1" | env_fit$method == "nrand_each_bad" ) {
 
 			m_use = mean(env_fit$opt)
 			v_use = max(env_fit$var)

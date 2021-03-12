@@ -197,7 +197,7 @@ for(o in 1:nincs){
 		###Choose 1:
 		#Choose the way that the environment will be constructed: 
 		#env_fit$method = "rnorm1"
-		env_fit$method = "nrand_each"
+		env_fit$method = "nrand_each_bad"
 
 		################################################
 		####2. Environment: Time series of environment. 
