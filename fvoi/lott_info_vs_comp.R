@@ -144,6 +144,9 @@ env_fit$fr_comp = get_fitness2(env_fit$Ni, env_fit$env, opt=env_fit$opt_comp , v
 env_fit$fr_niche = get_fitness2(env_fit$Ni, env_fit$env, opt=env_fit$opt_niche , var=env_fit$var, 
 	g_mean =env_fit$opt_niche, g_var = env_fit$var, method = env_fit$method)
 
+env_fit$fr_niche = get_fitness2(env_fit$Ni, env_fit$env, opt=env_fit$opt_niche , var=env_fit$var, 
+	g_mean =env_fit$opt_niche, g_var = env_fit$var, method = env_fit$method)
+
 ################################################
 ####4. Cue: Distribution of species' optimal germination environment 
 ################################################
