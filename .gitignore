@@ -59,7 +59,7 @@ scenario_foodwebs/scen_fwebmod6Rand.var
 .DS_Store
 .DS_Store
 .DS_Store
-*.var
+random_foodwebs/*.var
 *.pdf
 .DS_Store
 *.png
