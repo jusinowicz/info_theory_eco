@@ -7,6 +7,10 @@ require(grid)
 #=============================================================================
 # Paper plots
 #=============================================================================
+#=============================================================================
+# Box 1
+#=============================================================================
+
 ###Social info model
 both_long_use = subset(both_long, time <= 60 )
 both_long_use$species[both_long_use$species=="1"] = "species 1, no info"
@@ -80,3 +84,24 @@ for (p in 2:(nPsp+1)){
 axis(2, at=seq(0,40,10),cex.axis=1)
 axis(1, at=seq(0,n_plot,2000),cex.axis=1)
 
+#=============================================================================
+# Figure X in ms? 
+#=============================================================================
+load("env_fit1.var")
+rho_data = cbind(env_fit$mc2_all,env_fit$mr2_all,env_fit$mc3_all,env_fit$mr3_all)
+rho_data = as.data.frame(rho_data)
+colnames(rho_data) = c("species1_comp_info","species2_comp_info",
+						"species1_comp_noinfo","species2_comp_noinfo",
+						"species1_info","species2_info",
+						"species1_noinfo","species2_noinfo")
+#Convert to long: 
+rho_long = rho_data %>% gather( species, rho )
+p1 =ggplot()+ geom_line( data = rho_long, aes ( x = rho, y = N, color = species)  )+ 
+	geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
+	ylab("")+ xlab("")+   scale_colour_viridis_d()+ 
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
