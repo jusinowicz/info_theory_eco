@@ -52,9 +52,9 @@ names(elt) = c("env", "r1","sp1","sp2")
 p0=ggplot(data=elt)+geom_histogram(aes(x=env,y=..ncount..),color="black",fill="white")+
 geom_line(aes(x=r1, y=sp1),color="#440154FF")+
 geom_line(aes(x=r1, y=sp2),color="#35B779FF")+
-ylab("frequency/fitness value")+ xlab("Environment")+
+ylab("Fitness value")+ xlab("Environment")+
 theme_bw() + theme(
-	text = element_text(size=14),
+	text = element_text(size=10),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
 	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
 	legend.position = "none"
@@ -67,14 +67,31 @@ elt = data.frame( 1:ngens, env_fit$env, env_fit$fr, env_fit$gr,runif(ngens),runi
 names(elt) = c("Time", "env", "fr1","fr2","gr1","gr2","rgr1","rgr2")
 #el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)
 #el_long = elt %>% gather(fr, repro, env:gr2) 
-el_long = elt %>% gather(fr, repro, fr1:rgr2) 
+# el_long = elt %>% gather(fr, repro, fr1:rgr2) 
+# el_long$fr[el_long$fr =="fr1" | el_long$fr =="gr1"|el_long$fr =="rgr1"] = "sp1"
+# el_long$fr[el_long$fr =="fr2" | el_long$fr =="gr2"|el_long$fr =="rgr2"] = "sp2"
+el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)%>% 
+gather(rgr, rgerm, rgr1:rgr2)
+el_long$fr[el_long$fr =="fr1" ] = "sp1"
+el_long$gr[el_long$gr =="gr1"] = "sp1"
+el_long$rgr[el_long$rgr =="rgr1"] = "sp1"
+
+el_long$fr[el_long$fr =="fr2" ] = "sp2"
+el_long$gr[el_long$gr =="gr2"] = "sp2"
+el_long$rgr[el_long$rgr =="rgr2"] = "sp2"
+
 el2 = subset(el_long, Time<21)
+c_use = c(color="#440154FF","#35B779FF" )
 
 p1 = ggplot(data=el2) + geom_line(aes(x=Time, y=repro,color =fr ))+
+geom_line(aes(x=Time, y=germ,color =gr ))+
+geom_line(aes(x=Time, y=rgerm,color =rgr ),linetype = "dotted")+
+scale_color_manual(values=c_use)+
+geom_hline(yintercept=1 ,linetype = "dashed")+
  #scale_colour_viridis_d()+ 
  	ylab("Germination / Reproduction")+ 
 	theme_bw() + theme(
-	text = element_text(size=14),
+	text = element_text(size=10),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
 	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
 	legend.position = "none"
@@ -95,9 +112,9 @@ ypos2 = c(ll_sub$N[ll_sub$time == 1])
 ypos2 = ypos2 + (c(0.2,-0.05,-0.1,0.5))
 suse2 = unique(ll_sub$species)
 
-p1 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
+p2 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
 	geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
-	ylab("")+ xlab("")+   scale_colour_viridis_d()+ 
+	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+ 
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -105,13 +122,31 @@ p1 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species) 
 	legend.position = "none"
 	)
 
-p1
+p2
 
-g=grid.arrange(p0, p1, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
-					 heights=unit(0.5, "npc"), ncol = 2,
-					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
 
-ggsave(file="fvoi_box1.pdf", g)
+# g=grid.arrange(p0, p1, p2, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
+# 					 heights=unit(0.5, "npc"), ncol = 2,
+# 					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
+
+# g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
+#          arrangeGrob(p2, ncol=1, nrow=1), heights=c(4,1), widths=c(1,2))
+
+g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
+         arrangeGrob(p2, ncol=1, nrow=1), widths=c(unit(0.5, "npc"), 
+         	unit(0.75, "npc") ), heights=unit(0.5, "npc"))
+
+
+ggsave(file="fvoi_box2.pdf", g)
+
+#=============================================================================
+# Box 3
+#=============================================================================
+
+
+#=============================================================================
+# Figure 2
+#=============================================================================
 
 #=============================================================================
 #Base R plots: 
