@@ -105,7 +105,7 @@ parms_i = list(nPsp=spp_prms_i$nPsp, rp = spp_prms_i$rp,
 #=============================================================================
 # Run the model with initial conditions
 #=============================================================================
-minit = c( matrix( c(.1,0.5),spp_prms_i$nPsp,1) )
+minit = c( matrix( c(.01,20),spp_prms_i$nPsp,1) )
 ####No information 
 cc_noi_out = ode(y=minit, times=times, func=cc_noi, parms=parms_noi, atol = 1e-9)
 cc_noi_out = as.data.frame(cc_noi_out)
