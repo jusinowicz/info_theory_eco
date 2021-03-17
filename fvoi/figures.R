@@ -142,11 +142,60 @@ ggsave(file="fvoi_box2.pdf", g)
 #=============================================================================
 # Box 3
 #=============================================================================
+load("ni_simple")
+ngens = dim(Ni)[1]
+ni = data.frame(1:ngens, Ni[,1], Ni_i[,1])
+names(ni) = c("Time","ni1","ni_i1")
+nil = ni%>%gather(ni, pop, ni1:ni_i1) #%>% gather(ni_i, pop_i, ni_i1:ni_i2)
+c_use = c("#440154FF","#440154FF","#440154FF","#440154FF" )
+ni2 = nil[nil$Time < 100,]
 
+#For text plotting
+xpos2 = c(matrix(c(55, 60), 2,1))
+ypos2 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
+ypos2= ypos2[c(1,4)]
+suse2 = c("\u03C1(no information)", "\u03C1(information)")
+#suse2 = c("A","B")
 
+p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
+	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
+	scale_color_manual(values=c_use)+
+	 #scale_colour_viridis_d()+ 
+	ylab("Population")+ xlab("Time")+
+	geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
+ 	scale_y_log10()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p1
+
+ggsave(file="fvoi_box3.pdf")
+#cairo_pdf(file="fvoi_box3.pdf")
 #=============================================================================
 # Figure 2
 #=============================================================================
+load("env_fit1.var")
+rhos = data.frame(env_fit$mc2_all,env_fit$mc3_all,env_fit$mr2_all,env_fit$mr3_all )
+
+
+#Information gain as a function of model
+plot(env_fit$mc2_all[,1]-env_fit$mr2_all[,1],col="red")                                                                  
+points(env_fit$mc3_all[,1]-env_fit$mr3_all[,1])   
+
+plot(env_fit$mc2_all[,2]-env_fit$mr2_all[,2],col="red")                                                                  
+points(env_fit$mc3_all[,2]-env_fit$mr3_all[,2])   
+
+#Gain in rho across competition.
+plot(env_fit$mc2_all[,1],col="red", ylim=c(0,2) )                                                                  
+points(env_fit$mr2_all[,1])       
+
+plot(env_fit$mc2_all[,2],col="red", ylim=c(0,2) )                                                                  
+points(env_fit$mr2_all[,2])       
+
+
 
 #=============================================================================
 #Base R plots: 
