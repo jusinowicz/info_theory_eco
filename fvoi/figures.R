@@ -178,24 +178,16 @@ ggsave(file="fvoi_box3.pdf")
 # Figure 2
 #=============================================================================
 load("env_fit1.var")
-rhos = data.frame(env_fit$mc2_all,env_fit$mc3_all,env_fit$mr2_all,env_fit$mr3_all )
+ngens = dim(env_fit$mc2_all)[1]
+rhos = data.frame(1:ngens, env_fit$mc2_all,env_fit$mc3_all,env_fit$mr2_all,env_fit$mr3_all )
+names(rhos) = c("Competition", "cc1","cc2", "ncc1","ncc2","cr1","cr2","ncr1","ncr2")
+rhos_long = rhos %>% gather(cc, r_cc, cc1:cc2 )%>% gather(ncc, r_ncc, ncc1:ncc2 )%>% 
+					gather(cr, r_cr, cr1:cr2 )%>% gather(ncr, r_ncr, ncr1:ncr2 )
 
-
-#Information gain as a function of model
-plot(env_fit$mc2_all[,1]-env_fit$mr2_all[,1],col="red")                                                                  
-points(env_fit$mc3_all[,1]-env_fit$mr3_all[,1])   
-
-plot(env_fit$mc2_all[,2]-env_fit$mr2_all[,2],col="red")                                                                  
-points(env_fit$mc3_all[,2]-env_fit$mr3_all[,2])   
-
-#Gain in rho across competition.
-plot(env_fit$mc2_all[,1],col="red", ylim=c(0,2) )                                                                  
-points(env_fit$mr2_all[,1])       
-
-plot(env_fit$mc2_all[,2],col="red", ylim=c(0,2) )                                                                  
-points(env_fit$mr2_all[,2])       
-
-
+p0 = ggplot() + geom_line(data=rhos_long, aes(x=Competition, y=r_cc, group = cc  ) )+
+geom_line(data=rhos_long, aes(x=Competition, y=r_ncc, group = ncc  ) )+
+geom_line(data=rhos_long, aes(x=Competition, y=r_cr, group = cr  ) )+
+geom_line(data=rhos_long, aes(x=Competition, y=r_ncr, group = ncr  ) )
 
 #=============================================================================
 #Base R plots: 
@@ -212,6 +204,22 @@ for (p in 2:(nPsp+1)){
 
 axis(2, at=seq(0,40,10),cex.axis=1)
 axis(1, at=seq(0,n_plot,2000),cex.axis=1)
+
+
+#Information gain as a function of model
+plot(env_fit$mc2_all[,1]-env_fit$mr2_all[,1],col="red")                                                                  
+points(env_fit$mc3_all[,1]-env_fit$mr3_all[,1])   
+
+plot(env_fit$mc2_all[,2]-env_fit$mr2_all[,2],col="red")                                                                  
+points(env_fit$mc3_all[,2]-env_fit$mr3_all[,2])   
+
+#Gain in rho across competition.
+plot(env_fit$mc2_all[,1],col="red", ylim=c(0,2) )                                                                  
+points(env_fit$mr2_all[,1])       
+
+plot(env_fit$mc2_all[,2],col="red", ylim=c(0,2) )                                                                  
+points(env_fit$mr2_all[,2])       
+
 
 #=============================================================================
 # Figure X in ms? 
