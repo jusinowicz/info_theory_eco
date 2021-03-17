@@ -179,15 +179,23 @@ ggsave(file="fvoi_box3.pdf")
 #=============================================================================
 load("env_fit1.var")
 ngens = dim(env_fit$mc2_all)[1]
-rhos = data.frame(1:ngens, env_fit$mc2_all,env_fit$mc3_all,env_fit$mr2_all,env_fit$mr3_all )
-names(rhos) = c("Competition", "cc1","cc2", "ncc1","ncc2","cr1","cr2","ncr1","ncr2")
-rhos_long = rhos %>% gather(cc, r_cc, cc1:cc2 )%>% gather(ncc, r_ncc, ncc1:ncc2 )%>% 
-					gather(cr, r_cr, cr1:cr2 )%>% gather(ncr, r_ncr, ncr1:ncr2 )
+rhos = data.frame(1:ngens,  env_fit$mc2_all, env_fit$mr2_all, env_fit$mc2_all-env_fit$mr2_all,env_fit$mc3_all-env_fit$mr3_all )
+names(rhos) = c("Competition", "cc1","cc2", "cr1","cr2","crho1","crho2","rho1","rho2")
+rhos_long = rhos %>% gather(cc, r_cc, cc1:cc2 )%>%
+					gather(cr, r_cr, cr1:cr2 )%>%
+					 gather(crho, r, crho1:crho2 )%>% 
+					 gather(rho, rr, rho1:rho2 )
 
-p0 = ggplot() + geom_line(data=rhos_long, aes(x=Competition, y=r_cc, group = cc  ) )+
-geom_line(data=rhos_long, aes(x=Competition, y=r_ncc, group = ncc  ) )+
-geom_line(data=rhos_long, aes(x=Competition, y=r_cr, group = cr  ) )+
-geom_line(data=rhos_long, aes(x=Competition, y=r_ncr, group = ncr  ) )
+r1 = rhos_long[rhos_long$Competition<25,]
+p0 = ggplot() +
+geom_line(data=r1, aes(x=Competition, y=r, group = crho ) )+
+geom_line(data=r1, aes(x=Competition, y=rr, group = rho ) )
+p0
+
+
+p1 = ggplot() + geom_line(data=r1, aes(x=Competition, y=r_cc, group = cc  ) )+
+geom_line(data=r1, aes(x=Competition, y=r_cr, group = cr  ) )
+p1
 
 #=============================================================================
 #Base R plots: 
