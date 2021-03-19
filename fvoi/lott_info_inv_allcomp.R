@@ -46,7 +46,7 @@ source("./../fvoi/env_functions.R")
 #=============================================================================
 ngens = 2000 #Time steps
 nspp = 2 #Species
-nsamp = 100
+nsamp = 50
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
 #=============================================================================
@@ -379,10 +379,14 @@ for(o in 1:nincs){
 		# env_fit$mr3[env_fit$mr3<0] = NA
 
 		#Average log growth rate:
-		env_fit$mc2_all[o,] = colMeans(env_fit$mc2,na.rm=T) 
-		env_fit$mc3_all[o,] = colMeans(env_fit$mc3,na.rm=T) 
-		env_fit$mr2_all[o,] = colMeans(env_fit$mr2,na.rm=T) 
-		env_fit$mr3_all[o,] = colMeans(env_fit$mr3,na.rm=T) 
+		env_fit$mc2_all[o,,] =env_fit$mc2
+		env_fit$mc3_all[o,,] =env_fit$mc3 
+		env_fit$mr2_all[o,,] = env_fit$mr2
+		env_fit$mr3_all[o,,] = env_fit$mr3
+		# env_fit$mc2_all[o,] = colMeans(env_fit$mc2,na.rm=T) 
+		# env_fit$mc3_all[o,] = colMeans(env_fit$mc3,na.rm=T) 
+		# env_fit$mr2_all[o,] = colMeans(env_fit$mr2,na.rm=T) 
+		# env_fit$mr3_all[o,] = colMeans(env_fit$mr3,na.rm=T) 
 
 	}
 
