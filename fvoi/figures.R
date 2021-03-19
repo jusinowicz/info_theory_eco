@@ -177,8 +177,94 @@ ggsave(file="fvoi_box3.pdf")
 #=============================================================================
 # Figure 2
 #=============================================================================
-load("env_fit1.var")
+load("env_fit2.var")
 ngens = dim(env_fit$mc2_all)[1]
+
+
+rhos = NULL
+for (s in 1:nspp){ 
+
+	#Convert these to data frames
+	mc21 = as.data.frame(env_fit$mc2_all[,,s])
+	mr21 = as.data.frame(env_fit$mr2_all[,,s])
+	mc31 = as.data.frame(env_fit$mc3_all[,,s])
+	mr31 = as.data.frame(env_fit$mr3_all[,,s])
+
+	#Gather all of the runs into long format
+	mc21_long = mc21%>%gather(run1, val1,V1:V50) #Competition with info
+	mr21_long = mr21%>%gather(run2, val2,V1:V50) #Competition without info
+	mc31_long = mc31%>%gather(run3, val3,V1:V50) #No competition, info
+	mr31_long = mr31%>%gather(run4, val4,V1:V50) #No competition, no info
+
+	#Add a column to denote species
+	gr_use = paste("s",s,sep="")
+	mc21_long=cbind(mc21_long, gr = gr_use)
+	# mr21_long=cbind(mr21_long, gr = gr_use)
+	# mc31_long=cbind(mc31_long, gr = gr_use)
+	# mr31_long=cbind(mr31_long, gr = gr_use)
+
+	#Do the subtraction for the fvoi
+	rhos_tmp = NULL
+	rhos_tmp = cbind(mc21_long,mr21_long,mc31_long,mr31_long )
+	rhos_tmp$val4 = rhos_tmp$val3 - rhos_tmp$val4
+	rhos_tmp$val3 = rhos_tmp$val1 - rhos_tmp$val2
+
+	niches = seq(1, 0, length = ngens) - 0.29
+	rhos_tmp = cbind(Competition = niches, rhos_tmp)
+
+	rhos = rbind(rhos,rhos_tmp)
+
+}
+
+
+r1 = rhos[rhos$Competition>niches[25],]
+c_use = c(color="#440154FF","#35B779FF" )
+#r1 = rhos
+
+p0 = ggplot() +
+	geom_point(data=r1, aes(x=Competition, y=val3, group = gr,color=gr ) )+
+	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val3, group = gr,color=gr ) )+
+	geom_point(data=r1, aes(x=Competition, y=val4, group = gr,color=gr ) )+
+	geom_smooth(data=r1, method="lm" , aes(x=Competition, y=val4, group = gr,color=gr ) )+
+	scale_color_manual(values=c_use)+
+	ylab("Fitness value of information")+ xlab("")+
+	geom_hline(yintercept=0 ,linetype = "dashed")+
+	#geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p0
+
+p1 = ggplot() +
+	geom_point(data=r1, aes(x=Competition, y=val1, group = gr,color=gr ) )+
+	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val1, group = gr,color=gr ) )+
+	geom_point(data=r1, aes(x=Competition, y=val2, group = gr,color=gr ) )+
+	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3),aes(x=Competition, y=val2, group = gr,color=gr ) )+
+	scale_color_manual(values=c_use)+
+	ylab("Fitness")+ xlab("")+
+	geom_hline(yintercept=0 ,linetype = "dashed")+
+	#geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p1
+
+g=grid.arrange(p0, p1, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
+					 heights=unit(0.5, "npc"), ncol = 2,
+					 bottom = textGrob("Niche overlap",gp = gpar(fontsize = 14) ) )
+
+ggsave(file="fig2.pdf", g)
+
+#=============================================================================
+#Misc old plots: 
+#=============================================================================
+load("env_fit1.var")
 rhos = data.frame(1:ngens,  env_fit$mc2_all, env_fit$mr2_all, env_fit$mc2_all-env_fit$mr2_all,env_fit$mc3_all-env_fit$mr3_all )
 names(rhos) = c("Competition", "cc1","cc2", "cr1","cr2","crho1","crho2","rho1","rho2")
 rhos_long = rhos %>% gather(cc, r_cc, cc1:cc2 )%>%
