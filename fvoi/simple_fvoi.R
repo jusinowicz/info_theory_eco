@@ -206,4 +206,6 @@ lines(log(exp(nn*mI) ) ,col="green")
 mI_sim = mean(log(rhoi_i)) - mean(log(rhoi2))
 lines(log(exp(nn*mI_sim) ) ,col="red")
 
-
+####Save stuff for figures
+save(file = "ni_simple.var", Ni, Ni2, Ni_i, rhoi_i, rhoi2, sE, sCgivenE, mI, 
+		mI_sim,env_act,env_sensed)

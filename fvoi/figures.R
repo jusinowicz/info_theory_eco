@@ -154,7 +154,7 @@ ni2 = nil[nil$Time < 100,]
 xpos2 = c(matrix(c(55, 60), 2,1))
 ypos2 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
 ypos2= ypos2[c(1,4)]
-suse2 = c("\u03C1(no information)", "\u03C1(information)")
+suse2 = c("\u03C1(n.i.)", "\u03C1(info)")
 #suse2 = c("A","B")
 
 p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
@@ -183,9 +183,9 @@ infos = infos %>% gather( type, infos, rho:MI  )
 infos$type = factor(infos$type, levels = infos$type)
 
 p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
-	ylab("")+ xlab("")+
+	ylab("Fitness value/information")+ xlab("")+
 	theme_bw() + scale_x_discrete(breaks=infos$type,
-                  labels=c("\u03C1(no information)","\u03C1(information)",
+                  labels=c("\u03C1(n.i.)","\u03C1(info)",
                   			"\u0394 \u03C1", "I(E;C)" ) )+
 		theme(
 		text = element_text(size=14),
@@ -205,9 +205,9 @@ ni2 = nil[nil$Time < 100,]
 
 #For text plotting
 xpos3 = c(matrix(c(55, 60), 2,1))
-ypos3 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
+ypos3 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 25])
 ypos3= ypos3[c(1,4)]
-suse3 = c( "\u03C1(information)","\u03C1(no information)")
+suse3 = c( "\u03C1(info)","\u03C1(n.i.)")
 #suse2 = c("A","B")
 
 p2 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
@@ -226,12 +226,38 @@ p2 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
 p2
 
 
-g=grid.arrange(p1, p2, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
-					 heights=unit(0.5, "npc"), ncol = 2,
-					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
+mlogr2 = mean(log(rho_o))
+mlogr_i2 = mean(log(rho_i))
+mI_sim2 =  mlogr_i2 -mlogr2
+mI2 = mI
+
+infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2 )
+infos2 = infos2 %>% gather( type, infos, rho:MI  )
+infos2$type = factor(infos2$type, levels = infos2$type)
+
+p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos), stat="identity"  ) +
+	ylab("")+ xlab("")+
+	theme_bw() + scale_x_discrete(breaks=infos2$type,
+                  labels=c("\u03C1(n.i.)","\u03C1(info)",
+                  			"\u0394 \u03C1", "I(E;C)" ) )+
+		theme(
+		text = element_text(size=14),
+		panel.border = element_blank(), panel.grid.major = element_blank(),
+		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+		legend.position = "none"
+		)
+p2a
+
+
+g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = gpar(fontsize = 14)) ),
+				arrangeGrob(p1a, p2a, ncol=2, nrow=1),
+				widths=c(unit(0.5, "npc") ), 
+				heights=c( unit(0.5, "npc"),unit(0.25, "npc") )
+				)
 
 ggsave(file="fvoi_box3.pdf",g)
 #cairo_pdf(file="fvoi_box3.pdf")
+
 #=============================================================================
 # Figure 2
 #=============================================================================
