@@ -44,6 +44,25 @@ shannon_D2 = function ( freq = freq) {
 }
 
 #=============================================================================
+# shannon_CE
+# The Shannon conditional entropy  from a joint probability table, 
+# with natural log base.
+# 
+# freq 			The joint probability table
+#=============================================================================
+
+shannon_CE = function ( freq = freq) {
+
+	dims = dim(freq)[1]
+	mar_x = rowSums(freq) 
+	mx_table = matrix(mar_x, dims,dims)
+	ce =  - sum ( freq*log(freq/mx_table),na.rm=T )
+	return(ce)
+
+}
+
+
+#=============================================================================
 # get_ce
 # Conditional entropy in the Rutldege web model. This is mostly implemented to
 # double check the math and have multiple routes to the answer.

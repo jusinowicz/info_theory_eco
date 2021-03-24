@@ -25,7 +25,7 @@ library(tidyverse)
 library(RandomFields)
 library(vegan)
 source("./env_functions.R")
-
+source("../info_theory_functions/info_theory_functions.R")
 #=============================================================================
 #Declare variables 
 #=============================================================================
@@ -39,6 +39,9 @@ nspp = 2
 Ni = matrix(10, ngens+1,nspp) #Population
 Ni2 = matrix(10, ngens+1,nspp) #Population
 Ni_i = matrix(10, ngens+1,nspp) #Population with information
+rhoi = matrix(10, ngens+1,nspp) #Population
+rhoi2 = matrix(10, ngens+1,nspp) #Population
+rhoi_i = matrix(10, ngens+1,nspp) #Population with information
 env_act = matrix(1, ngens+1,1) #Realized environments from sim
 env_sensed = matrix(1, ngens+1,nspp) #Realized environments from sim
 
@@ -145,6 +148,7 @@ for (t in 1:ngens){
 	#This should be exactly the same: 
 	sp_fit2 = sp_fit[sp_fit>0 ]
 	gs2 = gs[(ec+1),]
+	rhoi2 [t+1, ] = gs2*sp_fit2
 	Ni2[t+1,] =  ( Ni2[t,]*gs2*sp_fit2)
 
 	####With information, as determined by conditional probabilities
@@ -158,6 +162,8 @@ for (t in 1:ngens){
 	}
 	sp_fit_i[sp_fit_i<0] = 0 
 
+	rhoi_i[t+1,] = colSums(gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]*
+					sp_fit_i)
 	Ni_i[t+1,] = (colSums(matrix(Ni_i[t,],num_states, nspp,byrow=T)*
 					gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]*
 					sp_fit_i))
@@ -169,7 +175,7 @@ for (t in 1:ngens){
 nn=1:ngens
 plot(log(Ni[,1]),t="l", ylim = c(0,300))
 #Theoretical prediction based on optimal germination/betting strategy (gs)
-lines(log(exp(nn*sum(env_states*log(env_states*fs[,1]) ) ) ),col="red")
+#lines(log(exp(nn*sum(env_states*log(env_states*fs[,1]) ) ) ),col="red")
 #Theoretical prediction when optimal germination matches actual probs
 # Wbp = log(env_prob*fs[,1])
 # Wbp[!is.finite(Wbp)] = 0
@@ -183,3 +189,21 @@ lines(log(Ni_i[,1]),t="l", col="blue")
 lGr = colSums(matrix(env_prob,num_states,nspp)*log(gs*fs))
 #Rate:
 Gr = apply( (gs*fs)^matrix(env_prob,num_states,nspp),2,prod)
+
+####The mutual information between the cue and the environment: 
+env_freq = prop.table(table(env_act)) #Environment frequency
+sE = shannon_D(env_freq) #Shannon entropy
+
+#For species 1: 
+c_and_e = prop.table(table( data.frame ( e =env_act, c = env_sensed[,1]) ))  #Joint prob between env and cue
+sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
+
+#Mutual information: 
+mI = sE - sCgivenE 
+
+n2 = 1:200
+lines(log(exp(nn*mI) ) ,col="green")
+mI_sim = mean(log(rhoi_i)) - mean(log(rhoi2))
+lines(log(exp(nn*mI_sim) ) ,col="red")
+
+

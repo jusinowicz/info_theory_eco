@@ -37,6 +37,7 @@ library(tidyverse)
 library(RandomFields)
 library(vegan)
 source("./env_functions.R")
+source("../info_theory_functions/info_theory_functions.R")
 
 #=============================================================================
 #Declare variables 
@@ -251,8 +252,8 @@ for (t in 1:ngens){
 	#This version is the most similar to the kelly betting example, but does not 
 	#make a lot of ecological sense. In particular, it never makes sense to bet
 	#everything on a really crappy year under conditions of sub-fair odds. 
-	# rho_i[t, ] = ( sr*(1-gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ] )   + 
-	# 			sp_fit_i[t,] * gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]  )
+	rho_i[t, ] = ( sr*(1-gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ] )   + 
+				sp_fit_i[t,] * gec[(env_act[t]+1) , , ][ (env_sensed[t,]+1) ]  )
 
 	# #This version uses the germination rate that matches the sensed environment
 	# rho_i[t, ] = ( sr*(1-gs[(env_sensed[t,]+1)] )   + 
@@ -291,3 +292,20 @@ lines(log(2^(nn*sum(env_prob*Wbp))),col="blue" )
 lGr = colSums(matrix(env_prob,num_states,nspp)*log(gs*fs))
 #Rate:
 Gr = apply( (gs*fs)^matrix(env_prob,num_states,nspp),2,prod)
+
+
+####The mutual information between the cue and the environment: 
+env_freq = prop.table(table(env_act)) #Environment frequency
+sE = shannon_D(env_freq) #Shannon entropy
+
+#For species 1: 
+c_and_e = prop.table(table( data.frame ( e =env_act, c = env_sensed[,1]) ))  #Joint prob between env and cue
+sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
+
+#Mutual information: 
+mI = sE - sCgivenE 
+
+n2 = 1:200
+lines(log(exp(nn*mI) ) ,col="green")
+mI_sim = mean(log(rho_i)) - mean(log(rho_o))
+lines(log(exp(nn*mI_sim) ) ,col="red")
