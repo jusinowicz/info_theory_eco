@@ -141,7 +141,7 @@ for (t in 1:ngens){
 	sp_fit[sp_fit==ec] = fs[sp_fit==ec] #Set winning state to its payout
 	sp_fit[sp_fit<0] = 0
 
-	####Without information
+	####Without information, optimal
 	#New total pop: Betting/germinating proportion * total pop * payout/losses
 	Ni[t+1,] = (colSums(matrix(Ni[t,],num_states, nspp,byrow=T)*gs*sp_fit))
 	
