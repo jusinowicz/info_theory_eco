@@ -142,7 +142,7 @@ ggsave(file="fvoi_box2.pdf", g)
 #=============================================================================
 # Box 3
 #=============================================================================
-load("ni_simple")
+load("ni_simple.var")
 ngens = dim(Ni)[1]
 ni = data.frame(1:ngens, Ni[,1], Ni_i[,1])
 names(ni) = c("Time","ni1","ni_i1")
@@ -171,6 +171,29 @@ p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
 	legend.position = "none"
 	)
 p1
+
+
+mlogr = mean(log(rhoi2))
+mlogr_i = mean(log(rhoi_i))
+mI_sim
+mI
+
+infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI )
+infos = infos %>% gather( type, infos, rho:MI  )
+infos$type = factor(infos$type, levels = infos$type)
+
+p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
+	ylab("")+ xlab("")+
+	theme_bw() + scale_x_discrete(breaks=infos$type,
+                  labels=c("\u03C1(no information)","\u03C1(information)",
+                  			"\u0394 \u03C1", "I(E;C)" ) )+
+		theme(
+		text = element_text(size=14),
+		panel.border = element_blank(), panel.grid.major = element_blank(),
+		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+		legend.position = "none"
+		)
+p1a
 
 load("dm_simp.var")
 ngens = dim(Ni)[1]

@@ -309,3 +309,7 @@ n2 = 1:200
 lines(log(exp(nn*mI) ) ,col="green")
 mI_sim = mean(log(rho_i)) - mean(log(rho_o))
 lines(log(exp(nn*mI_sim) ) ,col="red")
+
+####Save stuff for figures
+save(file ="dm_simp.var",Ni, No, N_noi, rho_noi, rho_o, rho_i, gs_o, gj, gce, gec, 
+		 sE, sCgivenE, mI, mI_sim,env_act,env_sensed)
