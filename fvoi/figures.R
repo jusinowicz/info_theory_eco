@@ -1,7 +1,6 @@
 #=============================================================================
 #Combined plots for FVOI paper
 #=============================================================================
-load("fvoi_plot1.var")
 library(gridExtra)
 require(grid)
 library(tidyverse)
@@ -11,6 +10,7 @@ library(tidyverse)
 #=============================================================================
 # Box 1
 #=============================================================================
+load("fvoi_plot1.var")
 ###Social info model
 both_long_use = subset(both_long, time <= 60 )
 both_long_use$species[both_long_use$species=="1"] = "species 1, no info"
@@ -161,7 +161,7 @@ p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
 	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
 	scale_color_manual(values=c_use)+
 	 #scale_colour_viridis_d()+ 
-	ylab("Population")+ xlab("Time")+
+	ylab("Population")+ xlab("")+
 	geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
  	scale_y_log10()+
 	theme_bw() + theme(
@@ -172,7 +172,42 @@ p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
 	)
 p1
 
-ggsave(file="fvoi_box3.pdf")
+load("dm_simp.var")
+ngens = dim(Ni)[1]
+ni = data.frame(1:ngens, Ni[,1], No[,1])
+names(ni) = c("Time","ni1","no1")
+nil = ni%>%gather(ni, pop, ni1:no1) #%>% gather(ni_i, pop_i, ni_i1:ni_i2)
+c_use = c("#440154FF","#440154FF","#440154FF","#440154FF" )
+ni2 = nil[nil$Time < 100,]
+
+#For text plotting
+xpos3 = c(matrix(c(55, 60), 2,1))
+ypos3 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
+ypos3= ypos3[c(1,4)]
+suse3 = c( "\u03C1(information)","\u03C1(no information)")
+#suse2 = c("A","B")
+
+p2 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
+	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
+	scale_color_manual(values=c_use)+
+	 #scale_colour_viridis_d()+ 
+	ylab("")+ xlab("")+
+	geom_text( aes(x = xpos3, y = ypos3, label = suse3,color=suse2)) +
+ 	scale_y_log10()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p2
+
+
+g=grid.arrange(p1, p2, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
+					 heights=unit(0.5, "npc"), ncol = 2,
+					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
+
+ggsave(file="fvoi_box3.pdf",g)
 #cairo_pdf(file="fvoi_box3.pdf")
 #=============================================================================
 # Figure 2
