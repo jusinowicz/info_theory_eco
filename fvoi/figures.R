@@ -263,8 +263,6 @@ ggsave(file="fvoi_box3.pdf",g)
 #=============================================================================
 load("env_fit2.var")
 ngens = dim(env_fit$mc2_all)[1]
-
-
 rhos = NULL
 for (s in 1:nspp){ 
 
@@ -305,15 +303,23 @@ r1 = rhos[rhos$Competition>niches[25],]
 c_use = c(color="#440154FF","#35B779FF" )
 #r1 = rhos
 
+
+#For text plotting
+xpos2 = c(matrix(c(0.25, 0.55), 2,1))
+ypos2 = c( min(r1$val3[r1$Competition == niches[20]]),max(r1$val4[r1$Competition == niches[10]]) )
+ypos2 = ypos2 - c(0.1, -0.05)
+suse2 = c("Competition", "No competition")
+#suse2 = c("A","B")
+
 p0 = ggplot() +
-	geom_point(data=r1, aes(x=Competition, y=val3, group = gr,color=gr ) )+
+	geom_point(data=r1, aes(x=Competition, y=val3, group = gr,color=gr ))+
 	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val3, group = gr,color=gr ) )+
-	geom_point(data=r1, aes(x=Competition, y=val4, group = gr,color=gr ) )+
+	geom_point(data=r1, aes(x=Competition, y=val4, group = gr,color=gr ),shape=5 )+
 	geom_smooth(data=r1, method="lm" , aes(x=Competition, y=val4, group = gr,color=gr ) )+
 	scale_color_manual(values=c_use)+
 	ylab("Fitness value of information")+ xlab("")+
 	geom_hline(yintercept=0 ,linetype = "dashed")+
-	#geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
+	geom_text( aes(x = xpos2, y = ypos2, label = suse2)) +
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -322,15 +328,23 @@ p0 = ggplot() +
 	)
 p0
 
+
+#For text plotting
+xpos3 = c(matrix(c(0.25, 0.35), 2,1))
+ypos3 = c( max(r1$val2[r1$Competition == niches[23]]) ,min(r1$val1[r1$Competition == niches[18]]))
+ypos3 = ypos3 - c(0.25, -0.15)
+suse3 = c( "No information","Information")
+#suse2 = c("A","B")
+
 p1 = ggplot() +
 	geom_point(data=r1, aes(x=Competition, y=val1, group = gr,color=gr ) )+
 	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val1, group = gr,color=gr ) )+
-	geom_point(data=r1, aes(x=Competition, y=val2, group = gr,color=gr ) )+
+	geom_point(data=r1, aes(x=Competition, y=val2, group = gr,color=gr ),shape=5  )+
 	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3),aes(x=Competition, y=val2, group = gr,color=gr ) )+
 	scale_color_manual(values=c_use)+
 	ylab("Fitness")+ xlab("")+
 	geom_hline(yintercept=0 ,linetype = "dashed")+
-	#geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
+	geom_text( aes(x = xpos3, y = ypos3, label = suse3)) +
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
