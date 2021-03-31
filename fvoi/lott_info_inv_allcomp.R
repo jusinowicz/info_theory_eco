@@ -61,12 +61,12 @@ opts = seq(opt_inc, opt_start-opt_end, opt_inc)
 #Main variables to store information across loops
 env_fit = NULL 
 #With info
-env_fit$mc2_all = matrix (0, nincs,nspp)
-env_fit$mc3_all = matrix (0, nincs,nspp)
+env_fit$mc2_all = array(0, dim = c(nincs,nsamp, nspp ) ) #Model 2 matrix (0, nincs,nspp)
+env_fit$mc3_all =array(0, dim = c(nincs,nsamp, nspp ) ) #matrix (0, nincs,nspp)
 #Without info
-env_fit$mr1_all = matrix (0, nincs,nspp)
-env_fit$mr2_all = matrix (0, nincs,nspp)
-env_fit$mr3_all =matrix (0, nincs,nspp)
+env_fit$mr1_all = array(0, dim = c(nincs,nsamp, nspp ) ) #matrix (0, nincs,nspp)
+env_fit$mr2_all =array(0, dim = c(nincs,nsamp, nspp ) ) # matrix (0, nincs,nspp)
+env_fit$mr3_all =array(0, dim = c(nincs,nsamp, nspp ) ) #matrix (0, nincs,nspp)
 
 #=============================================================================
 #Outer loop
