@@ -5,6 +5,7 @@ library(gridExtra)
 require(grid)
 library(tidyverse)
 library(optbin)
+library(reshape2)
 source("../info_theory_functions/info_theory_functions.R")
 #=============================================================================
 # Paper plots
@@ -274,7 +275,6 @@ elt = data.frame( 1:ngens, env_fit$env, env_fit$fr, env_fit$gr,runif(ngens),runi
 names(elt) = c("Time", "env", "fr1","fr2","gr1","gr2","rgr1","rgr2")
 elt$gr1= elt$gr1*max(elt$fr1)*0.4
 elt$fr1= elt$fr1+max(elt$fr1)*runif(ngens,0,0.5)
-
 
 #el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)
 #el_long = elt %>% gather(fr, repro, env:gr2) 
