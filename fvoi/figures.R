@@ -4,9 +4,12 @@
 library(gridExtra)
 require(grid)
 library(tidyverse)
+library(optbin)
+source("../info_theory_functions/info_theory_functions.R")
 #=============================================================================
 # Paper plots
 #=============================================================================
+load("fvoi_plot1.var")
 #=============================================================================
 # Box 1
 #=============================================================================
@@ -112,7 +115,6 @@ ggsave(file="fvoi_box2.pdf", g)
 #=============================================================================
 # Box 2
 #=============================================================================
-load("fvoi_plot1.var")
 ###Social info model
 both_long_use = subset(both_long, time <= 60 )
 both_long_use$species[both_long_use$species=="1"] = "species 1, no info"
@@ -264,8 +266,84 @@ ggsave(file="fvoi_box3.pdf",g)
 # Figure 1 -- Conceptual figure using the data from Box 1
 #=============================================================================
 # Work in progress
+ngens = length(env_fit$env)
+
+###Environment, species fitness, germination response
+ngens = dim(env_fit$fr)[1]
+elt = data.frame( 1:ngens, env_fit$env, env_fit$fr, env_fit$gr,runif(ngens),runif(ngens)) 
+names(elt) = c("Time", "env", "fr1","fr2","gr1","gr2","rgr1","rgr2")
+elt$gr1= elt$gr1*max(elt$fr1)*0.4
+elt$fr1= elt$fr1+max(elt$fr1)*runif(ngens,0,0.5)
 
 
+#el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)
+#el_long = elt %>% gather(fr, repro, env:gr2) 
+# el_long = elt %>% gather(fr, repro, fr1:rgr2) 
+# el_long$fr[el_long$fr =="fr1" | el_long$fr =="gr1"|el_long$fr =="rgr1"] = "sp1"
+# el_long$fr[el_long$fr =="fr2" | el_long$fr =="gr2"|el_long$fr =="rgr2"] = "sp2"
+el_long = elt %>% gather(fr, repro, fr1) %>% gather(gr, germ, gr1)
+el_long$fr[el_long$fr =="fr1" ] = "sp1"
+el_long$gr[el_long$gr =="gr1"] = "sp2"
+
+el_long$fr[el_long$fr =="fr2" ] = "sp2"
+el_long$gr[el_long$gr =="gr2"] = "sp1"
+
+el2 = subset(el_long, Time<21)
+c_use = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
+
+####The mutual information between the cue and the environment: 
+# This uses hist() to bin and create breaks first, then calculates 
+# frequencies: 
+brks = 10
+e1 = cut(elt$fr1, hist(elt$gr1,breaks=brks)$breaks )
+env_freq = prop.table(table(e1)) #Environment frequency
+sE = shannon_D(env_freq) #Shannon entropy
+
+#For species 1: 
+c1 = cut(elt$gr1,hist(elt$gr1,breaks=brks)$breaks )
+c_and_e = prop.table(table( data.frame ( e =e1, c = c1) ))  #Joint prob between env and cue
+sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
+
+#Mutual information: 
+mI = sE - sCgivenE 
+
+#For text plotting
+xpos = c(matrix(18,2,1))
+ypos = c(el2$repro[el2$Time == 20],el2$germ[el2$Time == 20])
+ypos = ypos + (c(1.5,0.1))
+suse = c("Total rain","Rain in January")
+
+p1 = ggplot() + geom_line(data=el2, aes(x=Time, y=repro,color =fr )) +
+geom_line(data=el2,aes(x=Time, y=germ,color =gr )) +
+scale_color_manual(values=c_use) +
+geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
+ #scale_colour_viridis_d()+ 
+ 	ylab("Rain (cm)")+ 
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p1
+
+#Table of conditional probabilities
+cp1 = melt(c_and_e)
+#d1 = d1[d1$value!=0,]
+
+p3 = ggplot( cp1, aes(x = e, y = c)) + 
+  geom_raster(aes(fill=value)) + 
+  scale_fill_gradient(low="grey90", high="red") +
+  labs(x="Environment", y="Cue", title="") +
+  theme_bw() + theme(axis.text.x=element_text(size=9, angle=0, vjust=0.3),
+                     axis.text.y=element_text(size=9),
+                     plot.title=element_text(size=11))
+p3
+
+
+
+
+ggsave(file="fvoi_fig1.pdf",p1)
 #=============================================================================
 # Figure 2
 #=============================================================================
