@@ -295,7 +295,7 @@ c_use = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
 # This uses hist() to bin and create breaks first, then calculates 
 # frequencies: 
 brks = 10
-e1 = cut(elt$fr1, hist(elt$gr1,breaks=brks)$breaks )
+e1 = cut(elt$fr1, hist(elt$fr1,breaks=brks)$breaks )
 env_freq = prop.table(table(e1)) #Environment frequency
 sE = shannon_D(env_freq) #Shannon entropy
 
@@ -311,7 +311,7 @@ mI = sE - sCgivenE
 xpos = c(matrix(18,2,1))
 ypos = c(el2$repro[el2$Time == 20],el2$germ[el2$Time == 20])
 ypos = ypos + (c(1.5,0.1))
-suse = c("Total rain","Rain in January")
+suse = c("Total rain(E) ","Rain in January(C)")
 
 p1 = ggplot() + geom_line(data=el2, aes(x=Time, y=repro,color =fr )) +
 geom_line(data=el2,aes(x=Time, y=germ,color =gr )) +
@@ -327,23 +327,45 @@ geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
 	)
 p1
 
+
+
+#Table of marginal environmental probabilities
+me1 = data.frame(e = melt(env_freq) )
+#d1 = d1[d1$value!=0,]
+p2 = ggplot( me1, aes(x = 1, y = e.e1)) + 
+  geom_raster(aes(fill=e.value)) + 
+  scale_fill_gradient(low="grey90", high="red") +
+   ylab("Total rain(E)") +
+   xlab("")+
+   ggtitle("P(E)")+
+  theme_bw() + theme(	text = element_text(size=14),
+  									axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+											 legend.position = "none")
+p2
+
 #Table of conditional probabilities
 cp1 = melt(c_and_e)
 #d1 = d1[d1$value!=0,]
-
-p3 = ggplot( cp1, aes(x = e, y = c)) + 
+p3 = ggplot( cp1, aes(x = c, y = e)) + 
   geom_raster(aes(fill=value)) + 
   scale_fill_gradient(low="grey90", high="red") +
-  labs(x="Environment", y="Cue", title="") +
-  theme_bw() + theme(axis.text.x=element_text(size=9, angle=0, vjust=0.3),
-                     axis.text.y=element_text(size=9),
-                     plot.title=element_text(size=11))
+  ggtitle("P(E|C)")+
+  theme_bw() + theme(	text = element_text(size=14), axis.text.y = element_blank(),
+  										axis.title.x = element_blank(),axis.title.y = element_blank(),
+  										plot.title = element_text(hjust = 0.5),
+  										legend.position = "none")
 p3
 
+g=grid.arrange( arrangeGrob(p1, ncol=1, nrow=1 ),	
+								arrangeGrob(p2, p3, ncol=2, nrow=1,bottom = textGrob("Rain in January(C)",gp = gpar(fontsize = 14)),
+							widths=c( unit(0.15, "npc"), unit(0.5, "npc") ) ), 			
+				widths=c(unit(0.5, "npc") ), 
+				heights=c(  unit(0.25, "npc"),unit(0.5, "npc") )
+				)
+
+ggsave(file="fvoi_fig1.pdf",g)
 
 
-
-ggsave(file="fvoi_fig1.pdf",p1)
 #=============================================================================
 # Figure 2
 #=============================================================================
