@@ -273,20 +273,26 @@ ngens = length(env_fit$env)
 ngens = dim(env_fit$fr)[1]
 elt = data.frame( 1:ngens, env_fit$env, env_fit$fr, env_fit$gr,runif(ngens),runif(ngens)) 
 names(elt) = c("Time", "env", "fr1","fr2","gr1","gr2","rgr1","rgr2")
-elt$gr1= elt$gr1*max(elt$fr1)*0.4
-elt$fr1= elt$fr1+max(elt$fr1)*runif(ngens,0,0.5)
+scale_gr1 = 0.4
+m1=max(elt$fr1)
+elt$gr1= elt$gr1*m1*scale_gr1
+elt$fr1= elt$fr1+m1*runif(ngens,0,0.5)
 
 #el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)
 #el_long = elt %>% gather(fr, repro, env:gr2) 
 # el_long = elt %>% gather(fr, repro, fr1:rgr2) 
 # el_long$fr[el_long$fr =="fr1" | el_long$fr =="gr1"|el_long$fr =="rgr1"] = "sp1"
 # el_long$fr[el_long$fr =="fr2" | el_long$fr =="gr2"|el_long$fr =="rgr2"] = "sp2"
-el_long = elt %>% gather(fr, repro, fr1) %>% gather(gr, germ, gr1)
+el_long = elt %>% gather(fr, repro, fr1) %>% gather(gr, germ, gr1)%>% 
+gather(rgr, rgerm, rgr1)
+
 el_long$fr[el_long$fr =="fr1" ] = "sp1"
 el_long$gr[el_long$gr =="gr1"] = "sp2"
+el_long$rgr[el_long$rgr =="rgr1"] = "sp2"
 
 el_long$fr[el_long$fr =="fr2" ] = "sp2"
 el_long$gr[el_long$gr =="gr2"] = "sp1"
+el_long$rgr[el_long$rgr =="rgr2"] = "sp2"
 
 el2 = subset(el_long, Time<21)
 c_use = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
@@ -316,7 +322,7 @@ suse = c("Total rain(E) ","Rain in January(C)")
 p1 = ggplot() + geom_line(data=el2, aes(x=Time, y=repro,color =fr )) +
 geom_line(data=el2,aes(x=Time, y=germ,color =gr )) +
 scale_color_manual(values=c_use) +
-geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
+geom_text( aes(x = xpos, y = ypos, label = suse, color = c_use[2:3]) ) +
  #scale_colour_viridis_d()+ 
  	ylab("Rain (cm)")+ 
 	theme_bw() + theme(
@@ -356,10 +362,70 @@ p3 = ggplot( cp1, aes(x = c, y = e)) +
   										legend.position = "none")
 p3
 
+
+c_use = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
+
+
+p4 = ggplot() + geom_line(data=el2, aes(x=Time, y=3*repro,color =fr ))+
+geom_line(data=el2,aes(x=Time, y=3*germ,color =gr ))+
+geom_line(data=el2, aes(x=Time, y=3*m1*scale_gr1*rgerm,color =rgr ),linetype = "dashed")+
+scale_color_manual(values=c_use)+
+scale_y_continuous(
+	sec.axis = sec_axis (~.*1/(3*m1*scale_gr1), name = "Germination rate" )
+	)+
+ #scale_colour_viridis_d()+ 
+ 	ylab("Reproduction")+ 
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p4
+
+###Lottery model
+ll_sub = subset(lott_long, time <= 21)
+ll_sub = subset(ll_sub, species==1 | species ==3)
+
+ll_sub$N[ll_sub$species=="1"] = ll_sub$N[ll_sub$species=="1"]*3
+ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
+ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
+
+#For text plotting
+xpos2 = c(matrix(10,2,1))
+ypos2 = c(ll_sub$N[ll_sub$time == 1])
+ypos2 = ypos2 + (c(0.2, 0))
+suse2 = unique(ll_sub$species)
+
+c_use = c(color="#35B779FF","#35B779FF"  )
+
+p5 = ggplot() + geom_line(data=ll_sub, aes(x=time, y=N,color =species )) +
+geom_smooth(data=ll_sub, method="lm", aes(x=time, y=N,color =species), se=FALSE, linetype = 1) +
+geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
+scale_color_manual(values=c_use)+
+ #scale_colour_viridis_d()+ 
+ 	ylab("Population")+ xlab("Time")+ 
+ 	scale_y_log10()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p5
+
 g=grid.arrange( arrangeGrob(p1, ncol=1, nrow=1 ),	
 								arrangeGrob(p2, p3, ncol=2, nrow=1,bottom = textGrob("Rain in January(C)",gp = gpar(fontsize = 14)),
 							widths=c( unit(0.15, "npc"), unit(0.5, "npc") ) ), 			
 				widths=c(unit(0.5, "npc") ), 
+				heights=c(  unit(0.25, "npc"),unit(0.5, "npc") )
+				)
+
+g=grid.arrange( arrangeGrob(p1, ncol=1, nrow=1 ),	
+								arrangeGrob(p4, ncol=1, nrow=1 ) ,	
+								arrangeGrob(p2, p3, ncol=2, nrow=1,bottom = textGrob("Rain in January(C)",gp = gpar(fontsize = 14)),
+							widths=c( unit(0.15, "npc"), unit(0.5, "npc") ) ),		
+				widths=c(unit(0.25, "npc"),unit(0.25, "npc") ), 
 				heights=c(  unit(0.25, "npc"),unit(0.5, "npc") )
 				)
 
