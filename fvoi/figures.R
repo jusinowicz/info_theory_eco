@@ -55,15 +55,17 @@ el_long$gr[el_long$gr =="gr2"] = "sp2"
 el_long$rgr[el_long$rgr =="rgr2"] = "sp2"
 
 el2 = subset(el_long, Time<21)
-c_use = c(color="#440154FF","#35B779FF" )
+c_use = c("#440154FF","#35B779FF" )
 
-p1 = ggplot(data=el2) + geom_line(aes(x=Time, y=repro,color =fr ))+
-geom_line(aes(x=Time, y=germ,color =gr ))+
-geom_line(aes(x=Time, y=rgerm,color =rgr ),linetype = "dotted")+
+p1 = ggplot(data=el2) + geom_line(aes(x=Time, y=repro+2.5,color =fr ))+
+geom_line(aes(x=Time, y=3*germ,color =gr ))+
+geom_line(aes(x=Time, y=3*rgerm,color =rgr ),linetype = "dotted")+
 scale_color_manual(values=c_use)+
-geom_hline(yintercept=1 ,linetype = "dashed")+
+scale_y_continuous(
+	sec.axis = sec_axis (~.*1/(3), name = "Germination rate" )
+	)+
  #scale_colour_viridis_d()+ 
- 	ylab("Germination / Reproduction")+ 
+ 	ylab("Reproduction")+ 
 	theme_bw() + theme(
 	text = element_text(size=10),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -73,29 +75,44 @@ geom_hline(yintercept=1 ,linetype = "dashed")+
 p1
 
 ###Lottery model
-ll_sub = subset(lott_long, time <= 60)
+ll_sub = subset(lott_long, time <= 21)
+ll_sub = subset(ll_sub, species == "1" | species =="3")
 ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
-ll_sub$species[ll_sub$species=="2"] = "species 2, cue"
+#ll_sub$species[ll_sub$species=="2"] = "species 2, cue"
 ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
-ll_sub$species[ll_sub$species=="4"] = "species 2, no cue"
+#ll_sub$species[ll_sub$species=="4"] = "species 2, no cue"
 
 
 #For text plotting
-xpos2 = c(matrix(10,4,1))
+###Lottery model
+ll_sub = subset(lott_long, time <= 21)
+ll_sub = subset(ll_sub, species==1 | species ==3)
+
+ll_sub$N[ll_sub$species=="1"] = ll_sub$N[ll_sub$species=="1"]*3
+ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
+ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
+
+#For text plotting
+xpos2 = c(matrix(10,2,1))
 ypos2 = c(ll_sub$N[ll_sub$time == 1])
-ypos2 = ypos2 + (c(0.2,-0.05,-0.1,0.5))
+ypos2 = ypos2 + (c(0.2, 0))
 suse2 = unique(ll_sub$species)
 
-p2 =ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
-	geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
-	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+ 
+c_use3 = c("#35B779FF","#35B779FF"  )
+
+p2 = ggplot() + geom_line(data=ll_sub, aes(x=time, y=N,color =species )) +
+geom_smooth(data=ll_sub, method="lm", aes(x=time, y=N,color =species), se=FALSE, linetype = 1) +
+geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
+scale_color_manual(values=c_use3)+
+ #scale_colour_viridis_d()+ 
+ 	ylab("Population")+ xlab("Time")+ 
+ 	scale_y_log10()+
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
 	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
 	legend.position = "none"
 	)
-
 p2
 
 
@@ -295,7 +312,7 @@ el_long$gr[el_long$gr =="gr2"] = "sp1"
 el_long$rgr[el_long$rgr =="rgr2"] = "sp2"
 
 el2 = subset(el_long, Time<21)
-c_use = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
+c_use1 = c("#35B779FF","#440154FF","#35B779FF","#440154FF" )
 
 ####The mutual information between the cue and the environment: 
 # This uses hist() to bin and create breaks first, then calculates 
@@ -314,15 +331,18 @@ sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
 mI = sE - sCgivenE 
 
 #For text plotting
-xpos = c(matrix(18,2,1))
-ypos = c(el2$repro[el2$Time == 20],el2$germ[el2$Time == 20])
-ypos = ypos + (c(1.5,0.1))
-suse = c("Total rain(E) ","Rain in January(C)")
+xpos1 = c(matrix(18,2,1))
+ypos1 = c(el2$repro[el2$Time == 20],el2$germ[el2$Time == 20])
+ypos1 = ypos1 + (c(1.5,0.1))
+suse1 = c("Total rain(E) ","Rain in January(C)")
+labels1 = data.frame( 
+  label=suse1,
+  x = xpos1, y =ypos1)
 
 p1 = ggplot() + geom_line(data=el2, aes(x=Time, y=repro,color =fr )) +
 geom_line(data=el2,aes(x=Time, y=germ,color =gr )) +
-scale_color_manual(values=c_use) +
-geom_text( aes(x = xpos, y = ypos, label = suse, color = c_use[2:3]) ) +
+geom_text( data=labels1, aes(x=x, y=y, label = label,color=label) ) +
+scale_color_manual(values=c_use1) +
  #scale_colour_viridis_d()+ 
  	ylab("Rain (cm)")+ 
 	theme_bw() + theme(
@@ -363,13 +383,13 @@ p3 = ggplot( cp1, aes(x = c, y = e)) +
 p3
 
 
-c_use = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
+c_use2 = c(color="#440154FF","#35B779FF","#440154FF","#35B779FF"  )
 
 
 p4 = ggplot() + geom_line(data=el2, aes(x=Time, y=3*repro,color =fr ))+
 geom_line(data=el2,aes(x=Time, y=3*germ,color =gr ))+
 geom_line(data=el2, aes(x=Time, y=3*m1*scale_gr1*rgerm,color =rgr ),linetype = "dashed")+
-scale_color_manual(values=c_use)+
+scale_color_manual(values=c_use2)+
 scale_y_continuous(
 	sec.axis = sec_axis (~.*1/(3*m1*scale_gr1), name = "Germination rate" )
 	)+
@@ -397,12 +417,12 @@ ypos2 = c(ll_sub$N[ll_sub$time == 1])
 ypos2 = ypos2 + (c(0.2, 0))
 suse2 = unique(ll_sub$species)
 
-c_use = c(color="#35B779FF","#35B779FF"  )
+c_use3 = c("#35B779FF","#35B779FF"  )
 
 p5 = ggplot() + geom_line(data=ll_sub, aes(x=time, y=N,color =species )) +
 geom_smooth(data=ll_sub, method="lm", aes(x=time, y=N,color =species), se=FALSE, linetype = 1) +
 geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
-scale_color_manual(values=c_use)+
+scale_color_manual(values=c_use3)+
  #scale_colour_viridis_d()+ 
  	ylab("Population")+ xlab("Time")+ 
  	scale_y_log10()+
@@ -424,7 +444,8 @@ g=grid.arrange( arrangeGrob(p1, ncol=1, nrow=1 ),
 g=grid.arrange( arrangeGrob(p1, ncol=1, nrow=1 ),	
 								arrangeGrob(p4, ncol=1, nrow=1 ) ,	
 								arrangeGrob(p2, p3, ncol=2, nrow=1,bottom = textGrob("Rain in January(C)",gp = gpar(fontsize = 14)),
-							widths=c( unit(0.15, "npc"), unit(0.5, "npc") ) ),		
+							widths=c( unit(0.15, "npc"), unit(0.5, "npc") ) ),
+								arrangeGrob(p5, ncol=1, nrow=1 ),	
 				widths=c(unit(0.25, "npc"),unit(0.25, "npc") ), 
 				heights=c(  unit(0.25, "npc"),unit(0.5, "npc") )
 				)
