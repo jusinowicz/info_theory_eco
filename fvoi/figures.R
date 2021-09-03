@@ -218,22 +218,26 @@ mI
 # p1a
 
 ##A stacked version, where the MI, D, and delta rho are stacked
-infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI, DKL = 0 )
-infos = infos %>% gather( type, infos, rho:DKL  )
-infos$type2 = c("rho1","rho2","infos","infos","infos")
-infos$type = factor(infos$type, levels = infos$type)
+infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, DKL = 0 )
+infos = infos %>% gather( name, infos, rho:DKL )
+infos$type1 = c("r1","r1","it1","it2")
+infos$type2 = c("rho1","rho2","infos","infos")
+infos$tname = factor(infos$name, levels = infos$name)
+infos$type1 = factor(infos$type1, levels = unique(infos$type1) )
 infos$type2 = factor(infos$type2, levels = unique(infos$type2) )
-p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
-	ylab("Fitness value/information")+ xlab("")+ scale_y_continuous(limits = c(0, 2.4))+
-	theme_bw() + scale_x_discrete(breaks=infos$type,
-                  labels=c("\u03C1(E~U)","\u03C1(E|C)",
-                  			"\u0394 \u03C1", "I(E;C)", expression(D[KL]) ) )+
+
+
+p1a = ggplot()  + geom_bar(data=infos, aes(x = type2, y = infos,fill = type1),position="stack", stat="identity"  ) +
+	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
+	theme_bw() + scale_x_discrete(breaks=unique(infos$type2),
+                     labels=c("\u03C1(E~U)","\u03C1(E|C)",
+                  			"I(E;C)") )+ #, "\u0394 \u03C1", , expression(D[KL]) ) )+
 		theme(
 		text = element_text(size=14),
 		panel.border = element_blank(), panel.grid.major = element_blank(),
 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
 		legend.position = "none"
-		)
+		) + scale_fill_grey(start = 0, end = .9)
 p1a
 
 load("dm_simp.var")
@@ -290,23 +294,25 @@ mI2 = mI
 # p2a
 
 ##A stacked version, where the MI, D, and delta rho are stacked
-infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2, DKL = mI2-mI_sim2  )
-infos2 = infos2 %>% gather( type, infos, rho:DKL )
-infos2$type2 = c("rho1","rho2","infos","infos","infos")
-infos2$type = factor(infos2$type, levels = infos2$type)
+infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, DKL = mI2-mI_sim2  )
+infos2 = infos2 %>% gather( name, infos, rho:DKL )
+infos2$type1 = c("r1","r1","it1","it2")
+infos2$type2 = c("rho1","rho2","infos","infos")
+infos2$tname = factor(infos2$name, levels = infos2$name)
+infos2$type1 = factor(infos2$type1, levels = unique(infos2$type1) )
 infos2$type2 = factor(infos2$type2, levels = unique(infos2$type2) )
 
-p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos,fill = type2),position="stack", stat="identity"  ) +
+p2a = ggplot() + geom_bar(data=infos2, aes(x = type2, y = infos,fill = type1),position="stack", stat="identity"  ) +
 	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
-	theme_bw() + scale_x_discrete(breaks=infos2$type,
+	theme_bw() + scale_x_discrete(breaks=unique(infos2$type2),
                      labels=c("\u03C1(E~U)","\u03C1(E|C)",
-                  			"\u0394 \u03C1", "I(E;C)", expression(D[KL]) ) )+
+                  			 "I(E;C)") )+ #,"\u0394 \u03C1", expression(D[KL]) ) )+
 		theme(
 		text = element_text(size=14),
 		panel.border = element_blank(), panel.grid.major = element_blank(),
 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
 		legend.position = "none"
-		)
+		)+ scale_fill_grey(start = 0, end = .9)
 p2a
 
 g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = gpar(fontsize = 14)) ),
@@ -315,7 +321,7 @@ g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = 
 				heights=c( unit(0.5, "npc"),unit(0.25, "npc") )
 				)
 
-ggsave(file="fvoi_box3.pdf",g)
+ggsave(file="fvoi_box3b.pdf",g)
 #cairo_pdf(file="fvoi_box3.pdf")
 
 #=============================================================================
