@@ -176,7 +176,7 @@ ni2 = nil[nil$Time < 100,]
 xpos2 = c(matrix(c(55, 60), 2,1))
 ypos2 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
 ypos2= ypos2[c(1,4)]
-suse2 = c("\u03C1(n.i.)", "\u03C1(info)")
+suse2 = c("\u03C1(E~U)", "\u03C1(E|C)")
 #suse2 = c("A","B")
 
 p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
@@ -200,15 +200,34 @@ mlogr_i = mean(log(rhoi_i))
 mI_sim
 mI
 
-infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI )
-infos = infos %>% gather( type, infos, rho:MI  )
-infos$type = factor(infos$type, levels = infos$type)
+# infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI, DKL = mI_sim - mI )
+# infos = infos %>% gather( type, infos, rho:DKL  )
+# infos$type = factor(infos$type, levels = infos$type)
 
+# p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
+# 	ylab("Fitness value/information")+ xlab("")+ scale_y_continuous(limits = c(0, 2.4))+
+# 	theme_bw() + scale_x_discrete(breaks=infos$type,
+#                   labels=c("\u03C1(E~U)","\u03C1(E|C)",
+#                   			"\u0394 \u03C1", "I(E;C)" ) )+
+# 		theme(
+# 		text = element_text(size=14),
+# 		panel.border = element_blank(), panel.grid.major = element_blank(),
+# 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+# 		legend.position = "none"
+# 		)
+# p1a
+
+##A stacked version, where the MI, D, and delta rho are stacked
+infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI, DKL = 0 )
+infos = infos %>% gather( type, infos, rho:DKL  )
+infos$type2 = c("rho1","rho2","infos","infos","infos")
+infos$type = factor(infos$type, levels = infos$type)
+infos$type2 = factor(infos$type2, levels = unique(infos$type2) )
 p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
-	ylab("Fitness value/information")+ xlab("")+
+	ylab("Fitness value/information")+ xlab("")+ scale_y_continuous(limits = c(0, 2.4))+
 	theme_bw() + scale_x_discrete(breaks=infos$type,
-                  labels=c("\u03C1(n.i.)","\u03C1(info)",
-                  			"\u0394 \u03C1", "I(E;C)" ) )+
+                  labels=c("\u03C1(E~U)","\u03C1(E|C)",
+                  			"\u0394 \u03C1", "I(E;C)", expression(D[KL]) ) )+
 		theme(
 		text = element_text(size=14),
 		panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -229,7 +248,7 @@ ni2 = nil[nil$Time < 100,]
 xpos3 = c(matrix(c(55, 60), 2,1))
 ypos3 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 25])
 ypos3= ypos3[c(1,4)]
-suse3 = c( "\u03C1(info)","\u03C1(n.i.)")
+suse3 = c( "\u03C1(E|C)","\u03C1(E~U)")
 #suse2 = c("A","B")
 
 p2 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
@@ -253,15 +272,35 @@ mlogr_i2 = mean(log(rho_i))
 mI_sim2 =  mlogr_i2 -mlogr2
 mI2 = mI
 
-infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2 )
-infos2 = infos2 %>% gather( type, infos, rho:MI  )
-infos2$type = factor(infos2$type, levels = infos2$type)
+# infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2 )
+# infos2 = infos2 %>% gather( type, infos, rho:MI  )
+# infos2$type = factor(infos2$type, levels = infos2$type)
 
-p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos), stat="identity"  ) +
-	ylab("")+ xlab("")+
+# p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos), stat="identity"  ) +
+# 	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
+# 	theme_bw() + scale_x_discrete(breaks=infos2$type,
+#                   labels=c("\u03C1(E~U)","\u03C1(E|C)",
+#                   			"\u0394 \u03C1", "I(E;C)" ) )+
+# 		theme(
+# 		text = element_text(size=14),
+# 		panel.border = element_blank(), panel.grid.major = element_blank(),
+# 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+# 		legend.position = "none"
+# 		)
+# p2a
+
+##A stacked version, where the MI, D, and delta rho are stacked
+infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2, DKL = mI2-mI_sim2  )
+infos2 = infos2 %>% gather( type, infos, rho:DKL )
+infos2$type2 = c("rho1","rho2","infos","infos","infos")
+infos2$type = factor(infos2$type, levels = infos2$type)
+infos2$type2 = factor(infos2$type2, levels = unique(infos2$type2) )
+
+p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos,fill = type2),position="stack", stat="identity"  ) +
+	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
 	theme_bw() + scale_x_discrete(breaks=infos2$type,
-                  labels=c("\u03C1(n.i.)","\u03C1(info)",
-                  			"\u0394 \u03C1", "I(E;C)" ) )+
+                     labels=c("\u03C1(E~U)","\u03C1(E|C)",
+                  			"\u0394 \u03C1", "I(E;C)", expression(D[KL]) ) )+
 		theme(
 		text = element_text(size=14),
 		panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -269,7 +308,6 @@ p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos), stat="identity"
 		legend.position = "none"
 		)
 p2a
-
 
 g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = gpar(fontsize = 14)) ),
 				arrangeGrob(p1a, p2a, ncol=2, nrow=1),
