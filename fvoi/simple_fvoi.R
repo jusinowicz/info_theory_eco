@@ -25,7 +25,7 @@ library(tidyverse)
 library(RandomFields)
 library(vegan)
 source("./env_functions.R")
-source("../info_theory_functions/info_theory_functions.R")
+source("./info_theory_functions.R")
 #=============================================================================
 #Declare variables 
 #=============================================================================
@@ -112,6 +112,8 @@ fm = matrix(num_states,nspp,1) # When this is a constant = num_states, fair odds
 fs = matrix(0,num_states,nspp)
 for (s in 1:nspp) { fs[,s] = get_species_fit(probs=env_prob, fcor = fs_cor, fm=fm[s], 
 	method=fm_method )}
+hist(fs) #Show fitness distribution 
+
 
 ####Conditional germination fraction i.e. germination with information
 #This function creates a table of conditional probabilities based on the
@@ -123,6 +125,8 @@ gce = gec
 for(s in 1:nspp){
 	#Joint probability distribution: G(E|C) * G(C)
 	gj[,,s] = gec[,,s]*matrix(gs[,s], num_states,num_states,byrow=T ) 
+	#For 0 MI, scramble to Cue: 
+	#gj[,,s] = matrix(runif(num_states^2), num_states,num_states,byrow=T ) 
 	#G(C|E) = G(C,E)/G(E)
 	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
 }
@@ -156,6 +160,7 @@ for (t in 1:ngens){
 	sp_fit_i = matrix((0:(num_states-1)),num_states,nspp)
 	for( s in 1:nspp){ 
 		env_sensed[t,s] = sample(x=(0:(num_states-1)), size=1, prob =gce[ (env_act[t]+1),,s], replace=T)
+		env_sensed[t,s] = 
 		ec = env_sensed[t,s]
 		sp_fit_i[,s][sp_fit_i[,s]!=ec] = -1 #Identify losers
 		sp_fit_i[,s][sp_fit_i[,s]==ec] = fs[,s][sp_fit_i[,s]==ec] #Set winning state to its payout
@@ -181,7 +186,7 @@ plot(log(Ni[,1]),t="l", ylim = c(0,300))
 # Wbp[!is.finite(Wbp)] = 0
 # lines(log(exp(nn*sum(env_prob*Wbp))),col="blue" )
 
-#Add in concditional population growth (growth with cue/information)
+#Add in conditional population growth (growth with cue/information)
 lines(log(Ni_i[,1]),t="l", col="blue")
 
 #The theoretical population growth rate:
@@ -195,6 +200,7 @@ env_freq = prop.table(table(env_act)) #Environment frequency
 sE = shannon_D(env_freq) #Shannon entropy
 
 #For species 1: 
+#env_act[ngens] = 9
 c_and_e = prop.table(table( data.frame ( e =env_act, c = env_sensed[,1]) ))  #Joint prob between env and cue
 sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
 

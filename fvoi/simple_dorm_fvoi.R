@@ -48,6 +48,8 @@ nspp = 2
 
 #Survival rates: 
 sr = c(0.8,0.8)
+sr = c(0.4,0.4)
+
 
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
@@ -195,7 +197,9 @@ gj = gec
 gce = gec
 for(s in 1:nspp){
 	#Joint probability distribution G(E,C) = G(C,E) = G(E|C) * G(C)
-	gj[,,s] = gec[,,s]*matrix(env_states, num_states,num_states,byrow=T ) 
+	#gj[,,s] = gec[,,s]*matrix(env_states, num_states,num_states,byrow=T ) 
+	#For 0 MI, scramble to Cue: 
+	gj[,,s] = matrix(runif(num_states^2), num_states,num_states,byrow=T ) 
 	#G(C|E) = G(C,E)/G(E)
 	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
 	gce[,,s][!is.finite(gce[,,s])] = 0
@@ -299,6 +303,9 @@ env_freq = prop.table(table(env_act)) #Environment frequency
 sE = shannon_D(env_freq) #Shannon entropy
 
 #For species 1: 
+env_act[ngens] = 9
+env_act[ngens-1] = 8
+
 c_and_e = prop.table(table( data.frame ( e =env_act, c = env_sensed[,1]) ))  #Joint prob between env and cue
 sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
 
