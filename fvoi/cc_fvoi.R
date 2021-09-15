@@ -131,6 +131,7 @@ p0 = ggplot()+ geom_line( data = both_long, aes ( x = time, y = N, color = speci
 ylab("Population")+
 theme(axis.text.x=element_blank(), axis.title.x=element_blank()) #, legend.position = "none") 
 p0
+
 #=============================================================================
 # Calculate the fitness value of information
 #	This is done by subtracting the instantaneous boundary growth rate 

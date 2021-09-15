@@ -78,7 +78,7 @@ Ni = matrix(0.1, ngens+1,nspp)
 #	   mweights		weighting for rand_each				
 #=============================================================================
 
-#It seems easier to make the species first, then taylor the environment. 
+#It seems easier to make the species first, then tailor the environment. 
 
 #Fitness: Distribution of species' optimal fitness environment
 #Be sure the optimum and variance are chosen with the environmental
