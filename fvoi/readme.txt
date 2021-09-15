@@ -25,8 +25,9 @@ This is the code used to produce the data in Figure 4.
 Figures: 
 The code in "figures.R" is used to make all of the figures in the manuscript. It loads stored data files, all of which are save with a ".var" ending. This is the map between files and figures: 
 
-load("fvoi_plot1.var") #Figure 1,3,5
-load("ni_simple.var") #Figure 2
-load("env_fit2.var") #Figure 4
+load("./data/fvoi_plot1.var") #Figure 1,3,5
+#"ni_simple.var" #Figure 2
+#"env_fit2.var"# #Figure 4
+# "dm_simp.var" #Figure 2 
 
 
