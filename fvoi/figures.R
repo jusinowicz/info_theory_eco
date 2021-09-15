@@ -10,319 +10,9 @@ source("../info_theory_functions/info_theory_functions.R")
 #=============================================================================
 # Paper plots
 #=============================================================================
-load("fvoi_plot1.var")
-#=============================================================================
-# Box 1
-#=============================================================================
-###Draw species intrinsic fitness curve and plot them overtop the realized 
-###env distribution: 
-ngens = length(env_fit$env)
-r1 = seq(0,1,length=ngens)
-sp1 = exp(-0.5* ( (r1-env_fit$opt[1])/(env_fit$var[1]) )^2 )
-sp2 = exp(-0.5* ( (r1-env_fit$opt[2])/(env_fit$var[1]) )^2 )
-elt = data.frame( env_fit$env, r1, sp1, sp2) 
-names(elt) = c("env", "r1","sp1","sp2")
-
-p0=ggplot(data=elt)+geom_histogram(aes(x=env,y=..ncount..),color="black",fill="white")+
-geom_line(aes(x=r1, y=sp1),color="#440154FF")+
-geom_line(aes(x=r1, y=sp2),color="#35B779FF")+
-ylab("Fitness value")+ xlab("Environment")+
-theme_bw() + theme(
-	text = element_text(size=10),
-	panel.border = element_blank(), panel.grid.major = element_blank(),
-	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-	legend.position = "none"
-	)
-p0
-
-###Environment, species fitness, germination response
-ngens = dim(env_fit$fr)[1]
-elt = data.frame( 1:ngens, env_fit$env, env_fit$fr, env_fit$gr,runif(ngens),runif(ngens)) 
-names(elt) = c("Time", "env", "fr1","fr2","gr1","gr2","rgr1","rgr2")
-#el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)
-#el_long = elt %>% gather(fr, repro, env:gr2) 
-# el_long = elt %>% gather(fr, repro, fr1:rgr2) 
-# el_long$fr[el_long$fr =="fr1" | el_long$fr =="gr1"|el_long$fr =="rgr1"] = "sp1"
-# el_long$fr[el_long$fr =="fr2" | el_long$fr =="gr2"|el_long$fr =="rgr2"] = "sp2"
-el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)%>% 
-gather(rgr, rgerm, rgr1:rgr2)
-el_long$fr[el_long$fr =="fr1" ] = "sp1"
-el_long$gr[el_long$gr =="gr1"] = "sp1"
-el_long$rgr[el_long$rgr =="rgr1"] = "sp1"
-
-el_long$fr[el_long$fr =="fr2" ] = "sp2"
-el_long$gr[el_long$gr =="gr2"] = "sp2"
-el_long$rgr[el_long$rgr =="rgr2"] = "sp2"
-
-el2 = subset(el_long, Time<21)
-c_use = c("#440154FF","#35B779FF" )
-
-p1 = ggplot(data=el2) + geom_line(aes(x=Time, y=repro+2.5,color =fr ))+
-geom_line(aes(x=Time, y=3*germ,color =gr ))+
-geom_line(aes(x=Time, y=3*rgerm,color =rgr ),linetype = "dotted")+
-scale_color_manual(values=c_use)+
-scale_y_continuous(
-	sec.axis = sec_axis (~.*1/(3), name = "Germination rate" )
-	)+
- #scale_colour_viridis_d()+ 
- 	ylab("Reproduction")+ 
-	theme_bw() + theme(
-	text = element_text(size=10),
-	panel.border = element_blank(), panel.grid.major = element_blank(),
-	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-	legend.position = "none"
-	)
-p1
-
-###Lottery model
-ll_sub = subset(lott_long, time <= 21)
-ll_sub = subset(ll_sub, species == "1" | species =="3")
-ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
-#ll_sub$species[ll_sub$species=="2"] = "species 2, cue"
-ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
-#ll_sub$species[ll_sub$species=="4"] = "species 2, no cue"
-
-
-#For text plotting
-###Lottery model
-ll_sub = subset(lott_long, time <= 21)
-ll_sub = subset(ll_sub, species==1 | species ==3)
-
-ll_sub$N[ll_sub$species=="1"] = ll_sub$N[ll_sub$species=="1"]*3
-ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
-ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
-
-#For text plotting
-xpos2 = c(matrix(10,2,1))
-ypos2 = c(ll_sub$N[ll_sub$time == 1])
-ypos2 = ypos2 + (c(0.2, 0))
-suse2 = unique(ll_sub$species)
-
-c_use3 = c("#35B779FF","#35B779FF"  )
-
-p2 = ggplot() + geom_line(data=ll_sub, aes(x=time, y=N,color =species )) +
-geom_smooth(data=ll_sub, method="lm", aes(x=time, y=N,color =species), se=FALSE, linetype = 1) +
-geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
-scale_color_manual(values=c_use3)+
- #scale_colour_viridis_d()+ 
- 	ylab("Population")+ xlab("Time")+ 
- 	scale_y_log10()+
-	theme_bw() + theme(
-	text = element_text(size=14),
-	panel.border = element_blank(), panel.grid.major = element_blank(),
-	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-	legend.position = "none"
-	)
-p2
-
-
-# g=grid.arrange(p0, p1, p2, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
-# 					 heights=unit(0.5, "npc"), ncol = 2,
-# 					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
-
-# g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
-#          arrangeGrob(p2, ncol=1, nrow=1), heights=c(4,1), widths=c(1,2))
-
-g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
-         arrangeGrob(p2, ncol=1, nrow=1), widths=c(unit(0.5, "npc"), 
-         	unit(0.75, "npc") ), heights=unit(0.5, "npc"))
-
-
-ggsave(file="fvoi_box2.pdf", g)
-
-#=============================================================================
-# Box 2
-#=============================================================================
-###Social info model
-both_long_use = subset(both_long, time <= 60 )
-both_long_use$species[both_long_use$species=="1"] = "species 1, no info"
-both_long_use$species[both_long_use$species=="2"] = "species 2, no info"
-both_long_use$species[both_long_use$species=="3"] = "species 1, social info"
-both_long_use$species[both_long_use$species=="4"] = "species 2, social info"
-
-#For text plotting
-xpos = c(matrix(40,4,1))
-ypos = c(both_long_use$N[both_long_use$time == 60])
-ypos = ypos + (c(-1,1,-1,1))
-suse = unique(both_long_use$species)
-
-p0 =ggplot()+ geom_line( data = both_long_use, aes ( x = time, y = N, color = species)  )+ 
-	geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
-	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+
-	theme_bw() + theme(
-	text = element_text(size=14),
-	panel.border = element_blank(), panel.grid.major = element_blank(),
-	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-	legend.position = "none"
-	)
-
-p0
-ggsave(file="fvoi_box1.pdf", p0)
-
-
-
-#=============================================================================
-# Box 3
-#=============================================================================
-load("ni_simple.var")
-ngens = dim(Ni)[1]
-ni = data.frame(1:ngens, Ni[,1], Ni_i[,1])
-names(ni) = c("Time","ni1","ni_i1")
-nil = ni%>%gather(ni, pop, ni1:ni_i1) #%>% gather(ni_i, pop_i, ni_i1:ni_i2)
-c_use = c("#440154FF","#440154FF","#440154FF","#440154FF" )
-ni2 = nil[nil$Time < 100,]
-
-#For text plotting
-xpos2 = c(matrix(c(55, 60), 2,1))
-ypos2 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
-ypos2= ypos2[c(1,4)]
-suse2 = c("\u03C1(E~U)", "\u03C1(E|C)")
-#suse2 = c("A","B")
-
-p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
-	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
-	scale_color_manual(values=c_use)+
-	 #scale_colour_viridis_d()+ 
-	ylab("Population")+ xlab("")+
-	geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
- 	scale_y_log10()+
-	theme_bw() + theme(
-	text = element_text(size=14),
-	panel.border = element_blank(), panel.grid.major = element_blank(),
-	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-	legend.position = "none"
-	)
-p1
-
-
-mlogr = mean(log(rhoi2))
-mlogr_i = mean(log(rhoi_i))
-mI_sim
-mI
-
-# infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI, DKL = mI_sim - mI )
-# infos = infos %>% gather( type, infos, rho:DKL  )
-# infos$type = factor(infos$type, levels = infos$type)
-
-# p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
-# 	ylab("Fitness value/information")+ xlab("")+ scale_y_continuous(limits = c(0, 2.4))+
-# 	theme_bw() + scale_x_discrete(breaks=infos$type,
-#                   labels=c("\u03C1(E~U)","\u03C1(E|C)",
-#                   			"\u0394 \u03C1", "I(E;C)" ) )+
-# 		theme(
-# 		text = element_text(size=14),
-# 		panel.border = element_blank(), panel.grid.major = element_blank(),
-# 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-# 		legend.position = "none"
-# 		)
-# p1a
-
-##A stacked version, where the MI, D, and delta rho are stacked
-infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, DKL = 0 )
-infos = infos %>% gather( name, infos, rho:DKL )
-infos$type1 = c("r1","r1","it1","it2")
-infos$type2 = c("rho1","rho2","infos","infos")
-infos$tname = factor(infos$name, levels = infos$name)
-infos$type1 = factor(infos$type1, levels = unique(infos$type1) )
-infos$type2 = factor(infos$type2, levels = unique(infos$type2) )
-
-
-p1a = ggplot()  + geom_bar(data=infos, aes(x = type2, y = infos,fill = type1),position="stack", stat="identity"  ) +
-	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
-	theme_bw() + scale_x_discrete(breaks=unique(infos$type2),
-                     labels=c("\u03C1(E~U)","\u03C1(E|C)",
-                  			"I(E;C)") )+ #, "\u0394 \u03C1", , expression(D[KL]) ) )+
-		theme(
-		text = element_text(size=14),
-		panel.border = element_blank(), panel.grid.major = element_blank(),
-		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-		legend.position = "none"
-		) + scale_fill_grey(start = 0, end = .9)
-p1a
-
-load("dm_simp.var")
-ngens = dim(Ni)[1]
-ni = data.frame(1:ngens, Ni[,1], No[,1])
-names(ni) = c("Time","ni1","no1")
-nil = ni%>%gather(ni, pop, ni1:no1) #%>% gather(ni_i, pop_i, ni_i1:ni_i2)
-c_use = c("#440154FF","#440154FF","#440154FF","#440154FF" )
-ni2 = nil[nil$Time < 100,]
-
-#For text plotting
-xpos3 = c(matrix(c(55, 60), 2,1))
-ypos3 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 25])
-ypos3= ypos3[c(1,4)]
-suse3 = c( "\u03C1(E|C)","\u03C1(E~U)")
-#suse2 = c("A","B")
-
-p2 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
-	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
-	scale_color_manual(values=c_use)+
-	 #scale_colour_viridis_d()+ 
-	ylab("")+ xlab("")+
-	geom_text( aes(x = xpos3, y = ypos3, label = suse3,color=suse2)) +
- 	scale_y_log10()+
-	theme_bw() + theme(
-	text = element_text(size=14),
-	panel.border = element_blank(), panel.grid.major = element_blank(),
-	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-	legend.position = "none"
-	)
-p2
-
-
-mlogr2 = mean(log(rho_o))
-mlogr_i2 = mean(log(rho_i))
-mI_sim2 =  mlogr_i2 -mlogr2
-mI2 = mI
-
-# infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2 )
-# infos2 = infos2 %>% gather( type, infos, rho:MI  )
-# infos2$type = factor(infos2$type, levels = infos2$type)
-
-# p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos), stat="identity"  ) +
-# 	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
-# 	theme_bw() + scale_x_discrete(breaks=infos2$type,
-#                   labels=c("\u03C1(E~U)","\u03C1(E|C)",
-#                   			"\u0394 \u03C1", "I(E;C)" ) )+
-# 		theme(
-# 		text = element_text(size=14),
-# 		panel.border = element_blank(), panel.grid.major = element_blank(),
-# 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-# 		legend.position = "none"
-# 		)
-# p2a
-
-##A stacked version, where the MI, D, and delta rho are stacked
-infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, DKL = mI2-mI_sim2  )
-infos2 = infos2 %>% gather( name, infos, rho:DKL )
-infos2$type1 = c("r1","r1","it1","it2")
-infos2$type2 = c("rho1","rho2","infos","infos")
-infos2$tname = factor(infos2$name, levels = infos2$name)
-infos2$type1 = factor(infos2$type1, levels = unique(infos2$type1) )
-infos2$type2 = factor(infos2$type2, levels = unique(infos2$type2) )
-
-p2a = ggplot() + geom_bar(data=infos2, aes(x = type2, y = infos,fill = type1),position="stack", stat="identity"  ) +
-	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
-	theme_bw() + scale_x_discrete(breaks=unique(infos2$type2),
-                     labels=c("\u03C1(E~U)","\u03C1(E|C)",
-                  			 "I(E;C)") )+ #,"\u0394 \u03C1", expression(D[KL]) ) )+
-		theme(
-		text = element_text(size=14),
-		panel.border = element_blank(), panel.grid.major = element_blank(),
-		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-		legend.position = "none"
-		)+ scale_fill_grey(start = 0, end = .9)
-p2a
-
-g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = gpar(fontsize = 14)) ),
-				arrangeGrob(p1a, p2a, ncol=2, nrow=1),
-				widths=c(unit(0.5, "npc") ), 
-				heights=c( unit(0.5, "npc"),unit(0.25, "npc") )
-				)
-
-ggsave(file="fvoi_box3b.pdf",g)
-#cairo_pdf(file="fvoi_box3.pdf")
+load("fvoi_plot1.var") #Figure 1,3,5
+load("ni_simple.var") #Figure 2
+load("env_fit2.var") #Figure 4
 
 #=============================================================================
 # Figure 1 -- Conceptual figure using the data from Box 1
@@ -500,7 +190,288 @@ ggsave(file="fvoi_fig1.pdf",g)
 #=============================================================================
 # Figure 2
 #=============================================================================
-load("env_fit2.var")
+ngens = dim(Ni)[1]
+ni = data.frame(1:ngens, Ni[,1], Ni_i[,1])
+names(ni) = c("Time","ni1","ni_i1")
+nil = ni%>%gather(ni, pop, ni1:ni_i1) #%>% gather(ni_i, pop_i, ni_i1:ni_i2)
+c_use = c("#440154FF","#440154FF","#440154FF","#440154FF" )
+ni2 = nil[nil$Time < 100,]
+
+#For text plotting
+xpos2 = c(matrix(c(55, 60), 2,1))
+ypos2 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 50])
+ypos2= ypos2[c(1,4)]
+suse2 = c("\u03C1(E~U)", "\u03C1(E|C)")
+#suse2 = c("A","B")
+
+p1 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
+	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
+	scale_color_manual(values=c_use)+
+	 #scale_colour_viridis_d()+ 
+	ylab("Population")+ xlab("")+
+	geom_text( aes(x = xpos2, y = ypos2, label = suse2,color=suse2)) +
+ 	scale_y_log10()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p1
+
+
+mlogr = mean(log(rhoi2))
+mlogr_i = mean(log(rhoi_i))
+mI_sim
+mI
+
+# infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, MI =mI, DKL = mI_sim - mI )
+# infos = infos %>% gather( type, infos, rho:DKL  )
+# infos$type = factor(infos$type, levels = infos$type)
+
+# p1a = ggplot() + geom_bar(data=infos, aes(x = type, y = infos), stat="identity"  ) +
+# 	ylab("Fitness value/information")+ xlab("")+ scale_y_continuous(limits = c(0, 2.4))+
+# 	theme_bw() + scale_x_discrete(breaks=infos$type,
+#                   labels=c("\u03C1(E~U)","\u03C1(E|C)",
+#                   			"\u0394 \u03C1", "I(E;C)" ) )+
+# 		theme(
+# 		text = element_text(size=14),
+# 		panel.border = element_blank(), panel.grid.major = element_blank(),
+# 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+# 		legend.position = "none"
+# 		)
+# p1a
+
+##A stacked version, where the MI, D, and delta rho are stacked
+infos = data.frame( rho = mlogr, rho_i = mlogr_i, MI_sim = mI_sim, DKL = 0 )
+infos = infos %>% gather( name, infos, rho:DKL )
+infos$type1 = c("r1","r1","it1","it2")
+infos$type2 = c("rho1","rho2","infos","infos")
+infos$tname = factor(infos$name, levels = infos$name)
+infos$type1 = factor(infos$type1, levels = unique(infos$type1) )
+infos$type2 = factor(infos$type2, levels = unique(infos$type2) )
+
+
+p1a = ggplot()  + geom_bar(data=infos, aes(x = type2, y = infos,fill = type1),position="stack", stat="identity"  ) +
+	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
+	theme_bw() + scale_x_discrete(breaks=unique(infos$type2),
+                     labels=c("\u03C1(E~U)","\u03C1(E|C)",
+                  			"I(E;C)") )+ #, "\u0394 \u03C1", , expression(D[KL]) ) )+
+		theme(
+		text = element_text(size=14),
+		panel.border = element_blank(), panel.grid.major = element_blank(),
+		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+		legend.position = "none"
+		) + scale_fill_grey(start = 0, end = .9)
+p1a
+
+load("dm_simp.var")
+ngens = dim(Ni)[1]
+ni = data.frame(1:ngens, Ni[,1], No[,1])
+names(ni) = c("Time","ni1","no1")
+nil = ni%>%gather(ni, pop, ni1:no1) #%>% gather(ni_i, pop_i, ni_i1:ni_i2)
+c_use = c("#440154FF","#440154FF","#440154FF","#440154FF" )
+ni2 = nil[nil$Time < 100,]
+
+#For text plotting
+xpos3 = c(matrix(c(55, 60), 2,1))
+ypos3 = c(ni2$pop[ni2$Time == 40],ni2$pop[ni2$Time == 25])
+ypos3= ypos3[c(1,4)]
+suse3 = c( "\u03C1(E|C)","\u03C1(E~U)")
+#suse2 = c("A","B")
+
+p2 = ggplot() + geom_line(data=ni2,aes(x=Time, y=pop,color =ni,linetype = ni ))+
+	#geom_line(data=ni2,aes(x=Time, y=pop_i,color =ni_i ),linetype = "dotted")+
+	scale_color_manual(values=c_use)+
+	 #scale_colour_viridis_d()+ 
+	ylab("")+ xlab("")+
+	geom_text( aes(x = xpos3, y = ypos3, label = suse3,color=suse2)) +
+ 	scale_y_log10()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p2
+
+
+mlogr2 = mean(log(rho_o))
+mlogr_i2 = mean(log(rho_i))
+mI_sim2 =  mlogr_i2 -mlogr2
+mI2 = mI
+
+# infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, MI =mI2 )
+# infos2 = infos2 %>% gather( type, infos, rho:MI  )
+# infos2$type = factor(infos2$type, levels = infos2$type)
+
+# p2a = ggplot() + geom_bar(data=infos2, aes(x = type, y = infos), stat="identity"  ) +
+# 	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
+# 	theme_bw() + scale_x_discrete(breaks=infos2$type,
+#                   labels=c("\u03C1(E~U)","\u03C1(E|C)",
+#                   			"\u0394 \u03C1", "I(E;C)" ) )+
+# 		theme(
+# 		text = element_text(size=14),
+# 		panel.border = element_blank(), panel.grid.major = element_blank(),
+# 		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+# 		legend.position = "none"
+# 		)
+# p2a
+
+##A stacked version, where the MI, D, and delta rho are stacked
+infos2 = data.frame( rho = mlogr2, rho_i = mlogr_i2, MI_sim = mI_sim2, DKL = mI2-mI_sim2  )
+infos2 = infos2 %>% gather( name, infos, rho:DKL )
+infos2$type1 = c("r1","r1","it1","it2")
+infos2$type2 = c("rho1","rho2","infos","infos")
+infos2$tname = factor(infos2$name, levels = infos2$name)
+infos2$type1 = factor(infos2$type1, levels = unique(infos2$type1) )
+infos2$type2 = factor(infos2$type2, levels = unique(infos2$type2) )
+
+p2a = ggplot() + geom_bar(data=infos2, aes(x = type2, y = infos,fill = type1),position="stack", stat="identity"  ) +
+	ylab("")+ xlab("")+scale_y_continuous(limits = c(0, 2.4))+
+	theme_bw() + scale_x_discrete(breaks=unique(infos2$type2),
+                     labels=c("\u03C1(E~U)","\u03C1(E|C)",
+                  			 "I(E;C)") )+ #,"\u0394 \u03C1", expression(D[KL]) ) )+
+		theme(
+		text = element_text(size=14),
+		panel.border = element_blank(), panel.grid.major = element_blank(),
+		panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+		legend.position = "none"
+		)+ scale_fill_grey(start = 0, end = .9)
+p2a
+
+g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = gpar(fontsize = 14)) ),
+				arrangeGrob(p1a, p2a, ncol=2, nrow=1),
+				widths=c(unit(0.5, "npc") ), 
+				heights=c( unit(0.5, "npc"),unit(0.25, "npc") )
+				)
+
+ggsave(file="fvoi_box3b.pdf",g)
+#cairo_pdf(file="fvoi_box3.pdf")
+
+#=============================================================================
+# Figure 3
+#=============================================================================
+###Draw species intrinsic fitness curve and plot them overtop the realized 
+###env distribution: 
+ngens = length(env_fit$env)
+r1 = seq(0,1,length=ngens)
+sp1 = exp(-0.5* ( (r1-env_fit$opt[1])/(env_fit$var[1]) )^2 )
+sp2 = exp(-0.5* ( (r1-env_fit$opt[2])/(env_fit$var[1]) )^2 )
+elt = data.frame( env_fit$env, r1, sp1, sp2) 
+names(elt) = c("env", "r1","sp1","sp2")
+
+p0=ggplot(data=elt)+geom_histogram(aes(x=env,y=..ncount..),color="black",fill="white")+
+geom_line(aes(x=r1, y=sp1),color="#440154FF")+
+geom_line(aes(x=r1, y=sp2),color="#35B779FF")+
+ylab("Fitness value")+ xlab("Environment")+
+theme_bw() + theme(
+	text = element_text(size=10),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p0
+
+###Environment, species fitness, germination response
+ngens = dim(env_fit$fr)[1]
+elt = data.frame( 1:ngens, env_fit$env, env_fit$fr, env_fit$gr,runif(ngens),runif(ngens)) 
+names(elt) = c("Time", "env", "fr1","fr2","gr1","gr2","rgr1","rgr2")
+#el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)
+#el_long = elt %>% gather(fr, repro, env:gr2) 
+# el_long = elt %>% gather(fr, repro, fr1:rgr2) 
+# el_long$fr[el_long$fr =="fr1" | el_long$fr =="gr1"|el_long$fr =="rgr1"] = "sp1"
+# el_long$fr[el_long$fr =="fr2" | el_long$fr =="gr2"|el_long$fr =="rgr2"] = "sp2"
+el_long = elt %>% gather(fr, repro, fr1:fr2) %>% gather(gr, germ, gr1:gr2)%>% 
+gather(rgr, rgerm, rgr1:rgr2)
+el_long$fr[el_long$fr =="fr1" ] = "sp1"
+el_long$gr[el_long$gr =="gr1"] = "sp1"
+el_long$rgr[el_long$rgr =="rgr1"] = "sp1"
+
+el_long$fr[el_long$fr =="fr2" ] = "sp2"
+el_long$gr[el_long$gr =="gr2"] = "sp2"
+el_long$rgr[el_long$rgr =="rgr2"] = "sp2"
+
+el2 = subset(el_long, Time<21)
+c_use = c("#440154FF","#35B779FF" )
+
+p1 = ggplot(data=el2) + geom_line(aes(x=Time, y=repro+2.5,color =fr ))+
+geom_line(aes(x=Time, y=3*germ,color =gr ))+
+geom_line(aes(x=Time, y=3*rgerm,color =rgr ),linetype = "dotted")+
+scale_color_manual(values=c_use)+
+scale_y_continuous(
+	sec.axis = sec_axis (~.*1/(3), name = "Germination rate" )
+	)+
+ #scale_colour_viridis_d()+ 
+ 	ylab("Reproduction")+ 
+	theme_bw() + theme(
+	text = element_text(size=10),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p1
+
+###Lottery model
+ll_sub = subset(lott_long, time <= 21)
+ll_sub = subset(ll_sub, species == "1" | species =="3")
+ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
+#ll_sub$species[ll_sub$species=="2"] = "species 2, cue"
+ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
+#ll_sub$species[ll_sub$species=="4"] = "species 2, no cue"
+
+
+#For text plotting
+###Lottery model
+ll_sub = subset(lott_long, time <= 21)
+ll_sub = subset(ll_sub, species==1 | species ==3)
+
+ll_sub$N[ll_sub$species=="1"] = ll_sub$N[ll_sub$species=="1"]*3
+ll_sub$species[ll_sub$species=="1"] = "species 1, cue"
+ll_sub$species[ll_sub$species=="3"] = "species 1, no cue"
+
+#For text plotting
+xpos2 = c(matrix(10,2,1))
+ypos2 = c(ll_sub$N[ll_sub$time == 1])
+ypos2 = ypos2 + (c(0.2, 0))
+suse2 = unique(ll_sub$species)
+
+c_use3 = c("#35B779FF","#35B779FF"  )
+
+p2 = ggplot() + geom_line(data=ll_sub, aes(x=time, y=N,color =species )) +
+geom_smooth(data=ll_sub, method="lm", aes(x=time, y=N,color =species), se=FALSE, linetype = 1) +
+geom_text( aes(x = xpos2, y = ypos2, label = suse2, color = suse2) ) +
+scale_color_manual(values=c_use3)+
+ #scale_colour_viridis_d()+ 
+ 	ylab("Population")+ xlab("Time")+ 
+ 	scale_y_log10()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+p2
+
+
+# g=grid.arrange(p0, p1, p2, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
+# 					 heights=unit(0.5, "npc"), ncol = 2,
+# 					 bottom = textGrob("Time",gp = gpar(fontsize = 14) ) )
+
+# g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
+#          arrangeGrob(p2, ncol=1, nrow=1), heights=c(4,1), widths=c(1,2))
+
+g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
+         arrangeGrob(p2, ncol=1, nrow=1), widths=c(unit(0.5, "npc"), 
+         	unit(0.75, "npc") ), heights=unit(0.5, "npc"))
+
+
+ggsave(file="fvoi_box2.pdf", g)
+
+
+#=============================================================================
+# Figure 4
+#=============================================================================
 ngens = dim(env_fit$mc2_all)[1]
 rhos = NULL
 for (s in 1:nspp){ 
@@ -531,8 +502,8 @@ for (s in 1:nspp){
 	rhos_tmp$fvoi = rhos_tmp$val1 - rhos_tmp$val2
 
 	#Calculate sensitivities, first step in niche and fitness differences
-	rhos_tmp$s_noi = rhos_tmp$val4 - rhos_tmp$val2
-	rhos_tmp$s_i = rhos_tmp$val3 - rhos_tmp$val1
+	rhos_tmp$s_noi = (rhos_tmp$val4 - rhos_tmp$val2)/rhos_tmp$val4 
+	rhos_tmp$s_i = (rhos_tmp$val3 - rhos_tmp$val1)/rhos_tmp$val3
 
 	niches = seq(1, 0, length = ngens) - 0.29
 	rhos_tmp = cbind(Competition = niches, rhos_tmp)
@@ -543,6 +514,7 @@ for (s in 1:nspp){
 
 
 r1 = rhos[rhos$Competition>niches[25],]
+dr1= dim(r1)[1]
 c_use = c("#440154FF","#35B779FF" )
 
 #r1 = rhos
@@ -576,17 +548,28 @@ p0
 #For text plotting
 xpos3 = c(matrix(c(0.25, 0.35), 2,1))
 ypos3 = c( max(r1$val2[r1$Competition == niches[23]]) ,min(r1$val1[r1$Competition == niches[18]]))
-ypos3 = ypos3 - c(0.25, -0.15)
+ypos3 = ypos3 - c(0.1, -0.2)
 suse3 = c( "No information","Information")
 #suse2 = c("A","B")
 
+#Niche differences:
+y_i = 1-sqrt( subset(r1, r1$gr =="s1")$s_i*subset(r1, r1$gr =="s2")$s_i)
+y_noi = 1-sqrt( subset(r1, r1$gr =="s1")$s_noi*subset(r1, r1$gr =="s2")$s_noi)
+
+#Fitness differences (these should be the same): 
+f_i = sqrt( subset(r1, r1$gr =="s1")$s_i/subset(r1, r1$gr =="s2")$s_i)
+f_noi = sqrt( subset(r1, r1$gr =="s1")$s_noi/subset(r1, r1$gr =="s2")$s_noi)
+
+
+rn1 = data.frame(Competition = r1$Competition, gr = "s1", y_i=y_i,y_noi=y_noi,f_i = f_i, f_noi=f_noi)
+
 p1 = ggplot() +
-	geom_point(data=r1, aes(x=Competition, y=val1, group = gr,color=gr ) )+
-	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val1, group = gr,color=gr ) )+
-	geom_point(data=r1, aes(x=Competition, y=val2, group = gr,color=gr ),shape=5  )+
-	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3),aes(x=Competition, y=val2, group = gr,color=gr ) )+
-	scale_color_manual(values=c_use)+
-	ylab("Fitness")+ xlab("")+
+	geom_point(data=rn1, aes(x=Competition, y=y_i, group = gr,color=gr ) )+
+	geom_smooth(data=rn1, method="lm" , formula = y ~ poly(x, 2), aes(x=Competition, y=y_i, group = gr,color=gr ) )+
+	geom_point(data=rn1, aes(x=Competition, y=y_noi, group = gr,color=gr ),shape=5  )+
+	geom_smooth(data=rn1, method="lm" , formula = y ~ poly(x, 2),aes(x=Competition, y=y_noi, group = gr,color=gr ) )+
+	scale_color_manual(values=c_use) +
+	ylab("Niche difference")+ xlab("")+
 	geom_hline(yintercept=0 ,linetype = "dashed")+
 	geom_text( aes(x = xpos3, y = ypos3, label = suse3)) +
 	theme_bw() + theme(
@@ -624,9 +607,42 @@ p1
 
 g=grid.arrange(p0, p1, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
 					 heights=unit(0.5, "npc"), ncol = 2,
-					 bottom = textGrob("Niche overlap",gp = gpar(fontsize = 14) ) )
+					 bottom = textGrob("Resource overlap",gp = gpar(fontsize = 14) ) )
 
 ggsave(file="fig2b.pdf", g)
+
+
+#=============================================================================
+# Figure 5
+#=============================================================================
+###Social info model
+both_long_use = subset(both_long, time <= 60 )
+both_long_use$species[both_long_use$species=="1"] = "species 1, no info"
+both_long_use$species[both_long_use$species=="2"] = "species 2, no info"
+both_long_use$species[both_long_use$species=="3"] = "species 1, social info"
+both_long_use$species[both_long_use$species=="4"] = "species 2, social info"
+
+#For text plotting
+xpos = c(matrix(40,4,1))
+ypos = c(both_long_use$N[both_long_use$time == 60])
+ypos = ypos + (c(-1,1,-1,1))
+suse = unique(both_long_use$species)
+
+p0 =ggplot()+ geom_line( data = both_long_use, aes ( x = time, y = N, color = species)  )+ 
+	geom_text( aes(x = xpos, y = ypos, label = suse, color = suse) ) +
+	ylab("Population")+ xlab("Time")+   scale_colour_viridis_d()+
+	theme_bw() + theme(
+	text = element_text(size=14),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none"
+	)
+
+p0
+ggsave(file="fvoi_box1.pdf", p0)
+
+
+
 
 #=============================================================================
 #Misc old plots: 
