@@ -8,14 +8,18 @@ library(optbin)
 library(reshape2)
 source("../info_theory_functions/info_theory_functions.R")
 #=============================================================================
-# Paper plots
+# Load this data here. Other files are loaded within figure blocks due to 
+# repeated name usage. 
 #=============================================================================
-load("fvoi_plot1.var") #Figure 1,3,5
-load("ni_simple.var") #Figure 2
-load("env_fit2.var") #Figure 4
+load("./data/fvoi_plot1.var") #Figure 1,3,5
+#"ni_simple.var" #Figure 2
+#"env_fit2.var"# #Figure 4
+# "dm_simp.var" #Figure 2 
+
 
 #=============================================================================
-# Figure 1 -- Conceptual figure using the data from Box 1
+# Figure 1 -- This is to generate some plots to be useful in the conceptual
+# figure. However, most of the grunt work for this was done in Inkscape. 
 #=============================================================================
 # Work in progress
 ngens = length(env_fit$env)
@@ -184,12 +188,14 @@ g=grid.arrange( arrangeGrob(p1, ncol=1, nrow=1 ),
 				heights=c(  unit(0.25, "npc"),unit(0.5, "npc") )
 				)
 
-ggsave(file="fvoi_fig1.pdf",g)
+ggsave(file="figure1.pdf",g)
 
 
 #=============================================================================
 # Figure 2
 #=============================================================================
+load("./data/ni_simple.var") #Figure 2
+
 ngens = dim(Ni)[1]
 ni = data.frame(1:ngens, Ni[,1], Ni_i[,1])
 names(ni) = c("Time","ni1","ni_i1")
@@ -265,7 +271,7 @@ p1a = ggplot()  + geom_bar(data=infos, aes(x = type2, y = infos,fill = type1),po
 		) + scale_fill_grey(start = 0, end = .9)
 p1a
 
-load("dm_simp.var")
+load("./data/dm_simp.var")
 ngens = dim(Ni)[1]
 ni = data.frame(1:ngens, Ni[,1], No[,1])
 names(ni) = c("Time","ni1","no1")
@@ -346,7 +352,7 @@ g=grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1, bottom = textGrob("Time",gp = 
 				heights=c( unit(0.5, "npc"),unit(0.25, "npc") )
 				)
 
-ggsave(file="fvoi_box3b.pdf",g)
+ggsave(file="figure2.pdf",g)
 #cairo_pdf(file="fvoi_box3.pdf")
 
 #=============================================================================
@@ -466,12 +472,14 @@ g= grid.arrange(arrangeGrob(p0,p1, ncol=1, nrow=2),
          	unit(0.75, "npc") ), heights=unit(0.5, "npc"))
 
 
-ggsave(file="fvoi_box2.pdf", g)
+ggsave(file="figure3.pdf", g)
 
 
 #=============================================================================
 # Figure 4
 #=============================================================================
+load("./data/env_fit2.var") 
+
 ngens = dim(env_fit$mc2_all)[1]
 rhos = NULL
 for (s in 1:nspp){ 
@@ -609,7 +617,7 @@ g=grid.arrange(p0, p1, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
 					 heights=unit(0.5, "npc"), ncol = 2,
 					 bottom = textGrob("Resource overlap",gp = gpar(fontsize = 14) ) )
 
-ggsave(file="fig2b.pdf", g)
+ggsave(file="fig4.pdf", g)
 
 
 #=============================================================================
