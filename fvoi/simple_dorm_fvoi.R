@@ -48,8 +48,6 @@ nspp = 2
 
 #Survival rates: 
 sr = c(0.8,0.8)
-sr = c(0.4,0.4)
-
 
 #=============================================================================
 #Stored values, i.e. population dynamics, information metrics
@@ -76,6 +74,7 @@ sp_act = matrix(1, ngens+1,nspp) #Realized environments from sim
 gi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 go_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
 gnoi_fit = matrix(1, ngens+1,nspp) #Realized fitness from sim
+
 
 #=============================================================================
 #Make environment
@@ -171,6 +170,7 @@ for (s in 1:nspp) {
 	method="constant" )
 }
 
+
 #####For the optimum single-species constant rate: 
 tsize = 1e4
 fr_opt = matrix(1, tsize,nspp)
@@ -197,15 +197,17 @@ gj = gec
 gce = gec
 for(s in 1:nspp){
 	#Joint probability distribution G(E,C) = G(C,E) = G(E|C) * G(C)
-	#gj[,,s] = gec[,,s]*matrix(env_states, num_states,num_states,byrow=T ) 
-	#For 0 MI, scramble to Cue: 
-	gj[,,s] = matrix(runif(num_states^2), num_states,num_states,byrow=T ) 
+	gj[,,s] = gec[,,s]*matrix(env_states, num_states,num_states,byrow=T ) 
+	
+	####For 0 MI, scramble to Cue: 
+	#gj[,,s] = matrix(runif(num_states^2), num_states,num_states,byrow=T ) 
+	
 	#G(C|E) = G(C,E)/G(E)
 	gce[,,s] = gj[,,s]/matrix(rowSums(gj[,,s]),num_states,num_states)
 	gce[,,s][!is.finite(gce[,,s])] = 0
 }
 
-###########THIS GOT ALL MESSED UP SOMEHOW, NEED TO FIX 
+###########
 #This is key somehow:
 incr=0.01
 H1 = seq(0.01,.99,incr)
@@ -216,8 +218,7 @@ g_in_e = H1[apply(a1,2,which.max)]
 # g_in_e = matrix(g_in_e,env)
 # g_in_e2 = g_in_e
 #g_in_e = env_states*g_in_e/(sum(env_states*g_in_e)) 
-###########THIS GOT ALL MESSED UP SOMEHOW, NEED TO FIX 
-
+###########
 
 
 #=============================================================================
@@ -303,19 +304,11 @@ env_freq = prop.table(table(env_act)) #Environment frequency
 sE = shannon_D(env_freq) #Shannon entropy
 
 #For species 1: 
-env_act[ngens] = 9
-env_act[ngens-1] = 8
-
 c_and_e = prop.table(table( data.frame ( e =env_act, c = env_sensed[,1]) ))  #Joint prob between env and cue
 sCgivenE = shannon_CE (c_and_e) #Conditional entropy H(C|E)
 
 #Mutual information: 
 mI = sE - sCgivenE 
-
-n2 = 1:200
-lines(log(exp(nn*mI) ) ,col="green")
-mI_sim = mean(log(rho_i)) - mean(log(rho_o))
-lines(log(exp(nn*mI_sim) ) ,col="red")
 
 ####Save stuff for figures
 save(file ="dm_simp.var",Ni, No, N_noi, rho_noi, rho_o, rho_i, gs_o, gj, gce, gec, 
