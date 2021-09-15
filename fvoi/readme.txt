@@ -3,7 +3,7 @@ This collection of files was used to test ideas for and produce figures in “Th
 Common code: 
 Common code is used to produce random environments with a user-specified underlying distribution of states, and produce species-specific preferences for environment types by mapping a Gaussian distribution of fitness onto the random environment distribution. See "env_functions.R" for details. 
 
-Common code is used to provide information theoretic (IT) analyses of environments and population dynamics. The core IT metrics used in these analyses are the Shannon entropy, the conditional information, and the mutual information.
+Common code is used to provide information theoretic (IT) analyses of environments and population dynamics. The core IT metrics used in these analyses are the Shannon entropy, the conditional information, and the mutual information. See "info_theory_functions.R"
 
 Population models: 
 1. The simplest model in "simple_fvoi.R" is a simple multiplicative growth process where all resoruces are "spent" each generation and there is no survival. It corresponds with the classic Kelly betting problem/optimum. See e.g. Cover and Thomas, 2006, Elements of Information Theory for a great overview of this model and its significance in probability theory/IT. This model also corresponds to the model employed in Donaldson-Matasci et al. 2010.  
@@ -21,6 +21,10 @@ This code reproduces the model described in Box 2 in the main manuscript and is 
 4. The code in "lott_info_inv_allcomp.R" is the workhorse implementation of the lottery model with information used to generate many scenarios of interspecific competition and keep track of all of the analyses for each scenario. Specifically, we used this code to generate many iterations across different scenarios of resource use overlap between two competing species. Increasing levels of resource overlap increase competition and reduce the potential for coexistence. 
 
 This is the code used to produce the data in Figure 4. 
+
+5. The code in "cc_fvoi.R" is the Lotka-Volterra model of competition from Gil et al. 2018. It includes some code to double check that the analytical solution to the FVOI for this model works. 
+
+This is the code used to produce Figure 5. 
 
 Figures: 
 The code in "figures.R" is used to make all of the figures in the manuscript. It loads stored data files, all of which are save with a ".var" ending. This is the map between files and figures: 
