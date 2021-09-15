@@ -527,8 +527,12 @@ for (s in 1:nspp){
 	#Do the subtraction for the fvoi
 	rhos_tmp = NULL
 	rhos_tmp = cbind(mc21_long,mr21_long,mc31_long,mr31_long )
-	rhos_tmp$val4 = rhos_tmp$val3 - rhos_tmp$val4
-	rhos_tmp$val3 = rhos_tmp$val1 - rhos_tmp$val2
+	rhos_tmp$fvoi_noi = rhos_tmp$val3 - rhos_tmp$val4
+	rhos_tmp$fvoi = rhos_tmp$val1 - rhos_tmp$val2
+
+	#Calculate sensitivities, first step in niche and fitness differences
+	rhos_tmp$s_noi = rhos_tmp$val4 - rhos_tmp$val2
+	rhos_tmp$s_i = rhos_tmp$val3 - rhos_tmp$val1
 
 	niches = seq(1, 0, length = ngens) - 0.29
 	rhos_tmp = cbind(Competition = niches, rhos_tmp)
@@ -539,7 +543,8 @@ for (s in 1:nspp){
 
 
 r1 = rhos[rhos$Competition>niches[25],]
-c_use = c(color="#440154FF","#35B779FF" )
+c_use = c("#440154FF","#35B779FF" )
+
 #r1 = rhos
 
 
@@ -551,14 +556,14 @@ suse2 = c("Competition", "No competition")
 #suse2 = c("A","B")
 
 p0 = ggplot() +
-	geom_point(data=r1, aes(x=Competition, y=val3, group = gr,color=gr ))+
-	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val3, group = gr,color=gr ) )+
-	geom_point(data=r1, aes(x=Competition, y=val4, group = gr,color=gr ),shape=5 )+
-	geom_smooth(data=r1, method="lm" , aes(x=Competition, y=val4, group = gr,color=gr ) )+
+	geom_point(data=r1, aes(x=Competition, y=fvoi, group = gr,color=gr ))+
+	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 2), aes(x=Competition, y=fvoi, group = gr,color=gr ) )+
+	#geom_point(data=r1, aes(x=Competition, y=val4, group = gr,color=gr ),shape=5 )+
+	#geom_smooth(data=r1, method="lm" , aes(x=Competition, y=val4, group = gr,color=gr ) )+
 	scale_color_manual(values=c_use)+
 	ylab("Fitness value of information")+ xlab("")+
 	geom_hline(yintercept=0 ,linetype = "dashed")+
-	geom_text( aes(x = xpos2, y = ypos2, label = suse2)) +
+	#geom_text( aes(x = xpos2, y = ypos2, label = suse2)) +
 	theme_bw() + theme(
 	text = element_text(size=14),
 	panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -592,11 +597,36 @@ p1 = ggplot() +
 	)
 p1
 
+
+# #For text plotting
+# xpos3 = c(matrix(c(0.25, 0.35), 2,1))
+# ypos3 = c( max(r1$val2[r1$Competition == niches[23]]) ,min(r1$val1[r1$Competition == niches[18]]))
+# ypos3 = ypos3 - c(0.25, -0.15)
+# suse3 = c( "No information","Information")
+# #suse2 = c("A","B")
+
+# p1 = ggplot() +
+# 	geom_point(data=r1, aes(x=Competition, y=val1, group = gr,color=gr ) )+
+# 	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3), aes(x=Competition, y=val1, group = gr,color=gr ) )+
+# 	geom_point(data=r1, aes(x=Competition, y=val2, group = gr,color=gr ),shape=5  )+
+# 	geom_smooth(data=r1, method="lm" , formula = y ~ poly(x, 3),aes(x=Competition, y=val2, group = gr,color=gr ) )+
+# 	scale_color_manual(values=c_use)+
+# 	ylab("Fitness")+ xlab("")+
+# 	geom_hline(yintercept=0 ,linetype = "dashed")+
+# 	geom_text( aes(x = xpos3, y = ypos3, label = suse3)) +
+# 	theme_bw() + theme(
+# 	text = element_text(size=14),
+# 	panel.border = element_blank(), panel.grid.major = element_blank(),
+# 	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+# 	legend.position = "none"
+# 	)
+# p1
+
 g=grid.arrange(p0, p1, widths=c(unit(0.5, "npc"), unit(0.5, "npc") ),
 					 heights=unit(0.5, "npc"), ncol = 2,
 					 bottom = textGrob("Niche overlap",gp = gpar(fontsize = 14) ) )
 
-ggsave(file="fig2.pdf", g)
+ggsave(file="fig2b.pdf", g)
 
 #=============================================================================
 #Misc old plots: 
