@@ -1,0 +1,44 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.2 ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+gn1:(1-(d1*n1+d2*n2))*R1/(R2*n2+R1*n1)+s1;
+ratsimp(gn1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dn1:diff(gn1,n1);
+dn2:diff(gn1,n2);
+dn11:diff(diff(gn1,n1),n1);
+dn12:diff(diff(gn1,n1),n2);
+dn22:diff(diff(gn1,n2),n2);
+dn1R1:diff(diff(gn1,n1),R1);
+dn2R1:diff(diff(gn1,n2),R1);
+dn1R2:diff(diff(gn1,n1),R2);
+dn2R2:diff(diff(gn1,n2),R2);
+dnR11:diff(diff(gn1,R1),R1);
+dnR22:diff(diff(gn1,R2),R2);
+dnR12:diff(diff(gn1,R1),R2);
+dnR2:diff(gn1,R2);
+dnR1:diff(gn1,R1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+n1:0;
+n2:1;
+ev(gn1);
+ev(dn12);
+ev(dn22);
+ev(dnR1);
+ev(dnR2);
+ev(dnR11);
+ev(dnR22);
+ev(dnR12);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

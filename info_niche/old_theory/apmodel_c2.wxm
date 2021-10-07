@@ -1,0 +1,410 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.2 ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The annual plant model pf Chesson 2000B.
+The goal is to derive the invasion growth rate and group components to 
+ultimately arrive at Chesson's grouping of terms into coexistence mechanisms. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Y1:(1-g_ix)*v_i*N_ixt+(g_ix*Y_ix*N_ixt)/(1+s_ix*(g_ix*N_ixt+g_jx*N_jxt ) );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The growth rate (usually G(E,C) in Chesson's notation).
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+G1: (Y1/N_ixt);
+G1:(1−g_ix)*v_i+(g_ix*Y_ix)/((g_jx*N_jxt+g_ix*N_ixt)*s_ix+1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+I don't really understand what yield (Y_ix) is, and how it differs from 
+the intrinsic growth rate, but it must. In order to get this model to 
+derive the reults in Chesson 2000B, then the model must be written as: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Y1:(1-g_ix)*v_i*N_ixt+(g_ix*Y_ix*N_ixt)/(1+s_ix*(g_ix*N_ixt*Y_ix+g_jx*N_jxt*Y_jx ) );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The growth rate (usually G(E,C) in Chesson's notation).
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+G1: (Y1/N_ixt);
+G1:(1−g_ix)*v_i+(g_ix*Y_ix)/((g_jx*N_jxt*Y_jx+g_ix*N_ixt*Y_ixt)*s_ix+1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+G2:(1−g_jx)*v_j+(g_jx*Y_jx)/((g_jx*N_jxt*Y_jx)*s_jx+1);
+solve([G2=1],[N_jxt]);
+Nhat: (g_jx*Y_jx+(1−g_jx)*v_j−1)/(((g_jx^2−g_jx)*s_jx*v_j+g_jx*s_jx)*Y_jx);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+First, enforce the invasion conditions: i.e. N_ixt =0, N_jxt = equilibrium(N_jxt).
+Then find the Taylor expansion of G1. This amounts to taking 1st and 2nd order derivatives
+with everything that moves (i.e.just random variables in this model -- because there are no competition
+or dispersal kernels, the N_jxt are all averages.
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+This is a key point: N_jxt is a spatial average when dispersal is global and there are not dispersal 
+kernels. As a result, there is NO non-linear competitive variance, and NO fitness density covariance! 
+So when taking the expectation of the model G*N_ixt, if N_ixt is acted upon by kernels of any kind that 
+make the local average != regional average, then E(G*N_ixt) != E(G)*E(N_ixt), and you cannot simply divide
+by E(N_ixt). What happens instead is that E(G*N_ixt) = E(G)*E(N_ixt)+cov(G,N_ixt). Then, dividing out E(N_ixt)
+gives E(G)+ cov(G,N_ixt/E(N_ixt)), where N_ixt/E(N_ixt) is the density v (or nu).
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+N_ixt : 0;
+N_jxt : y;
+G1:(ev(G1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+First order:
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dfLi:diff(G1,g_ix);
+dfLj:diff(G1,g_jx);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Second order:
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dfLjj:diff(dfLj,g_jx);
+dfLii:diff(dfLi,g_ix);
+dfLij:diff(dfLi,g_jx);
+diff(dfLj,g_ix);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The Taylor expansion is performed at the equilibrium/average of each variable 
+(equilibrium for populations, average for random variables). Each of the derivatives above is 
+collected and multiplied by the new variable, which is just the (variable - (equilibrium/average of variable)).
+So for example, LJ = (L_jxt - equilibrium(L_jxt) )
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Tf1:G1+dfLi*LI+dfLj*LJ+1/2*(dfLii*LI^2+dfLjj*LJ^2+2*dfLij*LI*LJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Now, take expectations. What this essentially means is that stochastic variables become their 
+averages (e.g. L_jx = E[L_jx], g_jx = E[g_jx], etc.). All of the first order TE terms (e.g. LI)
+become 0, and anything second order becomes either a variance or covariance.
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Tf2:(g_ix*s_ix^2*y^2*Y_ix*VarLJ)/(g_jx*Y_jx*s_ix*y+1)^3
+−(s_ix*y*Y_ix*CovLILJ)/(g_jx*Y_jx*s_ix*y+1)^2
++(g_ix*Y_ix)/(g_jx*Y_jx*s_ix*y+1)+(1−g_ix)*v_i-1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+This is pretty much the answer. The variance and covariance terms group 
+to give the storage effect. The other terms go into the fluctuation-independent
+mechanism, and the fitness difference. But, if you want to, you can parse it 
+like Chesson does.   
+
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Chesson's framework is based on defining a competition term, and an environmental 
+term, and recognizing that that G_i(E_is, Cs) =1 (the s stands for "star"). For 
+the annual model, Cs = g_jx*s_ix*y+1 and E_is = g_ix. So using the first condition,
+we can derive some relationships:  
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ft2:(1-E_is)*v_i+Yi*E_is/Cs1;
+solve([ft2=1],[E_is]);
+solve([ft2=1],[Cs1]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+From these, the most useful thing to recognize is that (E_is*Yi)/Cs = 1-(1−E_is)*v_i. 
+
+Then, in Chesson's derivation of this model, 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+beta_i:(1-(1−E_is)*v_i)/Cs;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+So going back to the storage efect terms,
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(beta_i);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+delta_I:−(CovLILJ*s_ix*y*Y_ix)/(g_jx*s_ix*y+1)^2+(g_ix*s_ix^2*VarLJ*y^2*Y_ix)/(g_jx*s_ix*y+1)^3;
+delta_I:beta_i*((s_ix^2*VarLJ*y^2)/Cs - (CovLILJ*s_ix*y*Y_ix)/E_is);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+This requires pulling out an E_is/E_is on the Cov term, leaving this term behind in the
+denominator.
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Now Nhat (the equilibrium density of the resident) can be written as 
+Nhat = (Cs-1)/(si*Es*Y_jx).
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+delta_I:beta_i*(Cs-1)
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Tf2:(g_ix*s_ix^2*y^2*Y_ix*VarLJ)/Cs^3
+−(s_ix*y*Y_ix*CovLILJ)/Cs^2
++(g_ix*Y_ix)/Cs+(1−g_ix)*v_i-1;
+y:Nhat;
+ev(((Tf2)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Define Cs = g_jx*s_ix*y+1, then multiply away the denominator, leaving:
+
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+y:Nhat;
+Cs1:g_jx*s_ix*y+1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Tf2: (g_ix*s_ix^2*y^2*Y_ix*VarLJ)/Cs^3
+−(s_ix*y*Y_ix*CovLILJ)/Cs^2
++(g_ix*Y_ix)/Cs+(1−g_ix)*v_i-1;
+ratsimp(Tf2);
+Tf3:(g_ix*s_ix^2*VarLJ*y^2−CovLILJ*Cs*s_ix*y+Cs^2*g_ix)+Cs^3*((1-g_ix)*vi-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+kill(Cs1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Bi: (1-v_i*(1-Es1))/Cs;
+ct1: Bi*(Cs-1);
+ratsimp(ct1);
+Bi*Cs-Bi;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:g_ix/((g_ix−1)*v_i+1);
+Cs1:s_ix*Nhat*g_ix+1;
+Nhat;
+s_ix*Nhat;
+ratsimp(Cs-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+qir: Bi/((1-v_j*(1-Esj1))/Cs);
+ct1*qir;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Es1/((Es1−1)*v_i+1);
+factor(ev(ct1*qir));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ft2:(1-Es1)*v_i+Es1/Cs1;
+solve([ft2=1],[Es1]);
+solve([ft2=1],[Cs1]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Nhat:(g_jx*Y_jx+(1−g_jx)*v_i−1)/((g_jx^2−g_jx)*s_jx*v_i+g_jx*s_jx);
+y:Nhat;
+Cs:g_jx*s_ix*y+1;
+y*s_ix;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:g_jx*s_ix*y+1;
+ev(Tf3);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ft1:Cs*x/(g*s_ix^2*y^2);
+solve([ft1=1],[x]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Since the other side is = 0, we can multiply away the denominator, leaving: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Tf3:(g_ix*s_ix^2*VarLJ*y^2*Y_ix+g_ix*g_jx^2*s_ix^2*y^2*Y_ix−CovLILJ*g_jx*s_ix^2*y^2*Y_ix+2*g_ix*g_jx
+*s_ix*y*Y_ix−CovLILJ*s_ix*y*Y_ix+g_ix*Y_ix−g_ix*g_jx^3*s_ix^3*v_i*y^3+g_jx^3*s_ix^3*v_i*y^3−g_jx^3*
+s_ix^3*y^3−3*g_ix*g_jx^2*s_ix^2*v_i*y^2+3*g_jx^2*s_ix^2*v_i*y^2−3*g_jx^2*s_ix^2*y^2−3*g_ix*g_jx*s_ix*v_i*y+3*
+g_jx*s_ix*v_i*y−3*g_jx*s_ix*y−g_ix*v_i+v_i−1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Chesson defines g_jx*s_ix*y+1 = Cs and (1−g_ix)*v_i−1 = theta_i. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(g_ix*Y_ix)−(CovLILJ*s_ix*y*Y_ix)/((g_jx*s_ix*y+1))+(g_ix*s_ix^2*VarLJ*y^2*Y_ix)/((g_jx*s_ix*y+1)^2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Focusing first on the storage effect. The Storage Effect is a comparison between Invader's CovaLILJ, and the Resident's CovLJLJ = VarLJ
+This is usually the easiest term to identify. Factoring out terms so that quantities can be 
+combined usually provides clues to Chesson's organization of terms, too. 
+
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+deltaI:−(CovLILJ*s_ix*y*Y_ix)/(theta_i*(g_jx*s_ix*y+1))+(g_ix*s_ix^2*VarLJ*y^2*Y_ix)/(theta_i*(g_jx*s_ix*y+1)^2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Combine the 1st order terms: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+frst:ratsimp((g_ix*Y_ix)/(g_jx*s_ix*y+1)+(1−g_ix)*v_i-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ratsimp(g_ix+(1−g_ix)*g_jx*s_ix*v_i*y+(1−g_ix)*v_i-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(frst);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Now call g_jx*s_ix*y+1 = Cs, and 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Factor out the first order terms (frst):
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+((g_ix*Y_ix+(1−g_ix)*g_jx*s_ix*v_i*y+(1−g_ix)*v_i)/( g_jx*s_ix*y+1))*(−(CovLILJ*s_ix*y*Y_ix)+(g_ix*s_ix^2*VarLJ*y^2*Y_ix)/(g_jx*s_ix*y+1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Now all of the terms that come out of Chessons framework are here, it is just a matter
+or recognizing them. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The Storage Effect is a comparison between Invader's CovaLILJ, and the Resident's CovLJLJ = VarLJ
+This is usually the easiest term to identify. Factoring out terms so that quantities can be 
+combined usually provides clues to Chesson's organization of terms, too. 
+
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+delta_I:−(CovLILJ*s_ix*y*Y_ix)/(g_jx*s_ix*y+1)+(g_ix*s_ix^2*VarLJ*y^2*Y_ix)/(g_jx*s_ix*y+1)^2;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Factor out the common term, see what is left on the Resident term: this is the reciprocal of qir
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Chesson: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Es1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Using the fact that G(Es, Cs) =1
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ft2:(1-Es1)*v_i+Yi*Es1/Cs1;
+solve([ft2=1],[Es1]);
+solve([ft2=1],[Cs1]);
+solve([ft2=1],[Yi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs: g_jx*s_ix*y+1;
+Es1:(Cs*v_i−Cs)/(Cs*v_i−1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Cs,Es1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Bi: (1-v_i*(1-Es1))/Cs;
+Cs:Es1/((Es1−1)*v_i+1);
+factor(Bi);
+factor(ratsimp(Bi*(Cs-1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ft1:Cs*x/(Cs-1);
+solve([ft1=1],[x]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+factor(ratsimp(−((Es1−1)*v_i−Es1+1)/Es1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+common: (s_ix*y*Y_ix)/(g_jx*s_ix*y+1)^2;
+temp1: (g_ix*s_ix*VarLJ*y)/(g_jx*s_ix*y+1)−(CovLILJ);
+qir: (g_jx*s_ix*y+1)/(g_ix*s_ix);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs1:Es1/((Es1−1)*v_i+1);
+ratsimp(ev((1-Ess)*v_i+Ess/Cs1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Es1);
+kill(theta);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EE:(1-Es1)*v_i+Es1/Cs;
+EE2:(1-Es2)*v_i+Es2/Cs;
+ECs:Cs*EE/theta+Cs;
+EECs:Cs*EE2/theta+Cs;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+theta:1-s_ix*(1-g_ix);
+Cs:1+g_jx*s_ix*y;
+Es1:g_ix;
+Es2:g_jx;
+ft1:(theta/Cs)*( (ECs-EECs)+(Cs-1)/(n-1));
+ratsimp(ft1);
+ratsimp(ev(ECs-EECs));
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

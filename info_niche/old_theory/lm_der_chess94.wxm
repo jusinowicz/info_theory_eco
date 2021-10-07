@@ -1,0 +1,420 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.2 ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(1-di+exp(Es-Cs));
+solve([g1=0],[Es]);
+solve([g1=0],[Cs]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ:log(1-di+exp(Ej-Cs));
+CCj:log(1-di+exp(Es-Cj));
+e1:diff(EEJ,Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Just to test the derivative, alpha
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Es−log(di);
+Ej:Es;
+ratsimp(ev(e1));
+ratsimp(ev(g1));
+kill(Ej,Cs);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(1-di+exp(Ei-Ci));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+E1:diff(g1,Ei);
+C1:diff(g1,Ci);
+EE1:diff(diff(g1,Ei),Ei);
+CC1:diff(diff(g1,Ci),Ci);
+EC1:diff(diff(g1,Ei),Ci);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te1:g1+E1*EI+C1*CI+1/2*EE1*EI^2+1/2*CC1*CI^2+EC1*EC;
+Vte1: E1^2*varEI +2*E1*C1*covEC+C1^2*varCI;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Ei:log(di)+Ci;
+ev(Te1);
+ev(Vte1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Ei);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Ci:Ei−log(di);
+ev(Te1);
+ev(Vte1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Then take the same set of terms for the Resident to end up with the compliments. With the 
+Resident, the covEC term will end up as a variance, since the Resident only experiences
+competition with itself. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#####################################################################################
+Various attempts at different approaches
+#####################################################################################
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te:g1+(1/2*(di-di^2)*EI^2+di*EI-(di-di^2)*EC+1/2*(di-di^2)*CI^2 - di*CI)+1/2*di^2*EI^2 + 1/2* di^2*CI^2 -(di^2)*EC;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ratsimp(−(di^2*EI^2)/2+((di−di^2)*EI^2)/2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Now without the log on the front or the exponential form of the E/C relationship
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(1-dj+Ej/Cj);
+solve([g1=0],[Ej]);
+solve([g1=0],[Cj]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ:(Ej/Cs-dj);
+CCj:(Es/Cj-dj);
+e1:diff(EEJ,Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Es:Cj*dj;
+ratsimp(ev(e1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Ej/dj;
+ratsimp(ev(e1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(1-di+Ei/Ci);
+E1:diff(g1,Ei);
+C1:diff(g1,Ci);
+EE1:diff(diff(g1,Ei),Ei);
+CC1:diff(diff(g1,Ci),Ci);
+EC1:diff(diff(g1,Ei),Ci);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te1:g1+E1*EI+C1*CI+1/2*EE1*EI^2+1/2*CC1*CI^2+EC1*EC;
+Vte1: E1^2*varEI +2*E1*C1*covEC+C1^2*varCI;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te2:-EI^2/(2*Ci^2*Di^2)+(Ei/(Ci^3*Di^2)-1/(Ci^2*Di))*EC+
+(((2*Ei)/(Ci^3*Di)−Ei^2/(Ci^4*Di^2))*CI^2)/2+log(Di);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Ci:Ei/di;
+ev(Te1);
+ev(Vte1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#So with the log, and without: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Ei,Ci);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+TeNo: di^2/Ei^2*(−(EC)+(di*CI^2))+1;
+TeLo:(di−di^2)*EI^2+(di^2−di)*EC+
+((di−di^2)*CI^2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+TeLo:((di−di^2)*EI^2+(di^2−di)*EC+(di−di^2)*CI^2);
+factor(TeLo);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ratsimp(di/(di-1)-(di^2)/(1-di));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ratsimp(%e^(2*(log(di)+Ci)−2*Ci));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Ei:Ci*di−Ci;
+ev(Te1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Using Taylor expansions on the standard expression. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(1-dj+(dr*Nr+dj*Nj)*Rj/(Rr*Nr+Rj*Nj));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+E1:diff(g1,Rj);
+C1:diff(g1,Rr);
+NR1:diff(g1,Nr);
+NJ1:diff(g1,Nj);
+EE1:diff(diff(g1,Rj),Rj);
+CC1:diff(diff(g1,Rr),Rr);
+EC1:diff(diff(g1,Rj),Rr);
+NRR:diff(diff(g1,Nr),Nr);
+NJJ:diff(diff(g1,Nj),Nj);
+NRJ:diff(diff(g1,Nj),Nr);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Nj:0;
+ev(E1);
+ev(C1);
+ev(NR1);
+ev(NJ1);
+ev(EE1);
+ev(CC1);
+ev(EC1);
+ev(NRR);
+ev(NJJ);
+ev(NRJ);
+Te1:g1+E1*R1+C1*RR+NR1*nr+NJ1*nj+1/2*EE1*R1^2+1/2*CC1*RR^2+EC1*R1RR+1/2*(NRR*nr^2+NJJ*nj^2)+NRJ*nrj;
+Ve1:E1^2*R1^2 +2*E1*C1*R1RR+C1^2*RR^2+NR1^2*nr^2 +2*NR1*NRR*nrj+NJ1^2*nj^2;
+ev(Te1);
+ev(Ve1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(dr*Rj*RR^2)/Rr^3−(dr*R1RR)/Rr^2+nrj*((dr*Rj^2)/(Nr^2*Rr^2)−(dj*Rj)/(Nr^2*Rr))+(dr*Rj)/Rr+
+(nj^2*((dr*Rj^3)/(Nr^2*Rr^3)−(dj*Rj^2)/(Nr^2*Rr^2)))−dj+1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+With Nr = 1
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(dr*Rj*RR^2)/Rr^3−(dr*R1RR)/Rr^2+nrj*((dr*Rj^2)/Rr^2−(dj*Rj)/Rr)+(dr*Rj)/Rr+
+(nj^2*((dr*Rj^3)/Rr^3−(dj*Rj^2)/Rr^2))−dj+1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The resident, in the absence of the invader: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+gr:(1-dr+(dr*Nr)*Rr/(Rr*Nr));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te1:g1+E1*R1+C1*RR+1/2*EE1*R1^2+1/2*CC1*RR^2+EC1*R1RR;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Ete1:−(dr^2*covRRJ)/Rr^2+(dr*Rj*varRR)/Rr^3+(dr*Rj)/Rr−di+1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Vte1: E1^2*varJJ +2*E1*C1*covRRj+C1^2*varRR;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+factor(((2*dr^3*Rj)/((D)*Rr^3)−(dr^4*Rj^2)/((D)^2*Rr^4)));
+factor(((dr^3*Rj)/((D)^2*Rr^3)−dr^2/(D*Rr^2)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+There seem to be two different ways to approximate E(ln(X/Y)), that should be equivalent,
+but I cannot see how similar terms are recovered in the approximation:
+1) exp(E(ln(X/Y))) =(E(X/Y)-1/2*var(X/Y))
+2) exp(E(ln(X/Y))) = exp((E(ln(X))-E(ln(Y))) )= exp(E(ln(X)))/exp(E(ln(Y))) =((E(x)-1/2var(x)))/(E(Y)-1/2var(Y)) 
+The terms in the first are well known.
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EXY:exX/exY - covXY/exY^2 + exX*varY/exY^3;
+VXY: 1/exY^2*varX-2*exX*covXY/exY^3+exX^2/exY^4*varY;
+(EXY-1/2*VXY);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+exX/exY-(covXY*(1/exY^2 −(exX)/exY^3) ) +(varY*((exX)/exY^3-(exX^2)/(2*exY^4)) ) -varX/(2*exY^2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Second approx: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EX: exX;
+VX: varX;
+EY: exY;
+VY: varY;
+((EX-1/2*VX)/ln(EY-1/2*VY));
+ratsimp(( (EX-1/2*VX)/(EY-1/2*VY)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ;
+CCj;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+###############################################################################
+#THIS IS HOW TO CALCULATE THAT STUPID GAMMA: SEE THE APPENDIX OF SNYDER 2004,
+AND CHESSON 1989 (if you're feeling masochistic)
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g2:(1-dj+Ej/Cj);
+a1:Ej/Cs−dj;
+a2:Es/Cj−dj;
+b1:diff(a1, Ej);
+b2:diff(a2,Cj);
+b3:diff(diff(g2,Ej),Cj);
+1/b1*1/b2*b3;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+################################################################################
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The lottery model pf Chesson 2000B.
+The goal is to derive the invasion growth rate and group components to 
+ultimately arrive at Chesson's grouping of terms into coexistence mechanisms. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Y1:(1-d_ix)*N_ixt+(E_ix*N_ixt)/((E_ix*N_ixt+E_jx*N_jxt )/(d_ix*N_ixt+d_jx*N_jxt) );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Rewrite this in terms of the standard parameters, EEj and CCj, and the equilibriums
+Ejs and Cjs (s for star, and the EE and CC are curly in papers).
+These satisfy EEj = G(Ej,Cjs)-1 and CCj = 1-G(Ejs,Cj)
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEj: (1-di)+Ei/Cis -1;
+CCj: 1-((1-di)+Eis/Ci);
+exEEj:(1-di)+Eis/Cis -1;
+exCCj:1-((1-di)+Eis*exICi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Use G(Eis,Cis) = 1 to get Eis =Cis*di
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEj: (1-di)+Ei/Eis -1;
+CCj: 1-((1-di)+Cis*di/Ci);
+exEEj:(1-di)+Eis/Eis -1;
+exCCj:1-((1-di)+Cis*di*exICi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cis:Eis/di;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+expand(ev( (EEj)*(CCj)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+expand(ev( (EEj-exEEj)*(CCj-exCCj)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Regrouping and taking the expectation of (Eis-Ei)/Ci, using the taylor expansion
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(Eis-Ei)/Ci;
+dE:diff(g1,Ei);
+dC:diff(g1,Ci);
+dEE:diff(diff(g1,Ei),Ei);
+dCC:diff(diff(g1,Ci),Ci);
+dEC:diff(diff(g1,Ci),Ei);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+TE1:dE*E1+dC*C1+dEE*E2+dCC*C2+dEC*EC1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log((Eis-Ei)/Ci);
+dE:diff(g1,Ei);
+dC:diff(g1,Ci);
+dEE:diff(diff(g1,Ei),Ei);
+dCC:diff(diff(g1,Ci),Ci);
+dEC:diff(diff(g1,Ci),Ei);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+TE2:dE*E1+dC*C1+dEE*E2+dCC*C2+dEC*EC1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(Eis-Eis)/exCi - covEiCi/exCi^2+Eis/exCi^3*varCi;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Competition, without the invader, is ((E_jx*N_jxt )/(d_jx*N_jxt) ) = ((E_jx )/(d_jx) ), 
+because the equilibrium N_j is just 1. Thus exCi = Ejs/dj.
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+After taking expectations, E[Ei] = Eis, and E[1/Ci] = 1/exCi - varCi/exCi^3 so:
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(di*Eis)*(1/exCi - varCi/exCi^3)−di*exEiexCi;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The ex signify expectations. Then exEiexCi is the joint expectation of Ei/Ci. Which can be expanded as: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+exEiexCi : Eis/exCi - covEiCi/exCi^2+Eis/exCi^3*varCi;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Cis);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$
