@@ -1,0 +1,464 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 15.04.0 ] */
+
+/* [wxMaxima: input   start ] */
+The annual plant model pf Chesson 2000B.
+The goal is to derive the invasion growth rate and group components to 
+ultimately arrive at Chesson's grouping of terms into coexistence mechanisms. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Y1:(1-g_ix)*v_i*N_ix+(g_ix*Y_ix*N_ix)/(1+s_ix*(g_ix*N_ix+g_jx*N_jx ) );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The growth rate (usually G(E,C) in Chesson's notation).
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1: (Y1/N_ix);
+g1:(1−g_ix)*v_i+(g_ix*Y_ix)/((g_jx*N_jx+g_ix*N_ix)*s_ix+1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#The normal model, without log-transforming or exponentials, in the original
+#parameters. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(1−g_ix)*v_i+(g_ix*Y_ix)/((g_jx*N_jx*s_ix) );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dgi:diff(g1,g_ix);
+dgj:diff(g1,g_jx);
+dnj:diff(g1,N_jx);
+dni:diff(g1,N_ix);
+
+dgii:diff(diff(g1,g_ix),g_ix);
+dgjj:diff(diff(g1,g_jx),g_jx);
+dgij:diff(diff(g1,g_ix),g_jx);
+dnii:diff(diff(g1,N_ix),N_ix);
+dnjj:diff(diff(g1,N_jx),N_jx);
+dnij:diff(diff(g1,N_ix),N_jx);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+N_ix:0;
+Te1:ev(g1+1/2*(dgii*EGI^2+dgjj*EGJ^2+dnjj*ENJ^2)+dgij*EGIJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Covariance of 3 variables: cov(gi,gj*Nj)
+= E[gi*gj*Nj]-E[gi]*E[gj*Nj]
+= E[gi*gj]*E[Nj] - E[gi]*E[gj*Nj]
+But without autocorrelation, E[gj*Nj] = 0, so 
+approx= cov(gi,gj)
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Variance of product: var(gj*Nj)
+ = var(gj)*var(Nj)+var(gj)*mean(Nj)^2 + var(Nj)*mean(gj)^2
+But drop the higher order interaction (var*var) and that leaves only the individual
+variances and the means. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#With these, it is easy to see how the covariance in this approach is related to the 
+#cov(E,C) in Chesson's approach. However, the correspondence between these terms and Chesson's
+#other mechanisms is less clear. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(1−g_ix)*v_i+(g_ix*Y_ix)/(g_jx*N_jx*s_ix);
+gr:(1−g_rx)*v_r+(g_rx*Y_rx)/(g_rx*N_jx*s_rx);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+solve([gr=1],[N_jx]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dgi:diff(g1,g_ix);
+dgj:diff(g1,g_jx);
+dnj:diff(g1,N_jx);
+dni:diff(g1,N_ix);
+dsi:diff(g1,s_ix);
+dYi:diff(g1,Y_ix);
+
+dgii:diff(diff(g1,g_ix),g_ix);
+dgjj:diff(diff(g1,g_jx),g_jx);
+dgij:diff(diff(g1,g_ix),g_jx);
+dnii:diff(diff(g1,N_ix),N_ix);
+dnjj:diff(diff(g1,N_jx),N_jx);
+dnij:diff(diff(g1,N_ix),N_jx);
+dsii:diff(diff(g1,s_ix),s_ix);
+dYii:diff(diff(g1,Y_ix),Y_ix);
+
+dgsi:diff(diff(g1,g_ix),s_ix);
+dgsj:diff(diff(g1,g_jx),s_ix);
+dYgi:diff(diff(g1,g_ix),Y_ix);
+dYgj:diff(diff(g1,g_jx),Y_ix);
+dYsi:diff(diff(g1,Y_ix),s_ix);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+N_ix:0;
+Te1:ev(g1+1/2*(dYii*EYI^2+dgii*EGI^2+dgjj*EGJ^2+dnjj*ENJ^2+dnii*ENI^2+dsii*ENS^2)+dgij*EGIJ+dnij*ENIJ+dgsi*EGSI+dgsj*EGSJ+dYgi*EYGI+dYgj*EYGJ+dYsi*EYSJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+N_ix:0;
+Te1:ev(g1+dgi*EGI+dgj*EGJ+dnj*ENJ+dni*ENI+dsi*ENS+1/2*(dgii*EGI^2+dgjj*EGJ^2+dnjj*ENJ^2+dnii*ENI^2+dsii*ENS^2)+dgij*EGIJ+dnij*ENIJ+dgsi*EGSI+dgsj*EGSJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+The growth rate, with exponential form (assuming variables are log-transformed)
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(1−exp(g_ix))*v_i+exp(g_ix+Y_ix -( ( (g_jx*N_jx)+(g_ix*N_ix))*s_ix+1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dgi:diff(g1,g_ix);
+dgj:diff(g1,g_jx);
+dnj:diff(g1,N_jx);
+dni:diff(g1,N_ix);
+dsi:diff(g1,s_ix);
+dgii:diff(diff(g1,g_ix),g_ix);
+dgjj:diff(diff(g1,g_jx),g_jx);
+dgij:diff(diff(g1,g_ix),g_ix);
+dnii:diff(diff(g1,N_ix),N_ix);
+dnjj:diff(diff(g1,N_jx),N_jx);
+dnij:diff(diff(g1,N_ix),N_jx);
+dsii:diff(diff(g1,s_ix),s_ix);
+dgsi:diff(diff(g1,g_ix),s_ix);
+dgsj:diff(diff(g1,g_jx),s_ix);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+N_ix:0;
+Te1:ev(g1+dgi*EGI+dgj*EGJ+dnj*ENJ+dni*ENI+dsi*ENS+1/2*(dgii*EGI^2+dgjj*EGJ^2+dnjj*ENJ^2+dnii*ENI^2+dsii*ENS^2)+dgij*EGIJ+dnij*ENIJ+dgsi*EGSI+dgsj*EGSJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+##################################################################################
+#This section is trying to reproduce and compare results from Chesson's papers:
+##################################################################################
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Rewrite this in terms of the standard parameters, EEj and CCj, and the equilibriums
+Ejs and Cjs (s for star, and the EE and CC are curly in papers).
+These satisfy EEj = G(Ej,Cjs)-1 and CCj = 1-G(Ejs,Cj)
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEj: sj*(1-Ej)+Ej*Yj*Cs-1;
+CCj: 1-sj*(1-Es)+Es*Yj*Cj;
+e1:diff(EEj,Ej);
+e2:diff(CCj,Cj);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(sj*(1-Es)+Es*Yj*Cs)-1;
+solve([g1=0],[Es]);
+solve([g1=0],[Cs]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Just to test the derivative, alpha
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: hide output   ] */
+/* [wxMaxima: input   start ] */
+Cs:(Es*Yj)/((Es−1)*sj+1);
+a1:ratsimp(ev(e1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+1-sj = -sj/Es, -sj*(1-sj)=1/Es, 1/(-sj*(1-sj)) = Es
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: hide output   ] */
+/* [wxMaxima: input   start ] */
+kill(Cs,Cj,Es);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: hide output   ] */
+/* [wxMaxima: input   start ] */
+Es:−(Cs*sj−Cs)/(Yj−Cs*sj);
+ratsimp(ev(e1));
+ratsimp(ev(e2));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: hide output   ] */
+/* [wxMaxima: input   start ] */
+a1:(((Cs*sj−Cs))/(Cs^2−Cs^2*Cs*sj));
+ratsimp(a1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: hide output   ] */
+/* [wxMaxima: input   start ] */
+Cj:Cs;
+Cs:(Es*Yj)/((Es−1)*sj+1);
+ratsimp(ev(e2));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: hide output   ] */
+/* [wxMaxima: input   start ] */
+Cs:(Es*Yj)/((Es−1)*sj+1);
+ratsimp(ev(EEj));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:sj*(1-Ej)+Ej*Yj*Cj;
+dE:diff(g1,Ej);
+dC:diff(g1,Cj);
+dEE:diff(diff(g1,Ej),Ej);
+dCC:diff(diff(g1,Cj),Cj);
+dEC:diff(diff(g1,Cj),Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te1:g1+dE*EI+dC*CI+1/2*dEE*EI^2+1/2*dCC*CI^2+dEC*EC;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cj:((Es−1)*sj+1)/(Es*Yj);
+Te1:ratsimp(ev(g1))+ratsimp(ev(dE))*EI+ratsimp(ev(dC))*CI+1/2*ratsimp(ev(dEE))*EI^2+1/2*ratsimp(ev(dCC))*CI^2+ratsimp(ev(dEC))*EC;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+factor(((Ej^2−2*Ej+1)*sj^2+(2*Ej−2)*sj+1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cj:(Ej*Yj)/((Ej−1)*sj+1);
+factor(Cj);
+ev(Te1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Es−log((%e^Es*sj)/Yj−sj/Yj+1/Yj);
+ev(EEJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(Yj/Cj−sj)*EI−(Yj*EC)/Cj^2+ ((1−sj)*Yj*CI^2)/(Cj^2*(Yj−Cj*sj)) - ((1−sj)*Yj*CI)/(Cj*(Yj−Cj*sj))+1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+expand(EEj*CCj);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Log and exponential
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(sj*(1-exp(Es))+Yj*exp(Es-Cs));
+solve([g1=0],[Es]);
+solve([g1=0],[Cs]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ:log(sj*(1-exp(Ej))+Yj*exp(Ej-Cs));
+CCj:log(sj*(1-exp(Es))+Yj*exp(Es-Cj));
+e1:diff(EEJ,Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Just to test the derivative, alpha
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Es−log((%e^Es*sj)/Yj−sj/Yj+1/Yj);
+Ej:Es;
+ratsimp(ev(e1));
+ratsimp(ev(g1));
+kill(Ej,Cs);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(si*(1-exp(Ei))+Yi*exp(Ei-Ci));
+dE:diff(g1,Ei);
+dC:diff(g1,Ci);
+dEE:diff(diff(g1,Ei),Ei);
+dCC:diff(diff(g1,Ci),Ci);
+dEC:diff(diff(g1,Ci),Ei);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te1:g1+dE*EI+dC*CI+1/2*dEE*EI^2+1/2*dCC*CI^2+dEC*EC;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Ci:Es−log((%e^Es*si)/Yi−si/Yi+1/Yi);
+Ei:Es;
+Te1:ratsimp(ev(g1))+ratsimp(ev(dE))*EI+ratsimp(ev(dC))*CI+1/2*ratsimp(ev(dEE))*EI^2+1/2*ratsimp(ev(dCC))*CI^2+ratsimp(ev(dEC))*EC;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te2:(D1/D2-D1^2/D2^2)*EI^2/2+
+(D3*D1/D2^2-D3/D2)*EC+
+(D3/D2-D3^2/D2^2)*CI^2/2+
+log(D2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Exponential, no log
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(sj*(1-exp(Es))+Yj*exp(Es-Cs));
+solve([g1=1],[Es]);
+solve([g1=1],[Cs]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ:(sj*(1-exp(Ej))+Yj*exp(Ej-Cs))-1;
+CCj:1-(sj*(1-exp(Es))+Yj*exp(Es-Cj));
+e1:diff(EEJ,Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Just to test the derivative, alpha
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Es−log((%e^Es*sj)/Yj−sj/Yj+1/Yj);
+Ej:Es;
+ratsimp(ev(e1));
+ratsimp(ev(g1));
+kill(Ej,Cs);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:Es−log((%e^Es*sj)/Yj−sj/Yj+1/Yj);
+ev(EEJ);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+exp(s1 - s2+log(x));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(sj*(1-exp(Ej))+Yj*exp(Ej-Cj));
+dE:diff(g1,Ej);
+dC:diff(g1,Cj);
+dEE:diff(diff(g1,Ej),Ej);
+dCC:diff(diff(g1,Cj),Cj);
+dEC:diff(diff(g1,Cj),Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te1:g1+dE*EI+dC*CI+1/2*dEE*EI^2+1/2*dCC*CI^2+dEC*EC;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cj:Es−log((%e^Es*sj)/Yj−sj/Yj+1/Yj);
+Ej:Es;
+factor(Cj);
+ev(Te1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Te2:((((%e^Es*sj)−sj+1)−%e^Es*sj)*EI^2)/2+(((%e^Es*sj)−sj+1)−%e^Es*sj)*EI−((%e^Es*sj)−sj+1)*EC+
+(((%e^Es*sj)−sj+1)*CI^2)/2−((%e^Es*sj)−sj+1)*CI+1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Log, no exponential 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:log(sj*(1-(Es))+Yj*(Es/Cs));
+solve([g1=0],[Es]);
+solve([g1=0],[Cs]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ:log(sj*(1-(Ej))+Yj*(Ej/Cs));
+CCj:log(sj*(1-(Es))+Yj*(Es/Cj));
+e1:diff(EEJ,Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Just to test the derivative, alpha
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:(Es*Yj)/((Es−1)*sj+1);
+Ej:Es;
+ratsimp(ev(e1));
+ratsimp(ev(g1));
+kill(Ej,Cs);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#no log, no exponential 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+g1:(sj*(1-(Es))+Yj*(Es/Cs));
+solve([g1=1],[Es]);
+solve([g1=1],[Cs]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+EEJ:(sj*(1-(Ej))+Yj*(Ej/Cs))-1;
+CCj:1-(sj*(1-(Es))+Yj*(Es/Cj));
+e1:diff(EEJ,Ej);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Just to test the derivative, alpha
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Cs:(Es*Yj)/((Es−1)*sj+1);
+ratsimp(ev(e1));
+ratsimp(ev(g1));
+kill(Ej,Cs);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+	
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$
