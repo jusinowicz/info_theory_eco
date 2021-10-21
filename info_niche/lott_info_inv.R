@@ -91,7 +91,7 @@ env_fit = NULL
 env_fit$Ni = Ni #Simple population dynamics
 env_fit$Ni2 = Ni #Population dynamics of residents only! 
 env_fit$Ni3 = Ni #Dormancy model (no competition)
-env_fit$opt = c(0.5,0.5) #runif(nspp)
+env_fit$opt = c(0.4,0.5) #runif(nspp)
 env_fit$var = matrix( 0.1 ,nspp,1) #A generic variance
 env_fit$min_max = NULL
 env_fit$g_mean = NULL
@@ -229,7 +229,7 @@ for (s in 1:nspp) {
 
 	#Probability distribution of growth rates
 	b_use = seq(min(env_fit$rho_c2[,s],na.rm=T),max(env_fit$rho_c2[,s],na.rm=T), length.out=breaks)
-	rho_dist = hist(env_fit$rho_c2[,s],breaks=b_use,plot = FALSE)
+	rho_dist = hist(env_fit$rho_c2[,s],breaks=b_use,plot = T)
 	env_fit$prc2[,s] = rho_dist$counts/sum(rho_dist$counts)
 	env_fit$brc2[,s] = rho_dist$mids
 
@@ -286,7 +286,7 @@ env_fit$Nj_runif1[,1,] = 0.01; env_fit$Nj_runif1[,-1,] = 1
 
 
 for (h in 1:nsamp) { 
-	H_runif = matrix( runif(ngens*nspp), ngens, nspp) #Germination fraction.
+	H_runif = matrix( runif((ngens+1)*nspp) , (ngens+1), nspp) #Germination fraction.
 
 	#=============================================================================
 	#Population dynamics
@@ -400,125 +400,108 @@ ylab("Population")+  scale_y_log10()+
 theme(axis.text.x=element_blank(), axis.title.x=element_blank()) #, legend.position = "none") 
 p0
 
-
-
-#=============================================================================
-#Some plots for optimal bet-hedging, Section 2: 
-#=============================================================================
-library(plotly)
-
-#A basic single-species plot: 
-#data1 = data.frame(x = Hs_big[1:360,1], y = Hs_big[1:360,2], z1=diff(env_fit$m3[,1]), z2=diff(env_fit$m3[,2] ) )
-data1 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=(env_fit$m3[,1]), z2=(env_fit$m3[,2] ) )
-
-#For multi-species competition, 2 species at a time: 
-data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, prod)  )
-#data2 = data.frame(x = Hs_big[,1], y = Hs_big[,2], z1=env_fit$m2[,1], z2=env_fit$m2[,2], z3 = apply(env_fit$m2,1, sum)  )
-
-mspp1 =  which(data2$z3 == max(data2$z3,na.rm=T))
-mspp2 =  which(round(data2$z3,2) == max(round(data2$z3,2),na.rm=T))
-
-par(mfrow=c(2,1))
-plot(data1$x, data1$z1, ylim= c(-0.1,1.5) )
-points(data2$x, data2$z1,col="red")
-points(data2$x[mspp1], data2$z1[mspp1],col="blue")
-points(data2$x, data2$z3, col="green")
-
-plot(data1$y, data1$z2, ylim= c(-0.1,1.5) )
-points(data2$y, data2$z2,col="red")
-points(data2$y[mspp1], data2$z2[mspp1],col="blue")
-points(data2$y, data2$z3, col="green")
-
-
-
-
-#3D plot for single species:
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1, type="mesh3d", intensity =data1$z1  ) 
-
-#
-plot_ly() %>% add_trace(data = data1,  x=data1$x, y=data1$y, z=data1$z1,type="contour" ) 
-
-
-#A 3D plot for multispecies competition
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1, type="mesh3d", intensity =data2$z1  ) 
-
-#
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z1,type="contour" ) 
-
-# For the combined metric z3
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z3, type="mesh3d", intensity =data2$z3  ) 
-
-#
-plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z=data2$z3,type="contour" ) 
-
-#Consider intrinsic growth rates jointly: 
-# mtx = matrix(NA, nrow=length(unique(data1$x)), ncol=length(unique(data1$y)) )
-# mtx[cbind(order(data1$x), order(data1$y))] = data1$z1
-# mtx1 = data1[order((data1$x)), ]
-# mtx2 = data1[order((data1$y)), ]
-# plot(mtx1$z1, mtx2$z2)
-# data2 =  data.frame(x = mtx1$z1, y = mtx2$z2, z3=mtx1$z1*mtx2$z2)
-# plot_ly() %>% add_trace(data = data2,  x=data2$x, y=data2$y, z = data2$z3, type="contour" ) 
-
-#=============================================================================
-#Some plots for random uniform germination, Section 3: 
-#=============================================================================
-#A basic single-species plot: 
-data1b = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr3[,1], z2=env_fit$mr3[,2] )
-#For multi-species competition, 2 species at a time: 
-data2b = data.frame(x = H_runif[,1], y = H_runif[,2], z1=env_fit$mr2[,1], z2=env_fit$mr2[,2], z3 = apply(env_fit$mr2,1, sum)  )
-mspp1b =  which(data2b$z3 == max(data2b$z3,na.rm=T))
-mspp2b =  which(round(data2b$z3,2) == max(round(data2b$z3,2),na.rm=T))
-
-
-par(mfrow=c(2,1))
-plot(data1b$x, data1b$z1, ylim= c(-0.1,1.5) )
-points(data2b$x, data2b$z1,col="red")
-points(data2b$x[mspp1], data2b$z1[mspp1],col="blue")
-points(data2b$x, data2b$z3, col="green")
-
-plot(data1b$y, data1b$z2, ylim= c(-0.1,1.5) )
-points(data2b$y, data2b$z2,col="red")
-points(data2b$y[mspp1], data2b$z2[mspp1],col="blue")
-points(data2b$y, data2b$z3, col="green")
-
-#Conditions for bet-hedging: 1/colMeans(env_fit$fr)*env_fit$sr > 1
-1/colMeans(env_fit$fr)*env_fit$sr
-
-#3D plot for single species:
-plot_ly() %>% add_trace(data = data1b,  x=data1b$x, y=data1b$y, z=data1b$z1, type="mesh3d", intensity =data1b$z1  ) 
-
-#
-plot_ly() %>% add_trace(data = data1b,  x=data1b$x, y=data1b$y, z=data1b$z1,type="contour" ) 
-
-
-#A 3D plot for multispecies competition
-plot_ly() %>% add_trace(data = data2b,  x=data2b$x, y=data2b$y, z=data2b$z1, type="mesh3d", intensity =data2b$z1  ) 
-
-#
-plot_ly() %>% add_trace(data = data2b,  x=data2b$x, y=data2b$y, z=data2b$z3, type="mesh3d", intensity =data2b$z3  ) 
-
-#
-plot_ly() %>% add_trace(data = data1b,  x=data1b$x, y=data1$y, z=data1b$z1,type="contour" ) 
-
-which(data1b$z3 == max(data1b$z3))
-
-
-
 #=============================================================================
 #Approximations 
 #=============================================================================
 #Testing the analytical approximations in info_niche1.wxmx
+####
+###First section: the RUNIF germination, no info
+####
+
 spp_r = 1
 spp_i = 2
 y1=mean(env_fit$Nj_runif2[,spp_r,h]) #Resident equilibrium density 
 mv1 = var(env_fit$Nj_runif2[,spp_r,h]) #Variance of resident equilibrium density 
 mgr1 = mean(H_runif[,spp_r]) #Mean germination rate
+#The average growth rate of the resident -- should be approximately 1 
 te_r1 = 1/y1+ mv1/(y1^3) + (1 - mgr1) * env_fit$sr[spp_r]
 
 
 #The variance approximation of average resident density, Taylor expansion of 
 #second moment. This is to test whether the analytical replacement works.   
-y1=mean(env_fit$Nj_runif2[,1,h])
-v1=var(env_fit$fr[,1]/mean(env_fit$fr[,1])) #Works when the data are mean-standardized 
-var(H_runif[,1])*env_fit$sr[1]^2+(1/(y1^2))^2*v1
+y1=mean(env_fit$Nj_runif2[,spp_r,h])
+v1=var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) #Works when the data are mean-standardized 
+te_v1 = var(H_runif[,spp_r])*env_fit$sr[spp_r]^2+(1/(y1^2))^2*v1
+
+#The average low-density growth rate of the invader. 
+#Average pop parameters
+gr1 = mean(H_runif[,spp_i] )
+gr2 = mean(H_runif[,spp_r] )
+R1 = mean(env_fit$fr[,spp_i])
+R2 = mean(env_fit$fr[,spp_r])
+
+#Variance/covariances
+#Classic variance/covariances
+ERJ2 = var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) #Works when the data are mean-standardized
+EGJ2 = var(H_runif[,spp_r]) 
+ENJ2 = var(env_fit$Nj_runif2[,spp_r,h]/mean(env_fit$Nj_runif2[,spp_r,h])) #Works when the data are mean-standardized
+ERIJ = var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r]), 
+			 env_fit$fr[,spp_i]/mean(env_fit$fr[,spp_i]) ) 
+EGIJ = var(H_runif[,spp_i],H_runif[,spp_r] ) 
+
+#Info variances/covariances -- these should be close to 0 for runif scenario
+EGRII = var(H_runif[,spp_i],env_fit$fr[,spp_i]/mean(env_fit$fr[,spp_i])) 
+EGRJJ = var(H_runif[,spp_r],env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) 
+EGRJI = var(H_runif[,spp_r],env_fit$fr[,spp_i]/mean(env_fit$fr[,spp_i])) 
+EGRIJ = var(H_runif[,spp_i],env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) 
+
+s1 = env_fit$sr[spp_i]
+
+te_i1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
+		(ERJ2*R1*gr1)/(R2^3*gr2*y1)+(EGJ2*R1*gr1)/(R2*gr2^3*y1)+(ENJ2*y1)/(R2*gr2*y1^3)-
+		(ERIJ*gr1)/(R2^2*gr2*y1)-(EGIJ*R1)/(R2*gr2^2*y1)+
+		EGRII/(R2*gr2*y1)-(EGRJI*R1)/(R2^2*gr2*y1)-(EGRIJ*gr1)/(R2*gr2^2*y1)+
+		(EGRJJ*R1*gr1)/(R2^2*gr2^2*y1)
+
+#Compare to: 
+mean(env_fit$rho_runif2[,spp_i,h ] )
+
+####
+###Second section: the conditional germination, with info
+####
+y1=mean(env_fit$Ni2[ ,spp_r]) #Resident equilibrium density 
+mv1 = var(env_fit$Ni2[ ,spp_r]) #Variance of resident equilibrium density 
+mgr1 = mean(env_fit$gr[ ,spp_r]) #Mean germination rate
+#The average growth rate of the resident -- should be approximately 1 
+te_r1 = 1/y1+ mv1/(y1^3) + (1 - mgr1) * env_fit$sr[spp_r]
+
+
+#The variance approximation of average resident density, Taylor expansion of 
+#second moment. This is to test whether the analytical replacement works.   
+v1=var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) #Works when the data are mean-standardized 
+te_v1 = var(env_fit$gr[ ,spp_r])*env_fit$sr[spp_r]^2+(1/(y1^2))^2*v1
+
+#The average low-density growth rate of the invader. 
+#Average pop parameters
+gr1 = mean(env_fit$gr[ ,spp_i] )
+gr2 = mean(env_fit$gr[ ,spp_r] )
+R1 = mean(env_fit$fr[,spp_i])
+R2 = mean(env_fit$fr[,spp_r])
+
+#Variance/covariances
+#Classic variance/covariances
+ERJ2 = var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) #Works when the data are mean-standardized
+EGJ2 = var(env_fit$gr[ ,spp_r]) 
+ENJ2 = var(env_fit$Ni2[,spp_r]/mean(env_fit$Ni2[,spp_r])) #Works when the data are mean-standardized
+ERIJ = var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r]), 
+			 env_fit$fr[,spp_i]/mean(env_fit$fr[,spp_i]) ) 
+EGIJ = var(env_fit$gr[ ,spp_i],env_fit$gr[ ,spp_r]) 
+
+#Info variances/covariances -- these should be close to 0 for runif scenario
+EGRII = var(env_fit$gr[ ,spp_i],env_fit$fr[,spp_i]/mean(env_fit$fr[,spp_i])) 
+EGRJJ = var(env_fit$gr[ ,spp_r],env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) 
+EGRJI = var(env_fit$gr[ ,spp_r],env_fit$fr[,spp_i]/mean(env_fit$fr[,spp_i])) 
+EGRIJ = var(env_fit$gr[ ,spp_i],env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) 
+
+s1 = env_fit$sr[spp_i]
+
+te_i1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
+		(ERJ2*R1*gr1)/(R2^3*gr2*y1)+(EGJ2*R1*gr1)/(R2*gr2^3*y1)+(ENJ2*R1*gr1)/(R2*gr2*y1^3)-
+		(ERIJ*gr1)/(R2^2*gr2*y1)-(EGIJ*R1)/(R2*gr2^2*y1)+
+		EGRII/(R2*gr2*y1)-(EGRJI*R1)/(R2^2*gr2*y1)-(EGRIJ*gr1)/(R2*gr2^2*y1)+
+		(EGRJJ*R1*gr1)/(R2^2*gr2^2*y1)
+
+#Compare to: 
+mean(exp(env_fit$rho_c2[,spp_i]  ))
+
+
