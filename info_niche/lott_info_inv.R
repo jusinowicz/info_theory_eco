@@ -508,7 +508,13 @@ which(data1b$z3 == max(data1b$z3))
 #=============================================================================
 #Approximations 
 #=============================================================================
-#Testing the analytical approximations in 
+#Testing the analytical approximations in info_niche1.wxmx
+spp_r = 1
+spp_i = 2
+y1=mean(env_fit$Nj_runif2[,spp_r,h]) #Resident equilibrium density 
+mv1 = var(env_fit$Nj_runif2[,spp_r,h]) #Variance of resident equilibrium density 
+mgr1 = mean(H_runif[,spp_r]) #Mean germination rate
+te_r1 = 1/y1+ mv1/(y1^3) + (1 - mgr1) * env_fit$sr[spp_r]
 
 
 #The variance approximation of average resident density, Taylor expansion of 
