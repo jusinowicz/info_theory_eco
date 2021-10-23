@@ -463,13 +463,13 @@ y1=mean(env_fit$Ni2[ ,spp_r]) #Resident equilibrium density
 mv1 = var(env_fit$Ni2[ ,spp_r]) #Variance of resident equilibrium density 
 mgr1 = mean(env_fit$gr[ ,spp_r]) #Mean germination rate
 #The average growth rate of the resident -- should be approximately 1 
-te_r1 = 1/y1+ mv1/(y1^3) + (1 - mgr1) * env_fit$sr[spp_r]
+te_rc1 = 1/y1+ mv1/(y1^3) + (1 - mgr1) * env_fit$sr[spp_r]
 
 
 #The variance approximation of average resident density, Taylor expansion of 
 #second moment. This is to test whether the analytical replacement works.   
 v1=var(env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r])) #Works when the data are mean-standardized 
-te_v1 = var(env_fit$gr[ ,spp_r])*env_fit$sr[spp_r]^2+(1/(y1^2))^2*v1
+te_vc1 = var(env_fit$gr[ ,spp_r])*env_fit$sr[spp_r]^2+(1/(y1^2))^2*v1
 
 #The average low-density growth rate of the invader. 
 #Average pop parameters
@@ -495,7 +495,7 @@ EGRIJ = var(env_fit$gr[ ,spp_i],env_fit$fr[,spp_r]/mean(env_fit$fr[,spp_r]))
 
 s1 = env_fit$sr[spp_i]
 
-te_i1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
+te_ic1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
 		(ERJ2*R1*gr1)/(R2^3*gr2*y1)+(EGJ2*R1*gr1)/(R2*gr2^3*y1)+(ENJ2*R1*gr1)/(R2*gr2*y1^3)-
 		(ERIJ*gr1)/(R2^2*gr2*y1)-(EGIJ*R1)/(R2*gr2^2*y1)+
 		EGRII/(R2*gr2*y1)-(EGRJI*R1)/(R2^2*gr2*y1)-(EGRIJ*gr1)/(R2*gr2^2*y1)+
@@ -503,5 +503,9 @@ te_i1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
 
 #Compare to: 
 mean(exp(env_fit$rho_c2[,spp_i]  ))
+
+#The information coexistence mechanism: 
+icm= EGRII/(R2*gr2*y1)-(EGRJI*R1)/(R2^2*gr2*y1)-(EGRIJ*gr1)/(R2*gr2^2*y1)+
+		(EGRJJ*R1*gr1)/(R2^2*gr2^2*y1)
 
 
