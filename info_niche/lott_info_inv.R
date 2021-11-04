@@ -454,7 +454,7 @@ te_i1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
 		(EGRJJ*R1*gr1)/(R2^2*gr2^2*y1)
 
 #Compare to: 
-mean(env_fit$rho_runif2[,spp_i,h ] )
+igr_noi=mean(exp(env_fit$rho_runif2[,spp_i,h ] ))
 
 ####
 ###Second section: the conditional germination, with info
@@ -502,10 +502,11 @@ te_ic1=(1-gr1)*s1+(R1*gr1)/(R2*gr2*y1)+
 		(EGRJJ*R1*gr1)/(R2^2*gr2^2*y1)
 
 #Compare to: 
-mean(exp(env_fit$rho_c2[,spp_i]  ))
+igr_i = mean(exp(env_fit$rho_c2[,spp_i]  ))
 
 #The information coexistence mechanism: 
 icm= EGRII/(R2*gr2*y1)-(EGRJI*R1)/(R2^2*gr2*y1)-(EGRIJ*gr1)/(R2*gr2^2*y1)+
 		(EGRJJ*R1*gr1)/(R2^2*gr2^2*y1)
 
-
+#Compare to: 
+deltaG1_comp
