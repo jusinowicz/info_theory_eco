@@ -95,7 +95,7 @@ env_fit = NULL
 env_fit$Ni = Ni #Simple population dynamics
 env_fit$Ni2 = Ni #Population dynamics of residents only! 
 env_fit$Ni3 = Ni #Dormancy model (no competition)
-env_fit$opt = c(0.4,0.5) #runif(nspp)
+env_fit$opt = c(0.3,0.6) #runif(nspp)
 env_fit$var = matrix( 0.1 ,nspp,1) #A generic variance
 env_fit$min_max = NULL
 env_fit$g_mean = NULL
@@ -398,6 +398,7 @@ llt = data.frame( cbind(1:(ngens+1), env_fit$Ni, llt_r)); names(llt) = c("time",
 lott_long =llt %>% gather( species, N, 2:(2*nspp+1))
 
 #Each species' time trajectory
+#1+2 is with info, 3+4 is without info
 ll_sub = subset(lott_long, time < 50)
 p0 = ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)  )+ 
 ylab("Population")+  scale_y_log10()+
