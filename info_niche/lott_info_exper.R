@@ -82,6 +82,10 @@ Ni = matrix(0.1, ngens+1,nspp)
 #	   mweights		weighting for rand_each				
 #=============================================================================
 
+#=============================================================================
+#PART 1: Make the "real" data, run the population dynamics, measure things.
+#=============================================================================
+
 #It seems easier to make the species first, then tailor the environment. 
 
 #Fitness: Distribution of species' optimal fitness environment
@@ -403,6 +407,15 @@ p0 = ggplot()+ geom_line( data = ll_sub, aes ( x = time, y = N, color = species)
 ylab("Population")+  scale_y_log10()+
 theme(axis.text.x=element_blank(), axis.title.x=element_blank()) #, legend.position = "none") 
 p0
+
+#=============================================================================
+#PART 2: Make the "observed" data, run things again, and compare results
+#=============================================================================
+
+
+
+
+
 
 #=============================================================================
 #Approximations 
