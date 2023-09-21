@@ -21,8 +21,8 @@
 #=============================================================================
 library(deSolve)
 library(fields)
-source("../info_theory_functions/food_web_functions.R")
-source("../info_theory_functions/info_theory_functions.R")
+source("./info_theory_functions/food_web_functions.R")
+source("./info_theory_functions/info_theory_functions.R")
 
 #=============================================================================
 # Outer loop. Set the number of trials and determine how to generate 

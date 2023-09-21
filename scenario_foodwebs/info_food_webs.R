@@ -641,8 +641,8 @@ visNetwork(te_visn$nodes, te_visn$edges) %>%
 	visEdges(arrows="to", arrowStrikethrough =FALSE  ) %>%
 		visOptions(highlightNearest = list(enabled =TRUE, degree =0) )%>%
 		  	visIgraphLayout(layout = "layout_in_circle") %>%
-		  		visSave(file=fig.name, selfcontained = FALSE, background = "white")
-  				#visExport( type = "pdf", name = fig.name)
+		  		#visSave(file=fig.name, selfcontained = FALSE, background = "white")
+  				visExport( type = "pdf", name = fig.name)
 }
 
 ######################################################
@@ -766,7 +766,7 @@ layout(mat = layout.matrix,
 
 ###Common figure properties
 
-t1 = 5840
+t1 = 1
 nlevel = 64 #For viridis color scheme
 #nt_use = dim(di_web[[w]]$ai_local)[1]
 nt_use = 5940
